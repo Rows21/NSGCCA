@@ -1,13 +1,15 @@
 import torch
+import numpy as np
+import math
+from itertools import combinations_with_replacement
 torch.set_default_tensor_type(torch.DoubleTensor)
 
 from synth_data import create_synthData_new
 from sgcca_hsic import SGCCA_HSIC
+
 class Solver():
-    def __init__(self,model):
-        self.model = model
-        self.device = device
-        self.model.to(device)
+    def __init__(self):
+        self.SGCCA_HSIC = SGCCA_HSIC()
 
     def fit(self, x_list, vx_list=None, tx_list=None, checkpoint='checkpoint.model'):
         x_list = [x.to(device) for x in x_list]
@@ -23,7 +25,7 @@ class Solver():
         train_losses = []
 
         # train_linear_gcca
-        if self.linear_gcca is not None:
+        if self.SGCCA_HSIC is not None:
             _, outputs_list = self._get_outputs(x_list)
             self.train_linear_gcca(outputs_list)
 
@@ -36,6 +38,13 @@ class Solver():
         if tx_list is not None:
             loss = self.test(tx_list)
             self.logger.info('loss on test data: {:.4f}'.format(loss))
+
+    def tune_hyper(self,x_list,set):
+        folds = 3
+        a = np.exp(np.linspace(0, math.log(5), num=set))
+        for aa in combinations_with_replacement(a, 3):
+            u = self.SGCCA_HSIC.fit(x_list,1e-5,20,aa)
+
 
 
 if __name__ == '__main__':
@@ -52,12 +61,9 @@ if __name__ == '__main__':
         print(f'view_{i} :  {view.shape}')
         view = view.to("cpu")
 
-    a = SGCCA_HSIC(views)
+    a = Solver()
     u = []
 
-    u = a.fit(1e-7, 40)
+    u = a.tune_hyper(views,10)
     print(u)
-
-
-
 

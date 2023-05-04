@@ -2,33 +2,12 @@ import torch
 import math
 
 class SGCCA_HSIC():
-    def __init__(self, views):
-        self.b = 1.5 ###########hyper
+    def __init__(self):
+
         self.K_list = []
         self.a_list = []
         self.cK_list = []
         self.u_list = []
-
-        for i, view in enumerate(views):
-            v = torch.rand(20)
-            umr = torch.reshape(self.projL1(v, self.b), (20, 1))
-            u_norm = umr / torch.norm(umr, p=2)
-
-            ## Calculate Kernel
-            Xu = view @ u_norm
-            sigma = None
-            if sigma is None:
-                K, a = self.rbf_kernel(Xu)
-            else:
-                K, a = self.rbf_kernel(Xu, sigma)
-            cK = self.centre_kernel(K)
-
-            ## Save Parameters
-            self.K_list.append(K)
-            self.a_list.append(a)
-            self.cK_list.append(cK)
-            self.u_list.append(u_norm)
-        self.views = views
 
     def projL1(self, v, b):
         if b < 0:
@@ -96,13 +75,34 @@ class SGCCA_HSIC():
             K2 @ cK3) / ((N - 1) ** 2)
         return res
 
-    def fit(self, eps, maxit):
+    def fit(self,views, eps, maxit,b):
+
+        for i, view in enumerate(views):
+            v = torch.rand(20)
+            umr = torch.reshape(self.projL1(v, b[i]), (20, 1))
+            u_norm = umr / torch.norm(umr, p=2)
+
+            ## Calculate Kernel
+            Xu = view @ u_norm
+            sigma = None
+            if sigma is None:
+                K, a = self.rbf_kernel(Xu)
+            else:
+                K, a = self.rbf_kernel(Xu, sigma)
+            cK = self.centre_kernel(K)
+
+            ## Save Parameters
+            self.K_list.append(K)
+            self.a_list.append(a)
+            self.cK_list.append(cK)
+            self.u_list.append(u_norm)
+
         diff = 99999
         ite = 0
 
         while (diff > eps) & (ite < maxit):
             ite += 1
-            for i, view in enumerate(self.views):
+            for i, view in enumerate(views):
                 obj_old = self.f(self.K_list[0], self.K_list[1], self.K_list[2])
                 cK_list_SGD = [self.cK_list[j] for j in range(3) if j != i]
 
@@ -115,7 +115,7 @@ class SGCCA_HSIC():
                 while chk == 1:
                     ## Update New latent variable
                     v_new = torch.reshape(self.u_list[i] + grad * gamma, (-1,))
-                    u_new = torch.reshape(self.projL1(v_new, self.b), (20, 1))
+                    u_new = torch.reshape(self.projL1(v_new, b[i]), (20, 1))
                     u_norm = u_new / torch.norm(u_new, p=2)
 
                     Xu_new = view @ u_norm
