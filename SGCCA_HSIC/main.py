@@ -39,11 +39,13 @@ class Solver():
             loss = self.test(tx_list)
             self.logger.info('loss on test data: {:.4f}'.format(loss))
 
-    def tune_hyper(self,x_list,set):
+    def tune_hyper(self,x_list,set_params,eps = 1e-5,iter = 20):
         folds = 3
-        a = np.exp(np.linspace(0, math.log(5), num=set))
+        a = np.exp(np.linspace(0, math.log(5), num=set_params))
         for aa in combinations_with_replacement(a, 3):
-            u = self.SGCCA_HSIC.fit(x_list,1e-5,20,aa)
+            u = self.SGCCA_HSIC.fit(x_list,eps,iter,aa)
+
+
 
 
 

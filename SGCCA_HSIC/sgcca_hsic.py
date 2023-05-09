@@ -149,5 +149,7 @@ class SGCCA_HSIC():
 
         return self.u_list
 
+    def early_stop(self):
+        pass
     def test(self):
         pass
