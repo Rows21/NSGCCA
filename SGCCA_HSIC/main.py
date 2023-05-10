@@ -37,12 +37,33 @@ class Solver():
             self.logger.info('loss on test data: {:.4f}'.format(loss))
 
     def tune_hyper(self,x_list,set_params,eps = 1e-5,iter = 20):
+        ## fixed folds number
         folds = 3
+        ## split
+        shuffled_index = np.random.permutation(len(x_list[0]))
+        split_index = int(len(x_list[0]) * 1/folds)
+        train_index = shuffled_index[:split_index]
+        test_index = shuffled_index[split_index:]
+
+        train_data = []
+        test_data = []
+        for i, view in enumerate(views):
+            train_data.append(view[train_index, :])
+            test_data.append(view[test_index, :])
+
+        ## set hyperparams set
         a = np.exp(np.linspace(0, math.log(5), num=set_params))
+
+        ## start validation
         for aa in combinations_with_replacement(a, 3):
             print("Sparsity selection",aa)
-            u = self.SGCCA_HSIC.fit(x_list,eps,iter,aa)
+            u = self.SGCCA_HSIC.fit(train_data,eps,iter,aa)
 
+            # Save iterations
+            #obj_test = X @ u
+
+
+        return
 
 
 if __name__ == '__main__':

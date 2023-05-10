@@ -3,7 +3,6 @@ import math
 
 class SGCCA_HSIC():
     def __init__(self):
-
         self.K_list = []
         self.a_list = []
         self.cK_list = []
@@ -45,7 +44,7 @@ class SGCCA_HSIC():
         return final.t()
 
     def gene_SGD(self, K1, cK_list, X, a, u):
-        res = torch.empty(20, 1)
+        res = torch.empty(u.shape[0], 1)
         for i in range((len(cK_list))):
             temp = self.gradf_gauss_SGD(K1, cK_list[i], X, a, u)
             res += temp
@@ -77,9 +76,14 @@ class SGCCA_HSIC():
 
     def fit(self,views, eps, maxit,b):
 
+        self.K_list = []
+        self.a_list = []
+        self.cK_list = []
+        self.u_list = []
+
         for i, view in enumerate(views):
-            v = torch.rand(20)
-            umr = torch.reshape(self.projL1(v, b[i]), (20, 1))
+            v = torch.rand(view.shape[1])
+            umr = torch.reshape(self.projL1(v, b[i]), (view.shape[1], 1))
             u_norm = umr / torch.norm(umr, p=2)
 
             ## Calculate Kernel
@@ -99,7 +103,7 @@ class SGCCA_HSIC():
 
         diff = 99999
         ite = 0
-        obj = 0
+        #obj_list = []
         while (diff > eps) & (ite < maxit):
             ite += 1
             for i, view in enumerate(views):
@@ -115,7 +119,7 @@ class SGCCA_HSIC():
                 while chk == 1:
                     ## Update New latent variable
                     v_new = torch.reshape(self.u_list[i] + grad * gamma, (-1,))
-                    u_new = torch.reshape(self.projL1(v_new, b[i]), (20, 1))
+                    u_new = torch.reshape(self.projL1(v_new, b[i]), (view.shape[1], 1))
                     u_norm = u_new / torch.norm(u_new, p=2)
 
                     Xu_new = view @ u_norm
@@ -147,6 +151,7 @@ class SGCCA_HSIC():
             diff = abs(obj - obj_old) / abs(obj + obj_old)
             print('iter=', ite, "diff=", diff, 'obj=', obj)
 
+        print(obj)
         return self.u_list
 
     def early_stop(self):
