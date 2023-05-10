@@ -99,7 +99,7 @@ class SGCCA_HSIC():
 
         diff = 99999
         ite = 0
-
+        obj = 0
         while (diff > eps) & (ite < maxit):
             ite += 1
             for i, view in enumerate(views):
