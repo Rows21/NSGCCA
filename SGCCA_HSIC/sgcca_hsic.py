@@ -1,6 +1,6 @@
 import torch
 import math
-
+import itertools
 class SGCCA_HSIC():
     def __init__(self):
         self.K_list = []
@@ -74,13 +74,16 @@ class SGCCA_HSIC():
             K2 @ cK3) / ((N - 1) ** 2)
         return res
 
-    def fit(self,views, eps, maxit,b):
+    def ff(self,K_list,cK_list):
+        N = K_list[0].shape[0]
+        res = 0
+        for items in itertools.combinations(range(len(K_list)), 2):
+            res += torch.trace(K_list[items[0]] @ cK_list[items[1]]) / ((N - 1) ** 2)
 
-        self.K_list = []
-        self.a_list = []
-        self.cK_list = []
-        self.u_list = []
+        return res
 
+
+    def set_init(self,views,b):
         for i, view in enumerate(views):
             v = torch.rand(view.shape[1])
             umr = torch.reshape(self.projL1(v, b[i]), (view.shape[1], 1))
@@ -101,14 +104,25 @@ class SGCCA_HSIC():
             self.cK_list.append(cK)
             self.u_list.append(u_norm)
 
+
+    def fit(self,views, eps, maxit,b):
+        n_view = len(views)
+        self.K_list = []
+        self.a_list = []
+        self.cK_list = []
+        self.u_list = []
+
+        self.set_init(views,b)
+
         diff = 99999
         ite = 0
         #obj_list = []
         while (diff > eps) & (ite < maxit):
             ite += 1
             for i, view in enumerate(views):
-                obj_old = self.f(self.K_list[0], self.K_list[1], self.K_list[2])
-                cK_list_SGD = [self.cK_list[j] for j in range(3) if j != i]
+                obj_old = self.ff(self.K_list,self.cK_list)
+
+                cK_list_SGD = [self.cK_list[j] for j in range(n_view) if j != i]
 
                 ## Calculate Delta and Gamma
                 grad = self.gene_SGD(self.K_list[i], cK_list_SGD, view, self.a_list[i], self.u_list[i])
@@ -131,9 +145,14 @@ class SGCCA_HSIC():
                         K_new, a_new = self.rbf_kernel(Xu_new, sigma)
                     cK_new = self.centre_kernel(K_new)
 
-                    K_list_SGD = [self.K_list[j] for j in range(3) if j != i]
+                    ## update K
+                    K_list_SGD = [self.K_list[j] for j in range(n_view) if j != i]
                     K_list_SGD.append(K_new)
-                    obj_new = self.f(K_list_SGD[0], K_list_SGD[1], K_list_SGD[2])
+
+                    ## update cK
+                    cK_list_SGD = [self.cK_list[j] for j in range(n_view) if j != i]
+                    cK_list_SGD.append(cK_new)
+                    obj_new = self.ff(K_list_SGD,cK_list_SGD)
 
                     ## Update Params
                     if obj_new > obj_old + 1e-4 * abs(obj_old):
@@ -149,9 +168,9 @@ class SGCCA_HSIC():
                 obj = obj_new
                 ## End Line Search
             diff = abs(obj - obj_old) / abs(obj + obj_old)
-            print('iter=', ite, "diff=", diff, 'obj=', obj)
+            #print('iter=', ite, "diff=", diff, 'obj=', obj)
 
-        print(obj)
+        print("diff=", diff, 'obj=', obj)
         return self.u_list
 
     def early_stop(self):

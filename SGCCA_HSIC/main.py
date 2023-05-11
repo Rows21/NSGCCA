@@ -51,29 +51,56 @@ class Solver():
             train_data.append(view[train_index, :])
             test_data.append(view[test_index, :])
 
+        ## calculate K,cK for validation set
+
+
         ## set hyperparams set
         a = np.exp(np.linspace(0, math.log(5), num=set_params))
 
         ## start validation
+        b0 = a[0]
+        obj_validate = 0
+        count = 0
         for aa in combinations_with_replacement(a, 3):
-            print("Sparsity selection",aa)
+            count +=1
+
             u = self.SGCCA_HSIC.fit(train_data,eps,iter,aa)
 
             # Save iterations
-            #obj_test = X @ u
+            K_test = []
+            cK_test = []
+            for i,view in enumerate(test_data):
+                Xu = view @ u[i]
+                sigma = None
+                if sigma is None:
+                    K, a = self.SGCCA_HSIC.rbf_kernel(Xu)
+                else:
+                    K, a = self.SGCCA_HSIC.rbf_kernel(Xu, sigma)
+                cK = self.SGCCA_HSIC.centre_kernel(K)
+                K_test.append(K)
+                cK_test.append(cK)
+            obj_temp = self.SGCCA_HSIC.ff(K_test,cK_test)
 
+            print("Sparsity selection number=", count, "hyperparams=", aa,"obj=",obj_temp)
+            if obj_temp > obj_validate:
+                b0 = aa
+                obj_validate = obj_temp
+            else:
+                continue
+        return b0,obj_validate
 
-        return
-
+    def _get_outputs(self,views,eps,maxit,b):
+        u = self.SGCCA_HSIC.fit(views, eps, maxit,b)
+        return u
 
 if __name__ == '__main__':
     ############
-    # Parameters Section
+    # Hyper Params Section
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
     print("Using", torch.cuda.device_count(), "GPUs")
 
     N = 400
-    views = create_synthData_new(N, mode=3, F=20)
+    views = create_synthData_new(N, mode=3, F=10)
 
     print(f'input views shape :')
     for i, view in enumerate(views):
@@ -82,7 +109,16 @@ if __name__ == '__main__':
 
     a = Solver()
     u = []
+    ## train hyper
+    b0,obj = a.tune_hyper(views,5)
 
-    u = a.tune_hyper(views,10)
-    print(u)
+    ## fit results
+    u = a._get_outputs(views,1e-5,20,b0)
+
+
+
+
+
+
+
 
