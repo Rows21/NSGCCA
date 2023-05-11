@@ -170,10 +170,5 @@ class SGCCA_HSIC():
             diff = abs(obj - obj_old) / abs(obj + obj_old)
             #print('iter=', ite, "diff=", diff, 'obj=', obj)
 
-        print("diff=", diff, 'obj=', obj)
+        #print("diff=", diff, 'obj=', obj)
         return self.u_list
-
-    def early_stop(self):
-        pass
-    def test(self):
-        pass

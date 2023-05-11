@@ -23,8 +23,9 @@ class Solver():
 
         # train_linear_gcca
         if self.SGCCA_HSIC is not None:
-            _, outputs_list = self._get_outputs(x_list)
+            outputs_list = self._get_outputs(x_list)
             self.train_linear_gcca(outputs_list)
+
 
         checkpoint_ = torch.load(checkpoint)
         self.model.load_state_dict(checkpoint_)
@@ -51,9 +52,6 @@ class Solver():
             train_data.append(view[train_index, :])
             test_data.append(view[test_index, :])
 
-        ## calculate K,cK for validation set
-
-
         ## set hyperparams set
         a = np.exp(np.linspace(0, math.log(5), num=set_params))
 
@@ -63,10 +61,10 @@ class Solver():
         count = 0
         for aa in combinations_with_replacement(a, 3):
             count +=1
-
             u = self.SGCCA_HSIC.fit(train_data,eps,iter,aa)
 
             # Save iterations
+            ## calculate K,cK for validation set
             K_test = []
             cK_test = []
             for i,view in enumerate(test_data):
@@ -79,6 +77,7 @@ class Solver():
                 cK = self.SGCCA_HSIC.centre_kernel(K)
                 K_test.append(K)
                 cK_test.append(cK)
+            ## get obj
             obj_temp = self.SGCCA_HSIC.ff(K_test,cK_test)
 
             print("Sparsity selection number=", count, "hyperparams=", aa,"obj=",obj_temp)
@@ -93,6 +92,13 @@ class Solver():
         u = self.SGCCA_HSIC.fit(views, eps, maxit,b)
         return u
 
+    def early_stop(self):
+        pass
+
+    def test(self):
+        pass
+
+
 if __name__ == '__main__':
     ############
     # Hyper Params Section
@@ -100,20 +106,25 @@ if __name__ == '__main__':
     print("Using", torch.cuda.device_count(), "GPUs")
 
     N = 400
-    views = create_synthData_new(N, mode=3, F=10)
+    views = create_synthData_new(N, mode=1, F=20)
 
     print(f'input views shape :')
     for i, view in enumerate(views):
         print(f'view_{i} :  {view.shape}')
         view = view.to("cpu")
 
-    a = Solver()
     u = []
+    Solver = Solver()
     ## train hyper
-    b0,obj = a.tune_hyper(views,5)
+    b0,obj = Solver.tune_hyper(x_list=views,set_params=5)
 
     ## fit results
-    u = a._get_outputs(views,1e-5,20,b0)
+    u = Solver._get_outputs(views,1e-5,20,b0)
+
+    Label = torch.cat([torch.ones(2, dtype=torch.bool), torch.zeros(18, dtype=torch.bool)])
+    res = FS_MCC(u,Label)
+    print(res)
+
 
 
 
