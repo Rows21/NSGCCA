@@ -48,7 +48,7 @@ class Solver():
 
         train_data = []
         test_data = []
-        for i, view in enumerate(views):
+        for i, view in enumerate(x_list):
             train_data.append(view[train_index, :])
             test_data.append(view[test_index, :])
 
@@ -124,6 +124,8 @@ if __name__ == '__main__':
     Label = torch.cat([torch.ones(2, dtype=torch.bool), torch.zeros(18, dtype=torch.bool)])
     res = FS_MCC(u,Label)
     print(res)
+
+
 
 
 

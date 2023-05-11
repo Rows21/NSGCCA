@@ -79,9 +79,7 @@ class SGCCA_HSIC():
         res = 0
         for items in itertools.combinations(range(len(K_list)), 2):
             res += torch.trace(K_list[items[0]] @ cK_list[items[1]]) / ((N - 1) ** 2)
-
         return res
-
 
     def set_init(self,views,b):
         for i, view in enumerate(views):
@@ -104,7 +102,6 @@ class SGCCA_HSIC():
             self.cK_list.append(cK)
             self.u_list.append(u_norm)
 
-
     def fit(self,views, eps, maxit,b):
         n_view = len(views)
         self.K_list = []
@@ -116,12 +113,11 @@ class SGCCA_HSIC():
 
         diff = 99999
         ite = 0
-        #obj_list = []
+
         while (diff > eps) & (ite < maxit):
             ite += 1
             for i, view in enumerate(views):
                 obj_old = self.ff(self.K_list,self.cK_list)
-
                 cK_list_SGD = [self.cK_list[j] for j in range(n_view) if j != i]
 
                 ## Calculate Delta and Gamma
@@ -172,3 +168,6 @@ class SGCCA_HSIC():
 
         #print("diff=", diff, 'obj=', obj)
         return self.u_list
+
+    def test(self):
+        pass
