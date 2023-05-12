@@ -151,7 +151,7 @@ class SGCCA_HSIC():
                     obj_new = self.ff(K_list_SGD,cK_list_SGD)
 
                     ## Update Params
-                    if obj_new > obj_old + 1e-4 * abs(obj_old):
+                    if obj_new > obj_old + 1e-5 * abs(obj_old):
                         chk = 0
                         self.u_list[i] = u_norm
                         self.K_list[i] = K_new

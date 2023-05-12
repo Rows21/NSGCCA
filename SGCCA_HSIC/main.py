@@ -38,6 +38,9 @@ class Solver():
             self.logger.info('loss on test data: {:.4f}'.format(loss))
 
     def tune_hyper(self,x_list,set_params,eps = 1e-5,iter = 20):
+        ## set hyperparams set
+        a = np.exp(np.linspace(0, math.log(5), num=set_params))
+        print("Start Hyperparams Tuning")
         ## fixed folds number
         folds = 3
         ## split
@@ -51,9 +54,6 @@ class Solver():
         for i, view in enumerate(x_list):
             train_data.append(view[train_index, :])
             test_data.append(view[test_index, :])
-
-        ## set hyperparams set
-        a = np.exp(np.linspace(0, math.log(5), num=set_params))
 
         ## start validation
         b0 = a[0]
@@ -80,15 +80,17 @@ class Solver():
             ## get obj
             obj_temp = self.SGCCA_HSIC.ff(K_test,cK_test)
 
-            print("Sparsity selection number=", count, "hyperparams=", aa,"obj=",obj_temp)
+            #print("Sparsity selection number=", count, "hyperparams=", aa,"obj=",obj_temp)
             if obj_temp > obj_validate:
                 b0 = aa
                 obj_validate = obj_temp
             else:
                 continue
+        print("Finish Tuning!")
         return b0,obj_validate
 
     def _get_outputs(self,views,eps,maxit,b):
+        print("SNGCCA Started!")
         u = self.SGCCA_HSIC.fit(views, eps, maxit,b)
         return u
 
