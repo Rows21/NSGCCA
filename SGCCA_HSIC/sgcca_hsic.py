@@ -102,7 +102,7 @@ class SGCCA_HSIC():
             self.cK_list.append(cK)
             self.u_list.append(u_norm)
 
-    def fit(self,views, eps, maxit,b):
+    def fit(self,views, eps, maxit,b,early_stopping = False,patience = 10):
         n_view = len(views)
         self.K_list = []
         self.a_list = []
@@ -113,7 +113,7 @@ class SGCCA_HSIC():
 
         diff = 99999
         ite = 0
-
+        obj_list = []
         while (diff > eps) & (ite < maxit):
             ite += 1
             for i, view in enumerate(views):
@@ -164,10 +164,20 @@ class SGCCA_HSIC():
                 obj = obj_new
                 ## End Line Search
             diff = abs(obj - obj_old) / abs(obj + obj_old)
-            #print('iter=', ite, "diff=", diff, 'obj=', obj)
+            print('iter=', ite, "diff=", diff, 'obj=', obj)
+
+            if early_stopping is True:
+                if self.EarlyStopping(obj_list,patience=patience):
+                    return self.u_list
 
         #print("diff=", diff, 'obj=', obj)
         return self.u_list
 
     def test(self):
         pass
+
+    def EarlyStopping(self,lst,patience=5):
+        if len(lst) < patience:
+            return False
+        last_five = lst[-patience:]
+        return len(set(last_five)) == 1

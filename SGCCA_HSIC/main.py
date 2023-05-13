@@ -108,7 +108,7 @@ if __name__ == '__main__':
     print("Using", torch.cuda.device_count(), "GPUs")
 
     N = 400
-    views = create_synthData_new(N, mode=1, F=20)
+    views = create_synthData_new(N, mode=2, F=20)
 
     print(f'input views shape :')
     for i, view in enumerate(views):
@@ -117,15 +117,10 @@ if __name__ == '__main__':
 
     u = []
     Solver = Solver()
-    ## train hyper
-    b0,obj = Solver.tune_hyper(x_list=views,set_params=5)
 
     ## fit results
-    u = Solver._get_outputs(views,1e-5,20,b0)
-
-    Label = torch.cat([torch.ones(2, dtype=torch.bool), torch.zeros(18, dtype=torch.bool)])
-    res = FS_MCC(u,Label)
-    print(res)
+    u = Solver._get_outputs(views,1e-7,50,(1,1,1))
+    print(u)
 
 
 
