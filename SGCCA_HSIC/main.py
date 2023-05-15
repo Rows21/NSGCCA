@@ -17,25 +17,9 @@ class Solver():
         x_list = [x.to(device) for x in x_list]
         data_size = x_list[0].size(0)
 
-        ##### ADD test and validation sets
-
-        train_losses = []
-
-        # train_linear_gcca
-        if self.SGCCA_HSIC is not None:
-            outputs_list = self._get_outputs(x_list)
-            self.train_linear_gcca(outputs_list)
 
 
-        checkpoint_ = torch.load(checkpoint)
-        self.model.load_state_dict(checkpoint_)
-        if vx_list is not None:
-            loss = self.test(vx_list)
-            self.logger.info("loss on validation data: {:.4f}".format(loss))
 
-        if tx_list is not None:
-            loss = self.test(tx_list)
-            self.logger.info('loss on test data: {:.4f}'.format(loss))
 
     def tune_hyper(self,x_list,set_params,eps = 1e-5,iter = 20):
         ## set hyperparams set
