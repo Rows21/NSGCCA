@@ -1,17 +1,29 @@
 from main import Solver
 import torch
-from synth_data import create_synthData_new
 
+import numpy as np
+
+# Hyper Params Section
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 print("Using", torch.cuda.device_count(), "GPUs")
 
-## import TCGA Cancer dataset
-N = 400
-views = create_synthData_new(N, mode=1, F=20)
 
-## start CCA process
+
+Exp = np.loadtxt("C:/Users/Programer/Documents/GitHub/SGCCA_HSIC/SGCCA_HSIC/RealData/Exp664.txt")
+Meth = np.loadtxt("C:/Users/Programer/Documents/GitHub/SGCCA_HSIC/SGCCA_HSIC/RealData/Meth664.txt")
+miRNA = np.loadtxt("C:/Users/Programer/Documents/GitHub/SGCCA_HSIC/SGCCA_HSIC/RealData/miRNA664.txt")
+
+views = [Exp.T,Meth.T,miRNA.T]
+views = [torch.tensor(view).to(device) for view in views]
+## Analysis
+
+
 Solver = Solver()
-b0,obj = Solver.tune_hyper(x_list=views,set_params=5)
+print(f'input views shape :')
+for i, view in enumerate(views):
+    print(f'view_{i} :  {view.shape}')
+    view = view.to("cpu")
 
-## fit results
-u = Solver._get_outputs(views,1e-5,20,b0)
+u = Solver._get_outputs(views, 1e-7, 100, (1,1,1))
+
+

@@ -17,10 +17,6 @@ class Solver():
         x_list = [x.to(device) for x in x_list]
         data_size = x_list[0].size(0)
 
-
-
-
-
     def tune_hyper(self,x_list,set_params,eps = 1e-5,iter = 20):
         ## set hyperparams set
         a = np.exp(np.linspace(0, math.log(5), num=set_params))
@@ -45,7 +41,7 @@ class Solver():
         count = 0
         for aa in combinations_with_replacement(a, 3):
             count +=1
-            u = self.SGCCA_HSIC.fit(train_data,eps,iter,aa)
+            u = self.SGCCA_HSIC.fit(train_data,eps,iter,aa,logging=2)
 
             # Save iterations
             ## calculate K,cK for validation set
@@ -75,7 +71,7 @@ class Solver():
 
     def _get_outputs(self,views,eps,maxit,b):
         print("SNGCCA Started!")
-        u = self.SGCCA_HSIC.fit(views, eps, maxit,b)
+        u = self.SGCCA_HSIC.fit(views, eps, maxit,b,patience=10,logging=1)
         return u
 
     def early_stop(self):

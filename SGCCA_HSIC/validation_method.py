@@ -17,8 +17,13 @@ def FS_MCC(U, Label):
 
     precision = tp / (tp + fp)
     recall = tp / (tp + fn)
+    if tp != 0:
+        f1 = 2 * precision * recall / (precision + recall)
+    else:
+        f1 = 0
 
-    f1 = 2 * precision * recall / (precision + recall)
+    acc = (tp + tn) / (tp+tn+fp+fn)
+
     mcc = (tp * tn - fp * fn) / np.sqrt((tp + fp) * (tp + fn) * (tn + fp) * (tn + fn))
 
-    return f1, mcc
+    return acc, f1, mcc
