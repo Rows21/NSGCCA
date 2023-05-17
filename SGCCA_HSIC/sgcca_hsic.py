@@ -122,6 +122,7 @@ class SGCCA_HSIC():
 
                 ## Calculate Delta and Gamma
                 grad = self.gene_SGD(self.K_list[i], cK_list_SGD, view, self.a_list[i], self.u_list[i])
+
                 gamma = torch.norm(grad, p=2)
 
                 ## Start Line Search

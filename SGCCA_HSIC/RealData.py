@@ -15,9 +15,8 @@ miRNA = np.loadtxt("C:/Users/Programer/Documents/GitHub/SGCCA_HSIC/SGCCA_HSIC/Re
 
 views = [Exp.T,Meth.T,miRNA.T]
 views = [torch.tensor(view).to(device) for view in views]
+
 ## Analysis
-
-
 Solver = Solver()
 print(f'input views shape :')
 for i, view in enumerate(views):
