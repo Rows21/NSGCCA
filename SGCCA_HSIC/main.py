@@ -96,10 +96,10 @@ if __name__ == '__main__':
         view = view.to("cpu")
 
     u = []
-    Solver = Solver()
+    a = SGCCA_HSIC()
 
     ## fit results
-    u = Solver._get_outputs(views,1e-7,50,(1,1,1))
+    u = a.fit(views,1e-7,50,(1,1,1))
     print(u)
 
 

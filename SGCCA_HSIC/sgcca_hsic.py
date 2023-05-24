@@ -1,6 +1,7 @@
 import torch
 import math
 import itertools
+import torch.optim as optim
 class SGCCA_HSIC():
     def __init__(self):
         self.K_list = []
@@ -64,15 +65,6 @@ class SGCCA_HSIC():
 
     def centre_kernel(self, K):
         return K + torch.mean(K) - (torch.mean(K, dim=0).reshape((1, -1)) + torch.mean(K, dim=1).reshape((-1, 1)))
-
-    def f(self, K1, K2, K3):
-        N = K1.shape[0]
-        cK2 = self.centre_kernel(K2)
-        cK3 = self.centre_kernel(K3)
-
-        res = torch.trace(K1 @ cK2) / ((N - 1) ** 2) + torch.trace(K1 @ cK3) / ((N - 1) ** 2) + torch.trace(
-            K2 @ cK3) / ((N - 1) ** 2)
-        return res
 
     def ff(self,K_list,cK_list):
         N = K_list[0].shape[0]
