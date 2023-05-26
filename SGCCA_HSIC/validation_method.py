@@ -15,8 +15,8 @@ def FS_MCC(U, Label):
         fn += C[1][0]
         fp += C[0][1]
 
-    precision = tp / (tp + fp)
-    recall = tp / (tp + fn)
+    precision = tp / (tp + fp + 1e-300)
+    recall = tp / (tp + fn + 1e-300)
     if tp != 0:
         f1 = 2 * precision * recall / (precision + recall)
     else:

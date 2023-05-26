@@ -3,11 +3,12 @@ import math
 import itertools
 import torch.optim as optim
 class SGCCA_HSIC():
-    def __init__(self):
+    def __init__(self, device):
         self.K_list = []
         self.a_list = []
         self.cK_list = []
         self.u_list = []
+        self.device = device
 
     def projL1(self, v, b):
         if b < 0:
@@ -16,7 +17,7 @@ class SGCCA_HSIC():
             return v
         u, indices = torch.sort(torch.abs(v), descending=True)
         sv = torch.cumsum(u, dim=0)
-        rho = torch.sum(u > (sv - b) / torch.arange(1, len(u) + 1), dim=0)
+        rho = torch.sum(u > (sv - b) / torch.arange(1, len(u) + 1).to(self.device), dim=0)
         theta = torch.max(torch.zeros_like(sv), (sv[rho - 1] - b) / rho)
         w = torch.sign(v) * torch.max(torch.abs(v) - theta, torch.zeros_like(v))
         return w
@@ -29,9 +30,9 @@ class SGCCA_HSIC():
 
     def gradf_gauss_SGD(self, K1, cK2, X, a, u):
         N = K1.shape[0]
-        temp1 = torch.zeros((X.shape[1], X.shape[1]))
+        temp1 = torch.zeros((X.shape[1], X.shape[1])).to(self.device)
         au = a
-
+        
         id1 = torch.sort(torch.rand(N))[1]
         id2 = torch.sort(torch.rand(N))[1]
         N = math.floor(N / 10)
@@ -40,12 +41,12 @@ class SGCCA_HSIC():
             for j in range(N):
                 a = id1[i]
                 b = id2[j]
-                temp1 += K1[a, b] * cK2[a, b] * torch.ger(X[a, :] - X[b, :], X[a, :] - X[b, :])
+                temp1 += K1[a, b] * cK2[a, b] * torch.ger(X[a, :] - X[b, :], X[a, :] - X[b, :]).to(self.device)
         final = -2 * au * u.t() @ temp1
         return final.t()
 
     def gene_SGD(self, K1, cK_list, X, a, u):
-        res = torch.empty(u.shape[0], 1)
+        res = torch.empty(u.shape[0], 1).to(self.device)
         for i in range((len(cK_list))):
             temp = self.gradf_gauss_SGD(K1, cK_list[i], X, a, u)
             res += temp
@@ -75,19 +76,19 @@ class SGCCA_HSIC():
 
     def set_init(self,views,b):
         for i, view in enumerate(views):
-            v = torch.rand(view.shape[1])
+            v = torch.rand(view.shape[1]).to(self.device)
             umr = torch.reshape(self.projL1(v, b[i]), (view.shape[1], 1))
-            u_norm = umr / torch.norm(umr, p=2)
+            u_norm = umr / torch.norm(umr, p=2).to(self.device)
 
             ## Calculate Kernel
-            Xu = view @ u_norm
+            Xu = view.to(self.device) @ u_norm
             sigma = None
             if sigma is None:
                 K, a = self.rbf_kernel(Xu)
             else:
                 K, a = self.rbf_kernel(Xu, sigma)
             cK = self.centre_kernel(K)
-
+            
             ## Save Parameters
             self.K_list.append(K)
             self.a_list.append(a)
@@ -125,7 +126,7 @@ class SGCCA_HSIC():
                     u_new = torch.reshape(self.projL1(v_new, b[i]), (view.shape[1], 1))
                     u_norm = u_new / torch.norm(u_new, p=2)
 
-                    Xu_new = view @ u_norm
+                    Xu_new = view.to(self.device) @ u_norm
 
                     sigma = None
                     if sigma is None:
@@ -176,3 +177,4 @@ class SGCCA_HSIC():
             return False
         last_five = lst[-patience:]
         return len(set(last_five)) == 1
+

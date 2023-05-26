@@ -10,8 +10,9 @@ from sgcca_hsic import SGCCA_HSIC
 from validation_method import FS_MCC
 
 class Solver():
-    def __init__(self):
-        self.SGCCA_HSIC = SGCCA_HSIC()
+    def __init__(self,device):
+        self.SGCCA_HSIC = SGCCA_HSIC(device)
+        self.device = device
 
     def fit(self, x_list, vx_list=None, tx_list=None, checkpoint='checkpoint.model'):
         x_list = [x.to(device) for x in x_list]
@@ -48,7 +49,7 @@ class Solver():
             K_test = []
             cK_test = []
             for i,view in enumerate(test_data):
-                Xu = view @ u[i]
+                Xu = view.to(self.device) @ u[i]
                 sigma = None
                 if sigma is None:
                     K, a = self.SGCCA_HSIC.rbf_kernel(Xu)
