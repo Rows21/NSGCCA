@@ -242,6 +242,8 @@ for( i in 1:100){
 mean(f1_score)
 sd(f1_score, na.rm = FALSE)
 
+mean(MCC)
+sd(MCC, na.rm = FALSE)
 ```
 
 ### Linear SGCCA
@@ -307,6 +309,9 @@ for( i in 1:100){
 }
 mean(f1_score)
 sd(f1_score, na.rm = FALSE)
+
+mean(MCC)
+sd(MCC, na.rm = FALSE)
 ```
 
 ### Sin RGCCA
@@ -376,6 +381,9 @@ for( i in 1:100){
 }
 mean(f1_score)
 sd(f1_score, na.rm = FALSE)
+
+mean(MCC)
+sd(MCC, na.rm = FALSE)
 ```
 
 ### Sin SGCCA
@@ -443,6 +451,9 @@ for( i in 1:100){
 }
 mean(f1_score)
 sd(f1_score, na.rm = FALSE)
+
+mean(MCC)
+sd(MCC, na.rm = FALSE)
 ```
 
 ### Method3 RGCCA
@@ -512,6 +523,9 @@ for( i in 1:100){
 }
 mean(f1_score)
 sd(f1_score, na.rm = FALSE)
+
+mean(MCC)
+sd(MCC, na.rm = FALSE)
 ```
 ### Method3 SGCCA
 ```{r}
@@ -578,4 +592,7 @@ for( i in 1:100){
 }
 mean(f1_score)
 sd(f1_score, na.rm = FALSE)
+
+mean(MCC)
+sd(MCC, na.rm = FALSE)
 ```
