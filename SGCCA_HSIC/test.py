@@ -1,50 +1,30 @@
 from main import Solver
+import pandas as pd
 import torch
 from synth_data import create_synthData_new
 from validation_method import FS_MCC
 import numpy as np
+from sgcca_hsic_adam import SNGCCA_ADAM
+torch.set_default_tensor_type(torch.DoubleTensor)
 
-# Hyper Params Section
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 print("Using", torch.cuda.device_count(), "GPUs")
 
-Solver = Solver()
+SNGCCA_ADAM = SNGCCA_ADAM(device)
+x = pd.read_csv("x.csv")
+y = pd.read_csv("y.csv")
+z = pd.read_csv("z.csv")
 
-## Scenario 2
-ACC = []
-FS = []
-MCC = []
-N = 400
-views = create_synthData_new(N, mode=2, F=20)
+v = torch.arange(0, 1, 0.05)
+umr = SNGCCA_ADAM.projL1(v,3)
+n_view = len(x)
+#ind = torch.randperm(n_view)[:n_view//10]
+ind = np.arange(0, 30)
 
-print(f'input views shape :')
-for i, view in enumerate(views):
-    print(f'view_{i} :  {view.shape}')
-    view = view.to("cpu")
+Xu = torch.tensor(x @ umr)
+Yu = y @ umr
+Zu = z @ umr
 
-for rep in range(100):
-    print("REP=", rep + 1)
-    u = []
-    ## train hyper
-    b0, obj = Solver.tune_hyper(x_list=views, set_params=3,iter=50)
+phiu,a = SNGCCA_ADAM.rbf_approx(Xu,ind)
 
-    ## fit results
-    u = Solver._get_outputs(views, 1e-7, 100, b0)
-    #
-    Label = torch.cat([torch.ones(2, dtype=torch.bool), torch.zeros(18, dtype=torch.bool)])
-    acc,f1,mcc = FS_MCC(u, Label)
-    ACC.append(acc)
-    FS.append(f1)
-    MCC.append(mcc)
-
-macc = np.mean(ACC)
-sdacc = np.std(ACC)
-print(macc, sdacc)
-
-mf = np.mean(FS)
-sdf = np.std(FS)
-print(mf, sdf)
-
-mmcc = np.mean(MCC)
-sdmcc = np.std(MCC)
-print(mmcc, sdmcc)
+print(a)

@@ -4,7 +4,7 @@ import itertools
 import torch.optim as optim
 
 
-class SGCCA_HSIC():
+class SNGCCA_ADAM():
     def __init__(self, device):
         self.K_list = []
         self.a_list = []
@@ -24,13 +24,11 @@ class SGCCA_HSIC():
         w = torch.sign(v) * torch.max(torch.abs(v) - theta, torch.zeros_like(v))
         return w
 
-    def sqdist(self, X1, X2):
-        n1 = X1.shape[1]
-        n2 = X2.shape[1]
-        D = torch.sum(X1 ** 2, dim=0).reshape(-1, 1).repeat(1, n2) + torch.sum(X2 ** 2, dim=0).reshape(1, -1).repeat(n1,
-                                                                                                                     1) - 2 * torch.mm(
-            X1.T, X2)
-        return D
+    def sqdist(self, Xu, n = None):
+        Xu_2d = Xu.unsqueeze(0)
+        Xu_n = Xu[n].unsqueeze(0)
+        dist = torch.cdist(Xu_2d.T, Xu_n.T, p=2) ** 2
+        return dist
 
     def gradf_gauss_SGD(self, K1, cK2, X, a, u):
         N = K1.shape[0]
@@ -56,17 +54,28 @@ class SGCCA_HSIC():
             res += temp
         return res
 
-    def rbf_kernel(self, X, sigma=None):
-        # 计算距离矩阵
-        D = torch.sqrt(torch.abs(self.sqdist(X.t(), X.t())))
+    def rbf_approx(self, X, ind, sigma=None):
+        # Kernel Matrix
+        D_mn = torch.sqrt(torch.abs(self.sqdist(X, ind)))
 
-        if sigma is None:
-            # 中位数启发式法估计 sigma
-            sigma = torch.median(D)
+        if sigma is None:  # median heuristic
+            sigma = torch.median(D_mn)
+        else:
+            sigma = torch.tensor(sigma)
 
-        # 计算核矩阵
-        K = torch.exp(- (D ** 2) / (2 * sigma ** 2))
-        return K, sigma
+        K_mn = torch.exp(- (D_mn ** 2) / (2 * sigma ** 2))
+        D_nn = torch.sqrt(torch.abs(self.sqdist(X[ind])))
+
+        K_nn = torch.exp(- (D_nn ** 2) / (2 * sigma ** 2))
+        K_nn = K_nn + torch.eye(K_nn.shape[0]) * 0.001
+
+        eigenvalues, eigenvectors = torch.linalg.eig(K_nn)
+        D_sqrt = torch.diag(torch.sqrt(eigenvalues))
+        K_nn_sqrt = (eigenvectors @ D_sqrt @ eigenvectors.inverse()).real
+
+        phi = K_mn @ torch.linalg.inv(K_nn_sqrt)
+
+        return phi, sigma
 
     def centre_kernel(self, K):
         return K + torch.mean(K) - (torch.mean(K, dim=0).reshape((1, -1)) + torch.mean(K, dim=1).reshape((-1, 1)))
@@ -106,6 +115,7 @@ class SGCCA_HSIC():
         self.cK_list = []
         self.u_list = []
 
+        # initialization
         self.set_init(views, b)
 
         diff = 99999
