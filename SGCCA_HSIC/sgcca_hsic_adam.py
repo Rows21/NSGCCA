@@ -92,8 +92,17 @@ class SNGCCA_ADAM():
             res += torch.trace(K_list[items[0]] @ cK_list[items[1]]) / ((N - 1) ** 2)
         return res
 
+    def f_nystrom(self, phix, phiy):
+        N = phix.size(0)
+        Kxx = centre_nystrom_kernel(phix)
+        Kyy = centre_nystrom_kernel(phiy)
+        hsic_nystrom = torch.norm((1 / N) * torch.matmul(Kxx.t(), Kyy), p='fro') ** 2
+        return hsic_nystrom
+
     def set_init(self, views, ind, b):
         ## initial
+        phi_list = []
+        phic_list = []
         for i, view in enumerate(views):
             v = torch.rand(view.shape[1]).to(self.device)
             umr = torch.reshape(self.projL1(v, b[i]), (view.shape[1], 1))
@@ -118,14 +127,39 @@ class SNGCCA_ADAM():
         return self.u_list
 
     def fit(self, views, eps, maxit, b, early_stopping=True, patience=10, logging=0):
-        n_view = len(views)
-        self.K_list = []
-        self.a_list = []
-        self.cK_list = []
-        self.u_list = []
 
-        # initialization
-        self.set_init(views, b)
+        ## initial
+        n_view = len(views)
+
+        K_list = []
+        a_list = []
+        cK_list = []
+        u_list = []
+        phi_list = []
+        phic_list = []
+        ind = 0
+#########################################################################
+        for i, view in enumerate(views):
+            v = torch.rand(view.shape[1]).to(self.device)
+            umr = torch.reshape(self.projL1(v, b[i]), (view.shape[1], 1))
+            u_norm = umr / torch.norm(umr, p=2).to(self.device)
+
+            ## Calculate Kernel
+            Xu = view.to(self.device) @ u_norm
+            sigma = None
+            if sigma is None:
+                phi, a = self.rbf_approx(Xu, ind)
+            else:
+                phi, a = self.rbf_approx(Xu, ind, sigma)
+            K = phi.t() @ phi
+            phic = self.centre_nystrom_kernel(phi)
+            cK = phic.t() @ phic
+
+            ## Save Parameters
+            K_list.append(K)
+            a_list.append(a)
+            cK_list.append(cK)
+            u_list.append(u_norm)
 
         diff = 99999
         ite = 0
