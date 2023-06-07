@@ -93,6 +93,7 @@ class SNGCCA_ADAM():
         return res
 
     def set_init(self, views, ind, b):
+        ## initial
         for i, view in enumerate(views):
             v = torch.rand(view.shape[1]).to(self.device)
             umr = torch.reshape(self.projL1(v, b[i]), (view.shape[1], 1))
@@ -102,10 +103,12 @@ class SNGCCA_ADAM():
             Xu = view.to(self.device) @ u_norm
             sigma = None
             if sigma is None:
-                K, a = self.rbf_approx(Xu,ind)
+                phi, a = self.rbf_approx(Xu,ind)
             else:
-                K, a = self.rbf_approx(Xu, ind,sigma)
-            cK = self.centre_nystrom_kernel(K)
+                phi, a = self.rbf_approx(Xu, ind,sigma)
+            K = phi.t() @ phi
+            phic = self.centre_nystrom_kernel(phi)
+            cK = phic.t() @ phic
 
             ## Save Parameters
             self.K_list.append(K)

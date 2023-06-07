@@ -38,4 +38,5 @@ for i, view in enumerate(views):
     view = view.to("cpu")
 
 u = SNGCCA_ADAM.set_init(views,ind,(1,1,1))
-print(u)
+
+obj_old = SNGCCA_ADAM.ff()
