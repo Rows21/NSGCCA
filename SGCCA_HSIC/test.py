@@ -19,12 +19,23 @@ v = torch.arange(0, 1, 0.05)
 umr = SNGCCA_ADAM.projL1(v,3)
 n_view = len(x)
 #ind = torch.randperm(n_view)[:n_view//10]
-ind = np.arange(0, 30)
+ind = np.arange(0, 20)
 
-Xu = torch.tensor(x @ umr)
+Xu = torch.tensor(x @ umr).reshape(-1,1)
 Yu = y @ umr
 Zu = z @ umr
 
 phiu,a = SNGCCA_ADAM.rbf_approx(Xu,ind)
 
-print(a)
+phic = SNGCCA_ADAM.centre_nystrom_kernel(phiu)
+
+N = 400
+views = create_synthData_new(N, mode=2, F=20)
+
+print(f'input views shape :')
+for i, view in enumerate(views):
+    print(f'view_{i} :  {view.shape}')
+    view = view.to("cpu")
+
+u = SNGCCA_ADAM.set_init(views,ind,(1,1,1))
+print(u)

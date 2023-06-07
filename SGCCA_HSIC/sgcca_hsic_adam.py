@@ -24,10 +24,13 @@ class SNGCCA_ADAM():
         w = torch.sign(v) * torch.max(torch.abs(v) - theta, torch.zeros_like(v))
         return w
 
-    def sqdist(self, Xu, n = None):
-        Xu_2d = Xu.unsqueeze(0)
-        Xu_n = Xu[n].unsqueeze(0)
-        dist = torch.cdist(Xu_2d.T, Xu_n.T, p=2) ** 2
+    def sqdist(self, X, n = None):
+        X_2d = X
+        if n is not None:
+            X_n = X[n]
+        else:
+            X_n = X_2d
+        dist = torch.cdist(X_2d, X_n, p=2) ** 2
         return dist
 
     def gradf_gauss_SGD(self, K1, cK2, X, a, u):
@@ -77,8 +80,10 @@ class SNGCCA_ADAM():
 
         return phi, sigma
 
-    def centre_kernel(self, K):
-        return K + torch.mean(K) - (torch.mean(K, dim=0).reshape((1, -1)) + torch.mean(K, dim=1).reshape((-1, 1)))
+    def centre_nystrom_kernel(self,phi):
+        N = phi.size(0)
+        phic = (torch.eye(N) - torch.ones(N) / N) @ phi
+        return phic
 
     def ff(self, K_list, cK_list):
         N = K_list[0].shape[0]
@@ -87,7 +92,7 @@ class SNGCCA_ADAM():
             res += torch.trace(K_list[items[0]] @ cK_list[items[1]]) / ((N - 1) ** 2)
         return res
 
-    def set_init(self, views, b):
+    def set_init(self, views, ind, b):
         for i, view in enumerate(views):
             v = torch.rand(view.shape[1]).to(self.device)
             umr = torch.reshape(self.projL1(v, b[i]), (view.shape[1], 1))
@@ -97,16 +102,17 @@ class SNGCCA_ADAM():
             Xu = view.to(self.device) @ u_norm
             sigma = None
             if sigma is None:
-                K, a = self.rbf_kernel(Xu)
+                K, a = self.rbf_approx(Xu,ind)
             else:
-                K, a = self.rbf_kernel(Xu, sigma)
-            cK = self.centre_kernel(K)
+                K, a = self.rbf_approx(Xu, ind,sigma)
+            cK = self.centre_nystrom_kernel(K)
 
             ## Save Parameters
             self.K_list.append(K)
             self.a_list.append(a)
             self.cK_list.append(cK)
             self.u_list.append(u_norm)
+        return self.u_list
 
     def fit(self, views, eps, maxit, b, early_stopping=True, patience=10, logging=0):
         n_view = len(views)
