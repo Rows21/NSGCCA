@@ -6,11 +6,8 @@ import torch.optim as optim
 
 class SNGCCA_ADAM():
     def __init__(self, device):
-        self.K_list = []
-        self.a_list = []
-        self.cK_list = []
-        self.u_list = []
         self.device = device
+        self.batch_size = 30
 
     def projL1(self, v, b):
         if b < 0:
@@ -33,10 +30,10 @@ class SNGCCA_ADAM():
         dist = torch.cdist(X_2d, X_n, p=2) ** 2
         return dist
 
-    def gradf_gauss_SGD(self, K1, cK2, X, a, u):
+    def gradf_gauss_SGD(self, K1, cK2, X, sigma, u):
         N = K1.shape[0]
         temp1 = torch.zeros((X.shape[1], X.shape[1])).to(self.device)
-        au = a
+        au = sigma
 
         id1 = torch.sort(torch.rand(N))[1]
         id2 = torch.sort(torch.rand(N))[1]
@@ -53,7 +50,7 @@ class SNGCCA_ADAM():
     def gene_SGD(self, K1, cK_list, X, a, u):
         res = torch.empty(u.shape[0], 1).to(self.device)
         for i in range((len(cK_list))):
-            temp = self.gradf_gauss_SGD(K1, cK_list[i], X, a, u)
+            temp = self.gradf_gauss_SGD(K1, cK_list, X, a, u)
             res += temp
         return res
 
@@ -72,11 +69,13 @@ class SNGCCA_ADAM():
         K_nn = torch.exp(- (D_nn ** 2) / (2 * sigma ** 2))
         K_nn = K_nn + torch.eye(K_nn.shape[0]) * 0.001
 
-        eigenvalues, eigenvectors = torch.linalg.eig(K_nn)
-        D_sqrt = torch.diag(torch.sqrt(eigenvalues))
-        K_nn_sqrt = (eigenvectors @ D_sqrt @ eigenvectors.inverse()).real
+        K_nn_sqrt_inv = torch.linalg.inv(torch.sqrt(K_nn))
+        phi = torch.matmul(K_mn, K_nn_sqrt_inv)
 
-        phi = K_mn @ torch.linalg.inv(K_nn_sqrt)
+        #eigenvalues, eigenvectors = torch.linalg.eig(K_nn)
+        #D_sqrt = torch.diag(torch.sqrt(eigenvalues))
+        #K_nn_sqrt = (eigenvectors @ D_sqrt @ eigenvectors.inverse()).real
+        #phi = K_mn @ torch.linalg.inv(K_nn_sqrt)
 
         return phi, sigma
 
@@ -85,24 +84,20 @@ class SNGCCA_ADAM():
         phic = (torch.eye(N) - torch.ones(N) / N) @ phi
         return phic
 
-    def ff(self, K_list, cK_list):
-        N = K_list[0].shape[0]
-        res = 0
-        for items in itertools.combinations(range(len(K_list)), 2):
-            res += torch.trace(K_list[items[0]] @ cK_list[items[1]]) / ((N - 1) ** 2)
-        return res
-
-    def f_nystrom(self, phix, phiy):
-        N = phix.size(0)
-        Kxx = centre_nystrom_kernel(phix)
-        Kyy = centre_nystrom_kernel(phiy)
-        hsic_nystrom = torch.norm((1 / N) * torch.matmul(Kxx.t(), Kyy), p='fro') ** 2
-        return hsic_nystrom
+    def ff_nystrom(self, phic_list):
+        N = phic_list[0].shape[0]
+        res_nystrom = 0
+        for items in itertools.combinations(range(len(phic_list)), 2):
+            res_nystrom += torch.norm((1 / N) * torch.matmul(phic_list[items[0]].t(), phic_list[items[1]]), p='fro') ** 2
+        return res_nystrom
 
     def set_init(self, views, ind, b):
         ## initial
-        phi_list = []
         phic_list = []
+        K_list = []
+        a_list = []
+        cK_list = []
+        u_list = []
         for i, view in enumerate(views):
             v = torch.rand(view.shape[1]).to(self.device)
             umr = torch.reshape(self.projL1(v, b[i]), (view.shape[1], 1))
@@ -120,25 +115,25 @@ class SNGCCA_ADAM():
             cK = phic.t() @ phic
 
             ## Save Parameters
-            self.K_list.append(K)
-            self.a_list.append(a)
-            self.cK_list.append(cK)
-            self.u_list.append(u_norm)
-        return self.u_list
+            K_list.append(K)
+            a_list.append(a)
+            cK_list.append(cK)
+            u_list.append(u_norm)
+            phic_list.append(phic)
 
-    def fit(self, views, eps, maxit, b, early_stopping=True, patience=10, logging=0):
+    def fit(self, views, eps, maxit, b,early_stopping=True, patience=10, logging=0):
 
         ## initial
+        batch_size = self.batch_size
         n_view = len(views)
 
         K_list = []
         a_list = []
         cK_list = []
         u_list = []
-        phi_list = []
         phic_list = []
-        ind = 0
-#########################################################################
+        ind = torch.randperm(views[0].shape[0])[:batch_size]
+
         for i, view in enumerate(views):
             v = torch.rand(view.shape[1]).to(self.device)
             umr = torch.reshape(self.projL1(v, b[i]), (view.shape[1], 1))
@@ -160,6 +155,7 @@ class SNGCCA_ADAM():
             a_list.append(a)
             cK_list.append(cK)
             u_list.append(u_norm)
+            phic_list.append(phic)
 
         diff = 99999
         ite = 0
@@ -167,19 +163,17 @@ class SNGCCA_ADAM():
         while (diff > eps) & (ite < maxit):
             ite += 1
             for i, view in enumerate(views):
-                obj_old = self.ff(self.K_list, self.cK_list)
-                cK_list_SGD = [self.cK_list[j] for j in range(n_view) if j != i]
+                obj_old = self.ff_nystrom(phic_list)
 
                 ## Calculate Delta and Gamma
-                grad = self.gene_SGD(self.K_list[i], cK_list_SGD, view, self.a_list[i], self.u_list[i])
-
+                grad = self.gene_SGD(K_list[i], cK_list[i], view[ind,:], a_list[i], u_list[i])
                 gamma = torch.norm(grad, p=2)
 
                 ## Start Line Search
                 chk = 1
                 while chk == 1:
                     ## Update New latent variable
-                    v_new = torch.reshape(self.u_list[i] + grad * gamma, (-1,))
+                    v_new = torch.reshape(u_list[i] + grad * gamma, (-1,))
                     u_new = torch.reshape(self.projL1(v_new, b[i]), (view.shape[1], 1))
                     u_norm = u_new / torch.norm(u_new, p=2)
 
@@ -187,27 +181,27 @@ class SNGCCA_ADAM():
 
                     sigma = None
                     if sigma is None:
-                        K_new, a_new = self.rbf_kernel(Xu_new)
+                        phi_new, a_new = self.rbf_approx(Xu_new,ind)
                     else:
-                        K_new, a_new = self.rbf_kernel(Xu_new, sigma)
-                    cK_new = self.centre_kernel(K_new)
+                        phi_new, a_new = self.rbf_approx(Xu_new, ind,sigma)
+                    K_new = phi_new.t() @ phi_new
 
-                    ## update K
-                    K_list_SGD = [self.K_list[j] for j in range(n_view) if j != i]
-                    K_list_SGD.append(K_new)
+                    phic_new = self.centre_nystrom_kernel(phi_new)
+                    cK_new = phic_new.t() @ phic_new
 
-                    ## update cK
-                    cK_list_SGD = [self.cK_list[j] for j in range(n_view) if j != i]
-                    cK_list_SGD.append(cK_new)
-                    obj_new = self.ff(K_list_SGD, cK_list_SGD)
+                    ## update phic
+                    phic_list_SGD = [phic_list[j] for j in range(n_view) if j != i]
+                    phic_list_SGD.append(phic_new)
+                    obj_new = self.ff_nystrom(phic_list_SGD)
 
                     ## Update Params
                     if obj_new > obj_old + 1e-5 * abs(obj_old):
                         chk = 0
-                        self.u_list[i] = u_norm
-                        self.K_list[i] = K_new
-                        self.cK_list[i] = cK_new
-                        self.a_list[i] = a_new
+                        u_list[i] = u_norm
+                        K_list[i] = K_new
+                        cK_list[i] = cK_new
+                        a_list[i] = a_new
+                        phic_list[i] = phic_new
                     else:
                         gamma = gamma / 2
                         if gamma < 1e-7:
@@ -221,10 +215,10 @@ class SNGCCA_ADAM():
 
             if early_stopping is True:
                 if self.EarlyStopping(obj_list, patience=patience):
-                    return self.u_list
+                    return u_list
         if logging == 2:
             print("diff=", diff, 'obj=', obj)
-        return self.u_list
+        return u_list
 
     def test(self):
         pass

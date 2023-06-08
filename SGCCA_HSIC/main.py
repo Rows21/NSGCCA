@@ -89,7 +89,7 @@ if __name__ == '__main__':
     print("Using", torch.cuda.device_count(), "GPUs")
 
     N = 400
-    views = create_synthData_new(N, mode=2, F=20)
+    views = create_synthData_new(N, mode=1, F=20)
 
     print(f'input views shape :')
     for i, view in enumerate(views):
@@ -97,10 +97,10 @@ if __name__ == '__main__':
         view = view.to("cpu")
 
     u = []
-    a = SGCCA_HSIC()
+    a = SGCCA_HSIC(device)
 
     ## fit results
-    u = a.fit(views,1e-7,50,(1,1,1))
+    u = a.fit(views,1e-7,50,(1,1,1),logging=1)
     print(u)
 
 
