@@ -11,6 +11,7 @@ device = 'cuda' if torch.cuda.is_available() else 'cpu'
 print("Using", torch.cuda.device_count(), "GPUs")
 
 SNGCCA_ADAM = SNGCCA_ADAM(device)
+'''
 x = pd.read_csv("x.csv")
 y = pd.read_csv("y.csv")
 z = pd.read_csv("z.csv")
@@ -32,7 +33,8 @@ cK = phic.t() @ phic
 
 aaa = torch.tensor(x.iloc[ind,:].values)
 
-#grad = SNGCCA_ADAM.gradf_gauss_SGD(K, cK, aaa, a, umr)
+grad = SNGCCA_ADAM.gradf_gauss_SGD(K, cK, aaa, a, umr)
+'''
 N = 400
 views = create_synthData_new(N, mode=1, F=20)
 
@@ -41,7 +43,5 @@ for i, view in enumerate(views):
     print(f'view_{i} :  {view.shape}')
     view = view.to("cpu")
 
-phic = SNGCCA_ADAM.set_init(views,ind,(1,1,1))
-
-a = SNGCCA_ADAM.fit(views, eps=1e-5, maxit=10, b=(1,1,1),early_stopping=True, patience=10, logging=1)
+a = SNGCCA_ADAM.fit(views, eps=1e-5, maxit=20, b=(2,2,2),early_stopping=True, patience=10, logging=1)
 print(a)

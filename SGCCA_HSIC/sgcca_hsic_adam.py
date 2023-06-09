@@ -1,5 +1,7 @@
 import torch
 import math
+import numpy as np
+from scipy.linalg import sqrtm
 import itertools
 import torch.optim as optim
 
@@ -7,7 +9,7 @@ import torch.optim as optim
 class SNGCCA_ADAM():
     def __init__(self, device):
         self.device = device
-        self.batch_size = 30
+        self.batch_size = 150
 
     def projL1(self, v, b):
         if b < 0:
@@ -68,14 +70,12 @@ class SNGCCA_ADAM():
 
         K_nn = torch.exp(- (D_nn ** 2) / (2 * sigma ** 2))
         K_nn = K_nn + torch.eye(K_nn.shape[0]) * 0.001
+        K_nn = torch.nan_to_num(K_nn, nan=0.001)
+        K_nn_sqrt_array = sqrtm(K_nn.numpy())
+        K_nn_sqrt = torch.from_numpy(K_nn_sqrt_array).real +  + torch.eye(K_nn.shape[0]) * 0.001
 
-        K_nn_sqrt_inv = torch.linalg.inv(torch.sqrt(K_nn))
+        K_nn_sqrt_inv = torch.linalg.inv(K_nn_sqrt)
         phi = torch.matmul(K_mn, K_nn_sqrt_inv)
-
-        #eigenvalues, eigenvectors = torch.linalg.eig(K_nn)
-        #D_sqrt = torch.diag(torch.sqrt(eigenvalues))
-        #K_nn_sqrt = (eigenvectors @ D_sqrt @ eigenvectors.inverse()).real
-        #phi = K_mn @ torch.linalg.inv(K_nn_sqrt)
 
         return phi, sigma
 
@@ -162,6 +162,7 @@ class SNGCCA_ADAM():
         obj_list = []
         while (diff > eps) & (ite < maxit):
             ite += 1
+            #obj_0 = self.ff_nystrom(phic_list)
             for i, view in enumerate(views):
                 obj_old = self.ff_nystrom(phic_list)
 
