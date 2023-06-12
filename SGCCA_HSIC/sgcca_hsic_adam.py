@@ -1,6 +1,7 @@
 import torch
 import math
 import numpy as np
+import scipy
 from scipy.linalg import sqrtm
 import itertools
 import torch.optim as optim
@@ -9,7 +10,7 @@ import torch.optim as optim
 class SNGCCA_ADAM():
     def __init__(self, device):
         self.device = device
-        self.batch_size = 150
+        self.batch_size = 300
 
     def projL1(self, v, b):
         if b < 0:
@@ -68,14 +69,16 @@ class SNGCCA_ADAM():
         K_mn = torch.exp(- (D_mn ** 2) / (2 * sigma ** 2))
         D_nn = torch.sqrt(torch.abs(self.sqdist(X[ind])))
 
-        K_nn = torch.exp(- (D_nn ** 2) / (2 * sigma ** 2))
-        K_nn = K_nn + torch.eye(K_nn.shape[0]) * 0.001
-        K_nn = torch.nan_to_num(K_nn, nan=0.001)
-        K_nn_sqrt_array = sqrtm(K_nn.numpy())
-        K_nn_sqrt = torch.from_numpy(K_nn_sqrt_array).real +  + torch.eye(K_nn.shape[0]) * 0.001
+        K_nn = torch.exp(- (D_nn ** 2) / (2 * sigma ** 2)) + torch.eye(D_nn.shape[0]) * 0.001
 
-        K_nn_sqrt_inv = torch.linalg.inv(K_nn_sqrt)
-        phi = torch.matmul(K_mn, K_nn_sqrt_inv)
+        K_nn_np = np.nan_to_num(K_nn.numpy(), nan=0.001)
+        K_nn_sqrt_real = np.nan_to_num(np.real(sqrtm(K_nn_np)), nan=0.001)
+        a = np.linalg.det(K_nn_sqrt_real)
+
+        K_nn_sqrt_inv = np.linalg.inv(K_nn_sqrt_real)
+
+        K_nn_sqrt_inv_tensor = torch.tensor(K_nn_sqrt_inv)
+        phi = torch.matmul(K_mn, K_nn_sqrt_inv_tensor)
 
         return phi, sigma
 
@@ -86,7 +89,7 @@ class SNGCCA_ADAM():
 
     def ff_nystrom(self, phic_list):
         N = phic_list[0].shape[0]
-        res_nystrom = 0
+        res_nystrom = 0.0
         for items in itertools.combinations(range(len(phic_list)), 2):
             res_nystrom += torch.norm((1 / N) * torch.matmul(phic_list[items[0]].t(), phic_list[items[1]]), p='fro') ** 2
         return res_nystrom
@@ -100,7 +103,8 @@ class SNGCCA_ADAM():
         u_list = []
         for i, view in enumerate(views):
             v = torch.rand(view.shape[1]).to(self.device)
-            umr = torch.reshape(self.projL1(v, b[i]), (view.shape[1], 1))
+            #umr = torch.reshape(self.projL1(v, b[i]), (view.shape[1], 1))
+            umr = torch.linspace(0, 0.95, 20)
             u_norm = umr / torch.norm(umr, p=2).to(self.device)
 
             ## Calculate Kernel
@@ -133,10 +137,12 @@ class SNGCCA_ADAM():
         u_list = []
         phic_list = []
         ind = torch.randperm(views[0].shape[0])[:batch_size]
+        ind = torch.arange(0, 40)
 
         for i, view in enumerate(views):
             v = torch.rand(view.shape[1]).to(self.device)
-            umr = torch.reshape(self.projL1(v, b[i]), (view.shape[1], 1))
+            #umr = torch.reshape(self.projL1(v, b[i]), (view.shape[1], 1))
+            umr = torch.linspace(0, 0.95, 20).reshape(-1,1)
             u_norm = umr / torch.norm(umr, p=2).to(self.device)
 
             ## Calculate Kernel
@@ -162,7 +168,6 @@ class SNGCCA_ADAM():
         obj_list = []
         while (diff > eps) & (ite < maxit):
             ite += 1
-            #obj_0 = self.ff_nystrom(phic_list)
             for i, view in enumerate(views):
                 obj_old = self.ff_nystrom(phic_list)
 
