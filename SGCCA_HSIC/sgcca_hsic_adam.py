@@ -47,18 +47,18 @@ class SNGCCA_ADAM():
                 a = id1[i]
                 b = id2[j]
                 temp1 += K1[a, b] * cK2[a, b] * torch.ger(X[a, :] - X[b, :], X[a, :] - X[b, :]).to(self.device)
+
         final = -2 * au * u.t() @ temp1
         return final.t()
 
     def gene_SGD(self, K1, cK_list, X, a, u):
         res = torch.empty(u.shape[0], 1).to(self.device)
         for i in range((len(cK_list))):
-            temp = self.gradf_gauss_SGD(K1, cK_list, X, a, u)
+            temp = self.gradf_gauss_SGD(K1, cK_list[i], X, a, u)
             res += temp
         return res
 
     def rbf_approx(self, X, ind, sigma=None):
-        # Kernel Matrix
         D_mn = torch.sqrt(torch.abs(self.sqdist(X, ind)))
 
         if sigma is None:  # median heuristic
@@ -73,13 +73,11 @@ class SNGCCA_ADAM():
 
         K_nn_np = np.nan_to_num(K_nn.numpy(), nan=0.001)
         K_nn_sqrt_real = np.nan_to_num(np.real(sqrtm(K_nn_np)), nan=0.001)
-        a = np.linalg.det(K_nn_sqrt_real)
 
         K_nn_sqrt_inv = np.linalg.inv(K_nn_sqrt_real)
 
         K_nn_sqrt_inv_tensor = torch.tensor(K_nn_sqrt_inv)
         phi = torch.matmul(K_mn, K_nn_sqrt_inv_tensor)
-
         return phi, sigma
 
     def centre_nystrom_kernel(self,phi):
@@ -137,16 +135,14 @@ class SNGCCA_ADAM():
         u_list = []
         phic_list = []
         ind = torch.randperm(views[0].shape[0])[:batch_size]
-        ind = torch.arange(0, 40)
 
         for i, view in enumerate(views):
             v = torch.rand(view.shape[1]).to(self.device)
-            #umr = torch.reshape(self.projL1(v, b[i]), (view.shape[1], 1))
-            umr = torch.linspace(0, 0.95, 20).reshape(-1,1)
+            umr = torch.reshape(self.projL1(v, b[i]), (view.shape[1], 1))
             u_norm = umr / torch.norm(umr, p=2).to(self.device)
 
             ## Calculate Kernel
-            Xu = view.to(self.device) @ u_norm
+            Xu = view.to(self.device) @ umr
             sigma = None
             if sigma is None:
                 phi, a = self.rbf_approx(Xu, ind)
@@ -160,7 +156,7 @@ class SNGCCA_ADAM():
             K_list.append(K)
             a_list.append(a)
             cK_list.append(cK)
-            u_list.append(u_norm)
+            u_list.append(umr)
             phic_list.append(phic)
 
         diff = 99999
@@ -172,7 +168,8 @@ class SNGCCA_ADAM():
                 obj_old = self.ff_nystrom(phic_list)
 
                 ## Calculate Delta and Gamma
-                grad = self.gene_SGD(K_list[i], cK_list[i], view[ind,:], a_list[i], u_list[i])
+                cK_list_SGD = [cK_list[j] for j in range(n_view) if j != i]
+                grad = self.gene_SGD(K_list[i], cK_list_SGD, view[ind,:], a_list[i], u_list[i])
                 gamma = torch.norm(grad, p=2)
 
                 ## Start Line Search
