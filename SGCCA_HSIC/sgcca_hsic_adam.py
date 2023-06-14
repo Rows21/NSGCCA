@@ -92,37 +92,6 @@ class SNGCCA_ADAM():
             res_nystrom += torch.norm((1 / N) * torch.matmul(phic_list[items[0]].t(), phic_list[items[1]]), p='fro') ** 2
         return res_nystrom
 
-    def set_init(self, views, ind, b):
-        ## initial
-        phic_list = []
-        K_list = []
-        a_list = []
-        cK_list = []
-        u_list = []
-        for i, view in enumerate(views):
-            v = torch.rand(view.shape[1]).to(self.device)
-            #umr = torch.reshape(self.projL1(v, b[i]), (view.shape[1], 1))
-            umr = torch.linspace(0, 0.95, 20)
-            u_norm = umr / torch.norm(umr, p=2).to(self.device)
-
-            ## Calculate Kernel
-            Xu = view.to(self.device) @ u_norm
-            sigma = None
-            if sigma is None:
-                phi, a = self.rbf_approx(Xu,ind)
-            else:
-                phi, a = self.rbf_approx(Xu, ind,sigma)
-            K = phi.t() @ phi
-            phic = self.centre_nystrom_kernel(phi)
-            cK = phic.t() @ phic
-
-            ## Save Parameters
-            K_list.append(K)
-            a_list.append(a)
-            cK_list.append(cK)
-            u_list.append(u_norm)
-            phic_list.append(phic)
-
     def fit(self, views, eps, maxit, b,early_stopping=True, patience=10, logging=0):
 
         ## initial
@@ -142,7 +111,7 @@ class SNGCCA_ADAM():
             u_norm = umr / torch.norm(umr, p=2).to(self.device)
 
             ## Calculate Kernel
-            Xu = view.to(self.device) @ umr
+            Xu = view.to(self.device) @ u_norm
             sigma = None
             if sigma is None:
                 phi, a = self.rbf_approx(Xu, ind)

@@ -1,4 +1,5 @@
 # 引入必要的库
+import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 from itertools import cycle
@@ -10,12 +11,25 @@ from sklearn.multiclass import OneVsRestClassifier
 from scipy import interp
 
 # 加载数据
-iris = datasets.load_iris()
-X = iris.data
-y = iris.target
+Exp_label = pd.read_csv('RealData/Exp664_genes.txt', sep='\t',header = None)
+Exp_list = Exp_label.iloc[:, 0].values.tolist()
+Exp = pd.DataFrame(np.loadtxt("RealData/Exp664.txt").T,columns = Exp_label)
 
+# labels
+y = pd.read_csv('RealData/PAM50label664.txt',header = None).values
+#X = Exp
+ExpRes = pd.read_csv("./Results/Exp_score.csv").values
+listname = ExpRes[:,0]
+FilterRes = []
+for i in range(len(listname)):
+    list_index: int = Exp_list.index(listname[i])
+    FilterRes.append(list_index)
+
+ExpFilter = Exp.iloc[:,FilterRes]
+
+X = ExpFilter
 # 将标签二值化
-y = label_binarize(y, classes=[0, 1, 2])  # 三个类别
+y = label_binarize(y, classes=[1, 2, 3,4])  # 三个类别
 
 # 设置种类
 n_classes = y.shape[1]
@@ -25,10 +39,10 @@ random_state = np.random.RandomState(0)
 n_samples, n_features = X.shape
 
 # shuffle and split training and test sets
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=.5, random_state=0)
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=.4, random_state=0)
 
 # Learn to predict each class against the other
-classifier = OneVsRestClassifier(svm.SVC(kernel='linear', probability=True,
+classifier = OneVsRestClassifier(svm.SVC(kernel='rbf', probability=True,
                                          random_state=random_state))
 y_score = classifier.fit(X_train, y_train).predict_proba(X_test)  # 获得预测概率
 
@@ -72,7 +86,7 @@ plt.plot(fpr["macro"], tpr["macro"],
                ''.format(roc_auc["macro"]),
          color='navy', linestyle=':', linewidth=4)
 
-colors = cycle(['aqua', 'darkorange', 'cornflowerblue'])
+colors = cycle(['aqua', 'darkorange', 'cornflowerblue','pink'])
 for i, color in zip(range(n_classes), colors):
     plt.plot(fpr[i], tpr[i], color=color, lw=lw,
              label='ROC curve of class {0} (area = {1:0.2f})'
