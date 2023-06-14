@@ -71,8 +71,8 @@ class SNGCCA_ADAM():
 
         K_nn = torch.exp(- (D_nn ** 2) / (2 * sigma ** 2)) + torch.eye(D_nn.shape[0]) * 0.001
 
-        K_nn_np = np.nan_to_num(K_nn.numpy(), nan=0.001)
-        K_nn_sqrt_real = np.nan_to_num(np.real(sqrtm(K_nn_np)), nan=0.001)
+        #K_nn_np = np.nan_to_num(K_nn.numpy(), nan=0.001)
+        K_nn_sqrt_real = np.nan_to_num(np.real(sqrtm(K_nn)), nan=0.001)
 
         K_nn_sqrt_inv = np.linalg.inv(K_nn_sqrt_real)
 

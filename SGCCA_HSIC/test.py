@@ -19,7 +19,7 @@ y = pd.read_csv("y.csv").values
 z = pd.read_csv("z.csv").values
 
 views = [torch.tensor(x),torch.tensor(y)]
-a = SNGCCA_ADAM.fit(views, eps=1e-5, maxit=10, b=(2,2,2),early_stopping=True, patience=10, logging=1)
+a = SNGCCA_ADAM.fit(views, eps=1e-5, maxit=10, b=(1,1,1),early_stopping=True, patience=10, logging=1)
 
 
 v = torch.arange(0, 1, 0.05)
