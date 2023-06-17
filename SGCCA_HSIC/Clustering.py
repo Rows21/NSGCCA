@@ -20,37 +20,37 @@ MethRes = pd.read_csv("./Results/Meth_score.csv").values
 miRNARes = pd.read_csv("./Results/miRNA_score.csv").values
 
 # Original Data
-Exp_label = pd.read_csv('RealData/Exp664_genes.txt', sep='\t',header = None)
+Exp_label = pd.read_csv('RealData/Exp664_genes.txt', sep='\t', header=None)
 Exp_list = Exp_label.iloc[:, 0].values.tolist()
-Exp = pd.DataFrame(np.loadtxt("RealData/Exp664.txt").T,columns = Exp_label)
+Exp = pd.DataFrame(np.loadtxt("RealData/Exp664.txt").T, columns=Exp_label)
 
-Meth_label = pd.read_csv('RealData/Meth664_probes.txt', sep='\t',header = None)
+Meth_label = pd.read_csv('RealData/Meth664_probes.txt', sep='\t', header=None)
 Meth_list = Meth_label.iloc[:, 0].values.tolist()
-Meth = pd.DataFrame(np.loadtxt("RealData/Meth664.txt").T,columns = Meth_label)
+Meth = pd.DataFrame(np.loadtxt("RealData/Meth664.txt").T, columns=Meth_label)
 
-miRNA_label = pd.read_csv('RealData/miRNA664_miRNA.txt', sep='\t',header = None)
+miRNA_label = pd.read_csv('RealData/miRNA664_miRNA.txt', sep='\t', header=None)
 miRNA_list = miRNA_label.iloc[:, 0].values.tolist()
-miRNA = pd.DataFrame(np.loadtxt("RealData/miRNA664.txt").T,columns = miRNA_label)
+miRNA = pd.DataFrame(np.loadtxt("RealData/miRNA664.txt").T, columns=miRNA_label)
 
 # labels
-y = pd.read_csv('RealData/PAM50label664.txt',header = None).values
+y = pd.read_csv('RealData/PAM50label664.txt', header=None).values
 
-## Random forest
+# Random forest
 scaler = StandardScaler()
 Exp = scaler.fit_transform(Exp)
 
-X_train, X_test,y_train,y_test = train_test_split(Exp,y,test_size=0.3,random_state=0)
-clf = RandomForestClassifier(n_estimators=50,criterion='entropy',random_state=0)
-clf.fit(X_train,y_train)
+X_train, X_test, y_train, y_test = train_test_split(Exp, y, test_size=0.3, random_state=0)
+clf = RandomForestClassifier(n_estimators=50, criterion='entropy', random_state=0)
+clf.fit(X_train, y_train)
 
 y_pred = clf.predict(X_test)
-cm = confusion_matrix(y_test,y_pred)
+cm = confusion_matrix(y_test, y_pred)
 
-cr = classification_report(y_test,y_pred)
+cr = classification_report(y_test, y_pred)
 
-acc = accuracy_score(y_test,y_pred)
+acc = accuracy_score(y_test, y_pred)
 
-## K-Mean
+# K-Mean
 km = KMeans(n_clusters=4).fit(Exp)
 SScore1 = silhouette_score(Exp, km.labels_, metric='euclidean')
 DBS1 = davies_bouldin_score(Exp, km.labels_)
@@ -80,7 +80,7 @@ for i in range(len(listname)):
 ExpFilter = Exp.iloc[:,FilterRes]
 print(ExpFilter.shape)
 
-## Random forest
+# Random forest
 scaler = StandardScaler()
 ExpFilter = scaler.fit_transform(ExpFilter)
 

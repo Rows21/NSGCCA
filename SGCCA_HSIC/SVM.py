@@ -4,9 +4,10 @@ import numpy as np
 import matplotlib.pyplot as plt
 from itertools import cycle
 from sklearn import svm, datasets
-from sklearn.metrics import roc_curve, auc
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.metrics import roc_curve, auc, confusion_matrix, classification_report, accuracy_score
 from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import label_binarize
+from sklearn.preprocessing import label_binarize, StandardScaler
 from sklearn.multiclass import OneVsRestClassifier
 from scipy import interp
 
@@ -29,22 +30,49 @@ ExpFilter = Exp.iloc[:,FilterRes]
 
 X = ExpFilter
 # 将标签二值化
-y = label_binarize(y, classes=[1, 2, 3,4])  # 三个类别
+#y = label_binarize(y, classes=[1, 2, 3,4])  # 三个类别
 
 # 设置种类
 n_classes = y.shape[1]
 
 # 训练模型并预测
 random_state = np.random.RandomState(0)
-n_samples, n_features = X.shape
+#n_samples, n_features = X.shape
 
 # shuffle and split training and test sets
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=.4, random_state=0)
+X_train, X_test, y_train, y_test = train_test_split(Exp, y, test_size=0.3, random_state=0)
 
 # Learn to predict each class against the other
-classifier = OneVsRestClassifier(svm.SVC(kernel='rbf', probability=True,
-                                         random_state=random_state))
-y_score = classifier.fit(X_train, y_train).predict_proba(X_test)  # 获得预测概率
+scaler = StandardScaler()
+Exp = scaler.fit_transform(Exp)
+
+clf_rf = RandomForestClassifier(n_estimators=50, criterion='entropy', random_state=0)
+clf_rf.fit(X_train, y_train)
+
+y_pred = clf_rf.predict(X_test)
+cm = confusion_matrix(y_test, y_pred)
+cr = classification_report(y_test, y_pred)
+acc = accuracy_score(y_test, y_pred)
+print(cm,cr,acc)
+
+# shuffle and split training and test sets
+X_train, X_test, y_train, y_test = train_test_split(ExpFilter, y, test_size=0.3, random_state=0)
+
+# Learn to predict each class against the other
+scaler = StandardScaler()
+Exp = scaler.fit_transform(Exp)
+
+clf_rf = RandomForestClassifier(n_estimators=50, criterion='entropy', random_state=0)
+clf_rf.fit(X_train, y_train)
+
+y_pred = clf_rf.predict(X_test)
+cm = confusion_matrix(y_test, y_pred)
+cr = classification_report(y_test, y_pred)
+acc = accuracy_score(y_test, y_pred)
+print(cm,cr,acc)
+
+clf_svm = OneVsRestClassifier(svm.SVC(kernel='rbf', probability=True, random_state=random_state))
+y_score = clf_svm.fit(X_train, y_train).predict_proba(X_test)  # 获得预测概率
 
 # 计算每一类的ROC
 fpr = dict()
@@ -99,4 +127,4 @@ plt.xlabel('False Positive Rate')
 plt.ylabel('True Positive Rate')
 plt.title('Some extension of Receiver operating characteristic to multi-class')
 plt.legend(loc="lower right")
-plt.show()
+#plt.show()

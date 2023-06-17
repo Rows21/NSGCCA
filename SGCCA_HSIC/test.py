@@ -55,9 +55,6 @@ print(a)
 import scipy.linalg as linalg
 import numpy as np
 
-
-
-
 def nystrom_kernel_svd(samples, kernel_fn, top_q):
     """Compute top eigensystem of kernel matrix using Nystrom method.
 
