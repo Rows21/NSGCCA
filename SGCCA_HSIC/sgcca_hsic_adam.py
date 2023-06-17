@@ -10,7 +10,7 @@ import torch.optim as optim
 class SNGCCA_ADAM():
     def __init__(self, device):
         self.device = device
-        self.batch_size = 300
+        self.batch_size = 100
 
     def projL1(self, v, b):
         if b < 0:

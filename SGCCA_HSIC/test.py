@@ -7,6 +7,7 @@ import numpy as np
 from sgcca_hsic_adam import SNGCCA_ADAM
 import scipy
 from sgcca_hsic import SGCCA_HSIC
+import torch.optim as optim
 torch.set_default_tensor_type(torch.DoubleTensor)
 
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
@@ -18,65 +19,33 @@ x = pd.read_csv("x.csv").values
 y = pd.read_csv("y.csv").values
 z = pd.read_csv("z.csv").values
 
-views = [torch.tensor(x),torch.tensor(y)]
-a = SNGCCA_ADAM.fit(views, eps=1e-5, maxit=10, b=(1,1,1),early_stopping=True, patience=10, logging=1)
+views = [torch.tensor(x),torch.tensor(y),torch.tensor(z)]
 
+#N = 400
+#views = create_synthData_new(N, mode=1, F=20)
 
-v = torch.arange(0, 1, 0.05)
-umr = SNGCCA_ADAM.projL1(v,3)
-n_view = len(x)
-#ind = torch.randperm(n_view)[:n_view//10]
-ind = np.arange(0, 30)
+#a = SNGCCA_ADAM.fit(views, eps=1e-7, maxit=30, b=(1,1,1),early_stopping=True, patience=10, logging=1)
+b = (1,1,1)
+SGCCA_HSIC = SGCCA_HSIC(device)
+SGCCA_HSIC.set_init(views,b)
 
-Xu = torch.tensor(x @ umr).reshape(-1,1)
-Yu = y @ umr
-Zu = z @ umr
+obj_old = SGCCA_HSIC.ff(SGCCA_HSIC.K_list,SGCCA_HSIC.cK_list)
 
-phiu,a = SNGCCA_ADAM.rbf_approx(Xu,ind)
-K = phiu.t() @ phiu
-phic = SNGCCA_ADAM.centre_nystrom_kernel(phiu)
-cK = phic.t() @ phic
+cK_list_SGD = [SGCCA_HSIC.cK_list[j] for j in range(3) if j != 0]
 
-aaa = torch.tensor(x.iloc[ind,:].values)
+## Calculate Delta and Gamma
+grad = SGCCA_HSIC.gene_SGD(SGCCA_HSIC.K_list[0], cK_list_SGD, views[0], SGCCA_HSIC.a_list[0], SGCCA_HSIC.u_list[0])
+gamma = torch.norm(grad, p=2)
 
-grad = SNGCCA_ADAM.gradf_gauss_SGD(K, cK, aaa, a, umr)
-'''
-N = 400
-views = create_synthData_new(N, mode=1, F=20)
+# 创建 Adam 优化器
+optimizer = optim.Adam(grad, lr=gamma)
 
-print(f'input views shape :')
-for i, view in enumerate(views):
-    print(f'view_{i} :  {view.shape}')
-    view = view.to("cpu")
+# 循环迭代更新
+for i in range(num_steps):
+    # 计算梯度
+    optimizer.zero_grad()
+    loss = compute_loss(model, data)
+    loss.backward()
 
-a = SNGCCA_ADAM.fit(views, eps=1e-5, maxit=10, b=(2,2,2),early_stopping=True, patience=10, logging=1)
-print(a)
-
-import scipy.linalg as linalg
-import numpy as np
-
-def nystrom_kernel_svd(samples, kernel_fn, top_q):
-    """Compute top eigensystem of kernel matrix using Nystrom method.
-
-    Arguments:
-        samples: data matrix of shape (n_sample, n_feature).
-        kernel_fn: tensor function k(X, Y) that returns kernel matrix.
-        top_q: top-q eigensystem.
-
-    Returns:
-        eigvals: top eigenvalues of shape (top_q).
-        eigvecs: (rescaled) top eigenvectors of shape (n_sample, top_q).
-    """
-
-    n_sample, _ = samples.shape
-    kmat = kernel_fn(samples, samples).cpu().data.numpy()
-    scaled_kmat = kmat / n_sample
-    vals, vecs = linalg.eigh(scaled_kmat,
-                             eigvals=(n_sample - top_q, n_sample - 1))
-    eigvals = vals[::-1][:top_q]
-    eigvecs = vecs[:, ::-1][:, :top_q] / np.sqrt(n_sample)
-    beta = np.diag(kmat).max()
-
-    return eigvals, eigvecs, beta
-'''
-
+    # 使用 Adam 更新模型参数
+    optimizer.step()
