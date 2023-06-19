@@ -170,9 +170,9 @@ class SGCCA_HSIC():
                     return self.u_list
         if logging == 2:
             print("diff=", diff, 'obj=', obj)
-        return self.u_list
+        return self.state #,self.u_list
 
-    def Adam(self,u,grad,lr,i,betas = (0.9,0.999),eps=1e-8,weight_decay=0):
+    def Adam(self,u,grad,lr,i,betas = (0.9,0.999),eps=1e-8):
         state = self.state[i]
         if state is None:
             state = {}
@@ -193,12 +193,8 @@ class SGCCA_HSIC():
             m_hat = m / (1 - beta1 ** state['step'])
             v_hat = v / (1 - beta2 ** state['step'])
             u_sgd = u + lr * grad
-            # 更新参数
+            # update params
             u_new = u + lr * m_hat / (torch.sqrt(v_hat) + eps)
-
-            # 应用权重衰减
-            if weight_decay != 0:
-                u_new = u_new - lr * weight_decay * u_new
 
             return u_new
 
