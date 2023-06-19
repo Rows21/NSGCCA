@@ -1,7 +1,7 @@
 import torch
 import math
 import itertools
-import torch.optim as optim
+import torch.optim.optimizer as Optimizer
 class SGCCA_HSIC():
     def __init__(self, device):
         self.K_list = []
@@ -9,6 +9,7 @@ class SGCCA_HSIC():
         self.cK_list = []
         self.u_list = []
         self.device = device
+        self.state = [None,None,None]
 
     def projL1(self, v, b):
         if b < 0:
@@ -107,6 +108,7 @@ class SGCCA_HSIC():
         diff = 99999
         ite = 0
         obj_list = []
+
         while (diff > eps) & (ite < maxit):
             ite += 1
             for i, view in enumerate(views):
@@ -115,15 +117,16 @@ class SGCCA_HSIC():
 
                 ## Calculate Delta and Gamma
                 grad = self.gene_SGD(self.K_list[i], cK_list_SGD, view, self.a_list[i], self.u_list[i])
-
                 gamma = torch.norm(grad, p=2)
 
+                uu_new = self.Adam(self.u_list[i],grad,gamma,i)
+                uu_new = uu_new.reshape(20,)
                 ## Start Line Search
                 chk = 1
                 while chk == 1:
                     ## Update New latent variable
                     v_new = torch.reshape(self.u_list[i] + grad * gamma, (-1,))
-                    u_new = torch.reshape(self.projL1(v_new, b[i]), (view.shape[1], 1))
+                    u_new = torch.reshape(self.projL1(uu_new, b[i]), (view.shape[1], 1))
                     u_norm = u_new / torch.norm(u_new, p=2)
 
                     Xu_new = view.to(self.device) @ u_norm
@@ -168,6 +171,36 @@ class SGCCA_HSIC():
         if logging == 2:
             print("diff=", diff, 'obj=', obj)
         return self.u_list
+
+    def Adam(self,u,grad,lr,i,betas = (0.9,0.999),eps=1e-8,weight_decay=0):
+        state = self.state[i]
+        if state is None:
+            state = {}
+            state['step'] = 0
+            state['m'] = torch.zeros_like(u)
+            state['v'] = torch.zeros_like(u)
+
+            m, v = state['m'], state['v']
+            beta1 = betas[0]
+            beta2 = betas[1]
+
+            # update Momentum $ RMSProp
+            state['step'] += 1
+            m = beta1 * m + (1 - beta1) * grad
+            v = beta2 * v + (1 - beta2) * (grad ** 2)
+
+            # Calculate the corrected Momentum and RMSProp
+            m_hat = m / (1 - beta1 ** state['step'])
+            v_hat = v / (1 - beta2 ** state['step'])
+            u_sgd = u + lr * grad
+            # 更新参数
+            u_new = u + lr * m_hat / (torch.sqrt(v_hat) + eps)
+
+            # 应用权重衰减
+            if weight_decay != 0:
+                u_new = u_new - lr * weight_decay * u_new
+
+            return u_new
 
     def test(self):
         pass
