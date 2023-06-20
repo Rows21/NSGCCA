@@ -120,7 +120,7 @@ class SGCCA_HSIC():
                 gamma = torch.norm(grad, p=2)
 
                 m[i] = 0.9 * m[i] + grad * gamma
-                uu_new = self.u_list[i] + grad * gamma
+                uu_new = self.u_list[i] + m[i]
                 #uu_new = self.Adam(self.u_list[i],grad,gamma,i)
                 #uu_new = uu_new.reshape(20,)
 
