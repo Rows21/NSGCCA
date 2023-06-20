@@ -108,7 +108,7 @@ class SGCCA_HSIC():
         diff = 99999
         ite = 0
         obj_list = []
-
+        m = [0, 0, 0]
         while (diff > eps) & (ite < maxit):
             ite += 1
             for i, view in enumerate(views):
@@ -119,17 +119,23 @@ class SGCCA_HSIC():
                 grad = self.gene_SGD(self.K_list[i], cK_list_SGD, view, self.a_list[i], self.u_list[i])
                 gamma = torch.norm(grad, p=2)
 
-                uu_new = self.Adam(self.u_list[i],grad,gamma,i)
-                uu_new = uu_new.reshape(20,)
+                m[i] = 0.9 * m[i] + grad * gamma
+                uu_new = self.u_list[i] + grad * gamma
+                #uu_new = self.Adam(self.u_list[i],grad,gamma,i)
+                #uu_new = uu_new.reshape(20,)
+
                 ## Start Line Search
                 chk = 1
                 while chk == 1:
                     ## Update New latent variable
                     v_new = torch.reshape(self.u_list[i] + grad * gamma, (-1,))
-                    u_new = torch.reshape(self.projL1(uu_new, b[i]), (view.shape[1], 1))
+                    u_new = torch.reshape(self.projL1(v_new, b[i]), (view.shape[1], 1))
                     u_norm = u_new / torch.norm(u_new, p=2)
 
-                    Xu_new = view.to(self.device) @ u_norm
+                    un_new = self.projL1(uu_new.reshape(20,), b[i]).reshape(20,1)
+                    un_norm = un_new / torch.norm(un_new, p=2)
+
+                    Xu_new = view.to(self.device) @ un_norm
 
                     sigma = None
                     if sigma is None:
@@ -150,7 +156,7 @@ class SGCCA_HSIC():
                     ## Update Params
                     if obj_new > obj_old + 1e-5 * abs(obj_old):
                         chk = 0
-                        self.u_list[i] = u_norm
+                        self.u_list[i] = un_norm
                         self.K_list[i] = K_new
                         self.cK_list[i] = cK_new
                         self.a_list[i] = a_new
@@ -170,7 +176,7 @@ class SGCCA_HSIC():
                     return self.u_list
         if logging == 2:
             print("diff=", diff, 'obj=', obj)
-        return self.state #,self.u_list
+        return self.state ,self.u_list
 
     def Adam(self,u,grad,lr,i,betas = (0.9,0.999),eps=1e-8):
         state = self.state[i]
@@ -180,23 +186,28 @@ class SGCCA_HSIC():
             state['m'] = torch.zeros_like(u)
             state['v'] = torch.zeros_like(u)
 
-            m, v = state['m'], state['v']
-            beta1 = betas[0]
-            beta2 = betas[1]
+        m, v = state['m'], state['v']
+        beta1 = betas[0]
+        beta2 = betas[1]
 
-            # update Momentum $ RMSProp
-            state['step'] += 1
-            m = beta1 * m + (1 - beta1) * grad
-            v = beta2 * v + (1 - beta2) * (grad ** 2)
+        # update Momentum $ RMSProp
+        state['step'] += 1
+        m = beta1 * m + (1 - beta1) * grad
+        v = beta2 * v + (1 - beta2) * (grad ** 2)
 
-            # Calculate the corrected Momentum and RMSProp
-            m_hat = m / (1 - beta1 ** state['step'])
-            v_hat = v / (1 - beta2 ** state['step'])
-            u_sgd = u + lr * grad
-            # update params
-            u_new = u + lr * m_hat / (torch.sqrt(v_hat) + eps)
+        state['m'] = m
+        state['v'] = v
+        self.state[i] = state
 
-            return u_new
+        # Calculate the corrected Momentum and RMSProp
+        m_hat = m / (1 - beta1 ** state['step'])
+        v_hat = v / (1 - beta2 ** state['step'])
+        u_sgd = u + lr * grad
+        # update params
+        a = m_hat / (torch.sqrt(v_hat) + eps)
+        u_new = u + lr * m_hat / (torch.sqrt(v_hat) + eps)
+
+        return u_new
 
     def test(self):
         pass
