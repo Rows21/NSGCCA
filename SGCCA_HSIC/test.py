@@ -21,13 +21,12 @@ z = pd.read_csv("z.csv").values
 
 views = [torch.tensor(x),torch.tensor(y),torch.tensor(z)]
 
-#N = 400
-#views = create_synthData_new(N, mode=1, F=20)
+N = 400
+views = create_synthData_new(N, mode=2, F=20)
 SGCCA_HSIC = SGCCA_HSIC(device)
-a,b = SGCCA_HSIC.fit(views=views, eps=1e-7, maxit=30, b=(1,1,1),early_stopping=True, patience=10, logging=1)
+a,b = SGCCA_HSIC.fit(views=views, eps=1e-7, maxit=30, b=(10,10,10),early_stopping=True, patience=10, logging=1)
 
 b = (1,1,1)
-SGCCA_HSIC = SGCCA_HSIC(device)
 SGCCA_HSIC.set_init(views,b)
 
 obj_old = SGCCA_HSIC.ff(SGCCA_HSIC.K_list,SGCCA_HSIC.cK_list)
