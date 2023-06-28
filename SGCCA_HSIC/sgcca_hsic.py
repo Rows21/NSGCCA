@@ -124,34 +124,7 @@ class SGCCA_HSIC():
                 chk = 1
                 while chk == 1:
 
-                    #print("GAMMA=",gamma)
-                    ## Update New latent variable
-                    ## SGD
-                    view_len = view.shape[i]
-                    v_new = torch.reshape(self.u_list[i] + grad * gamma, (-1,))
-                    u_new = torch.reshape(self.projL1(v_new, b[i]), (view_len, 1))
-
-                    ## Momentum
-                    if v[i] is None:
-                        v[i] = torch.zeros(view_len, 1)
-                        uu_list[i] = torch.zeros(view_len, 1)
-                    v[i] = - 0.9 * v[i] + grad * gamma
-                    med_new = uu_list[i] + v[i]
-                    uu_new = self.projL1(med_new, b[i])
-                    uu_new = uu_new / torch.norm(uu_new, p=2)
-
-                    ## Adam
-                    if m_adam[i] is None:
-                        v_adam[i] = torch.zeros(view_len, 1)
-                        m_adam[i] = torch.zeros(view_len, 1)
-                        uadam_list[i] = torch.zeros(view_len, 1)
-                    m_adam[i] = 0.9 * m_adam[i] + (1 - 0.9) * grad
-                    v_adam[i] = 0.999 * v_adam[i] + (1 - 0.999) * (grad ** 2)
-                    medadam_new = self.u_list[i] + gamma * m_adam[i]/(torch.sqrt(v_adam[i]) + 1e-8)
-                    uadam_new = self.projL1(medadam_new, b[i])
-                    uadam_new = uadam_new / torch.norm(uadam_new, p=2)
-
-                    u_norm = u_new / torch.norm(uadam_new, p=2)
+                    u_norm = self._optim(i,self.u_list[i],grad,gamma,b[i],view_len=view.shape[1],loss="SGD")
                     Xu_new = view.to(self.device) @ u_norm
 
                     sigma = None
@@ -195,7 +168,7 @@ class SGCCA_HSIC():
             print("diff=", diff, 'obj=', obj)
         return self.state, self.u_list
 
-    def _optim(self, u, grad, gamma, b, view_len, i, loss="SGD"):
+    def _optim(self, i, u, grad, gamma, b, view_len, loss="SGD"):
         if loss == "SGD":   # SGD
             v_new = torch.reshape(u + grad * gamma, (-1,))
             u_new = torch.reshape(self.projL1(v_new, b), (view_len, 1))
