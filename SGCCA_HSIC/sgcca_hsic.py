@@ -1,7 +1,6 @@
 import torch
 import math
 import itertools
-import torch.optim.optimizer as Optimizer
 class SGCCA_HSIC():
     def __init__(self, device):
         self.K_list = []
@@ -9,7 +8,10 @@ class SGCCA_HSIC():
         self.cK_list = []
         self.u_list = []
         self.device = device
-        self.state = [None,None,None]
+        self.state = []
+        self.state['Momentum_V']: list = [None] * 3
+        self.state['Adam_V']: list = [None] * 3
+        self.state['Adam_M']: list = [None] * 3
 
     def projL1(self, v, b):
         if b < 0:
@@ -102,17 +104,11 @@ class SGCCA_HSIC():
         self.a_list = []
         self.cK_list = []
         self.u_list = []
-        uu_list = [None,None,None]
-        uadam_list = [None, None, None]
         self.set_init(views,b)
 
         diff = 99999
         ite = 0
         obj_list = []
-        v = [None, None, None]
-        m_adam = [None,None,None]
-        v_adam = [None,None,None]
-
         while (diff > eps) & (ite < maxit):
             ite += 1
             for i, view in enumerate(views):
@@ -131,13 +127,14 @@ class SGCCA_HSIC():
                     #print("GAMMA=",gamma)
                     ## Update New latent variable
                     ## SGD
+                    view_len = view.shape[i]
                     v_new = torch.reshape(self.u_list[i] + grad * gamma, (-1,))
-                    u_new = torch.reshape(self.projL1(v_new, b[i]), (view.shape[1], 1))
+                    u_new = torch.reshape(self.projL1(v_new, b[i]), (view_len, 1))
 
                     ## Momentum
                     if v[i] is None:
-                        v[i] = torch.zeros(20, 1)
-                        uu_list[i] = torch.zeros(20, 1)
+                        v[i] = torch.zeros(view_len, 1)
+                        uu_list[i] = torch.zeros(view_len, 1)
                     v[i] = - 0.9 * v[i] + grad * gamma
                     med_new = uu_list[i] + v[i]
                     uu_new = self.projL1(med_new, b[i])
@@ -145,9 +142,9 @@ class SGCCA_HSIC():
 
                     ## Adam
                     if m_adam[i] is None:
-                        v_adam[i] = torch.zeros(20, 1)
-                        m_adam[i] = torch.zeros(20, 1)
-                        uadam_list[i] = torch.zeros(20, 1)
+                        v_adam[i] = torch.zeros(view_len, 1)
+                        m_adam[i] = torch.zeros(view_len, 1)
+                        uadam_list[i] = torch.zeros(view_len, 1)
                     m_adam[i] = 0.9 * m_adam[i] + (1 - 0.9) * grad
                     v_adam[i] = 0.999 * v_adam[i] + (1 - 0.999) * (grad ** 2)
                     medadam_new = self.u_list[i] + gamma * m_adam[i]/(torch.sqrt(v_adam[i]) + 1e-8)
@@ -155,7 +152,6 @@ class SGCCA_HSIC():
                     uadam_new = uadam_new / torch.norm(uadam_new, p=2)
 
                     u_norm = u_new / torch.norm(uadam_new, p=2)
-
                     Xu_new = view.to(self.device) @ u_norm
 
                     sigma = None
@@ -199,11 +195,36 @@ class SGCCA_HSIC():
             print("diff=", diff, 'obj=', obj)
         return self.state, self.u_list
 
-    def Loss(self,u,grad,lr,i,betas = (0.9,0.999),eps=1e-8):
-        pass
+    def _optim(self, u, grad, gamma, b, view_len, i, loss="SGD"):
+        if loss == "SGD":   # SGD
+            v_new = torch.reshape(u + grad * gamma, (-1,))
+            u_new = torch.reshape(self.projL1(v_new, b), (view_len, 1))
+        elif loss == "Momentum":    # Momentum
+            if self.state['Momentum_V'][i] is None:
+                self.state['Momentum_V'][i] = torch.zeros(view_len, 1)
+            v = self.state['Momentum_V'][i]
 
-    def test(self):
-        pass
+            v = - 0.9 * v + grad * gamma
+            self.state['Momentum_V'][i] = v
+            v_new = u + v
+
+            u_new = self.projL1(v_new, b[i])
+        elif loss == "Adam":    # adam
+            if self.state['Adam_M'][i] is None:
+                self.state['Adam_V'][i] = torch.zeros(view_len, 1)
+                self.state['Adam_M'][i] = torch.zeros(view_len, 1)
+            m = self.state['Adam_M'][i]
+            v = self.state['Adam_V'][i]
+
+            m = 0.9 * m + (1 - 0.9) * grad
+            v = 0.999 * v + (1 - 0.999) * (grad ** 2)
+            self.state['Adam_M'][i] = m
+            self.state['Adam_V'][i] = v
+            v_new = u + gamma * m / (torch.sqrt(v) + 1e-8)
+            u_new = self.projL1(v_new, b[i])
+
+        u_norm = u_new / torch.norm(u_new, p=2)
+        return u_norm
 
     def EarlyStopping(self,lst,patience=5):
         if len(lst) < patience:

@@ -7,7 +7,7 @@ import itertools
 import torch.optim as optim
 
 
-class SNGCCA_ADAM():
+class SNGCCA_APPROX():
     def __init__(self, device):
         self.device = device
         self.batch_size = 100
