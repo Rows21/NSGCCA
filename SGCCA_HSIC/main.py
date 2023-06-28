@@ -5,7 +5,7 @@ from itertools import combinations_with_replacement
 torch.set_default_tensor_type(torch.DoubleTensor)
 
 from synth_data import create_synthData_new
-from sgcca_hsic import SGCCA_HSIC
+from sngcca import SGCCA_HSIC
 
 from validation_method import FS_MCC
 

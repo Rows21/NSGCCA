@@ -4,16 +4,16 @@ import torch
 from synth_data import create_synthData_new
 from validation_method import FS_MCC
 import numpy as np
-from sgcca_hsic_adam import SNGCCA_ADAM
+from sngcca_approx import SNGCCA_APPROX
 import scipy
-from sgcca_hsic import SGCCA_HSIC
+from sngcca import SGCCA_HSIC
 import torch.optim as optim
 torch.set_default_tensor_type(torch.DoubleTensor)
 
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 print("Using", torch.cuda.device_count(), "GPUs")
 
-SNGCCA_ADAM = SNGCCA_ADAM(device)
+SNGCCA_ADAM = SNGCCA_APPROX(device)
 
 x = pd.read_csv("x.csv").values
 y = pd.read_csv("y.csv").values
