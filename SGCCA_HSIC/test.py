@@ -1,3 +1,15 @@
+# 定义一个包含元素的列表
+elements = [1, 2, 3, 4]
+
+# 定义一个变量，表示要从列表中取出的循环长度
+loop_len = 3
+
+# 使用嵌套的 for 循环和切片，从列表中取出指定长度的子序列
+for i in range(len(elements) - loop_len + 1):
+    subseq = elements[i:i+loop_len]
+    # 处理每个子序列
+    print(subseq)
+
 from main import Solver
 import pandas as pd
 import torch
@@ -24,7 +36,7 @@ views = [torch.tensor(x),torch.tensor(y),torch.tensor(z)]
 N = 400
 views = create_synthData_new(N, mode=2, F=20)
 SGCCA_HSIC = SGCCA_HSIC(device)
-a,b = SGCCA_HSIC.fit(views=views, eps=1e-7, maxit=30, b=(10,10,10),early_stopping=True, patience=10, logging=1)
+a = SGCCA_HSIC.fit(views=views, eps=1e-7, maxit=30, b=(20,20,20),early_stopping=True, patience=10, logging=1)
 
 b = (1,1,1)
 SGCCA_HSIC.set_init(views,b)

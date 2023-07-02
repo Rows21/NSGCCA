@@ -1,17 +1,17 @@
 import torch
 import math
 import itertools
-class SGCCA_HSIC():
+class SNGCCA():
     def __init__(self, device):
         self.K_list = []
         self.a_list = []
         self.cK_list = []
         self.u_list = []
         self.device = device
-        self.state = []
-        self.state['Momentum_V']: list = [None] * 3
-        self.state['Adam_V']: list = [None] * 3
-        self.state['Adam_M']: list = [None] * 3
+
+        self.Momentum_V: list = [None] * 3
+        self.Adam_V: list = [None] * 3
+        self.Adam_M: list = [None] * 3
 
     def projL1(self, v, b):
         if b < 0:
@@ -98,7 +98,7 @@ class SGCCA_HSIC():
             self.cK_list.append(cK)
             self.u_list.append(u_norm)
 
-    def fit(self, views, eps, maxit, b, early_stopping=True, patience=10, logging=0):
+    def fit(self, views, eps, maxit, b, loss="SGD", early_stopping=True, patience=10, logging=0):
         n_view = len(views)
         self.K_list = []
         self.a_list = []
@@ -111,6 +111,9 @@ class SGCCA_HSIC():
         obj_list = []
         while (diff > eps) & (ite < maxit):
             ite += 1
+            obj_origin = self.ff(self.K_list,self.cK_list)
+            obj_new = obj_origin - 1
+            #while obj_origin > obj_new:
             for i, view in enumerate(views):
                 obj_old = self.ff(self.K_list,self.cK_list)
                 cK_list_SGD = [self.cK_list[j] for j in range(n_view) if j != i]
@@ -118,13 +121,12 @@ class SGCCA_HSIC():
                 ## Calculate Delta and Gamma
                 grad = self.gene_SGD(self.K_list[i], cK_list_SGD, view, self.a_list[i], self.u_list[i])
                 gamma = torch.norm(grad, p=2)
-                if gamma > torch.tensor(1e-2):
-                    gamma = torch.tensor(1e-2)
+
                 ## Start Line Search
                 chk = 1
                 while chk == 1:
 
-                    u_norm = self._optim(i,self.u_list[i],grad,gamma,b[i],view_len=view.shape[1],loss="SGD")
+                    u_norm = self._optim(i,self.u_list[i],grad,gamma,b[i],view_len=view.shape[1],loss=loss)
                     Xu_new = view.to(self.device) @ u_norm
 
                     sigma = None
@@ -155,9 +157,10 @@ class SGCCA_HSIC():
                         if gamma < 1e-7:
                             chk = 0
                 obj = obj_new
-                ## End Line Search
-            diff = abs(obj - obj_old) / abs(obj + obj_old)
-            obj_list.append(round(obj.item(),5))
+                # End Line Search
+
+            diff = abs(obj_new - obj_old) / abs(obj_new + obj_old)
+            obj_list.append(round(obj_new.item(),4))
             if logging == 1:
                 print('iter=', ite, "diff=", diff, 'obj=', obj)
 
@@ -166,36 +169,41 @@ class SGCCA_HSIC():
                     return self.u_list
         if logging == 2:
             print("diff=", diff, 'obj=', obj)
-        return self.state, self.u_list
+        return self.u_list
 
     def _optim(self, i, u, grad, gamma, b, view_len, loss="SGD"):
         if loss == "SGD":   # SGD
+            if gamma > torch.tensor(1e-2):
+                gamma = torch.tensor(1e-2)
             v_new = torch.reshape(u + grad * gamma, (-1,))
-            u_new = torch.reshape(self.projL1(v_new, b), (view_len, 1))
-        elif loss == "Momentum":    # Momentum
-            if self.state['Momentum_V'][i] is None:
-                self.state['Momentum_V'][i] = torch.zeros(view_len, 1)
-            v = self.state['Momentum_V'][i]
+
+        elif loss == "Momentum": # Momentum
+            if gamma > torch.tensor(1e-2):
+                gamma = torch.tensor(1e-2)
+
+            if self.Momentum_V[i] is None:
+                self.Momentum_V[i] = torch.zeros(view_len,1)
+            v = self.Momentum_V[i]
 
             v = - 0.9 * v + grad * gamma
-            self.state['Momentum_V'][i] = v
-            v_new = u + v
+            self.Momentum_V[i] = v
 
-            u_new = self.projL1(v_new, b[i])
+            v_new = torch.reshape(u + v, (-1,))
+
         elif loss == "Adam":    # adam
-            if self.state['Adam_M'][i] is None:
-                self.state['Adam_V'][i] = torch.zeros(view_len, 1)
-                self.state['Adam_M'][i] = torch.zeros(view_len, 1)
-            m = self.state['Adam_M'][i]
-            v = self.state['Adam_V'][i]
+            if self.Adam_M[i] is None:
+                self.Adam_V[i] = torch.zeros(view_len, 1)
+                self.Adam_M[i] = torch.zeros(view_len, 1)
+            m = self.Adam_M[i]
+            v = self.Adam_V[i]
 
             m = 0.9 * m + (1 - 0.9) * grad
             v = 0.999 * v + (1 - 0.999) * (grad ** 2)
-            self.state['Adam_M'][i] = m
-            self.state['Adam_V'][i] = v
-            v_new = u + gamma * m / (torch.sqrt(v) + 1e-8)
-            u_new = self.projL1(v_new, b[i])
+            self.Adam_M[i] = m
+            self.Adam_V[i] = v
+            v_new = torch.reshape(u + gamma * m / (torch.sqrt(v) + 1e-8), (-1,))
 
+        u_new = torch.reshape(self.projL1(v_new, b), (view_len, 1))
         u_norm = u_new / torch.norm(u_new, p=2)
         return u_norm
 

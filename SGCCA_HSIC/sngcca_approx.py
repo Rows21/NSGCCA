@@ -73,7 +73,6 @@ class SNGCCA_APPROX():
 
         #K_nn_np = np.nan_to_num(K_nn.numpy(), nan=0.001)
         K_nn_sqrt_real = np.nan_to_num(np.real(sqrtm(K_nn)), nan=0.001)
-
         K_nn_sqrt_inv = np.linalg.inv(K_nn_sqrt_real)
 
         K_nn_sqrt_inv_tensor = torch.tensor(K_nn_sqrt_inv)
