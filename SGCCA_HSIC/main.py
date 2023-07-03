@@ -6,15 +6,17 @@ torch.set_default_tensor_type(torch.DoubleTensor)
 
 from synth_data import create_synthData_new
 from sngcca import SNGCCA
+from sngcca_approx import SNGCCA_APPROX
 
 from validation_method import FS_MCC
 
 class Solver():
-    def __init__(self,device):
+    def __init__(self,device,batch_size=100):
         self.SNGCCA = SNGCCA(device)
+        self.SNGCCA_APPROX = SNGCCA_APPROX(device,batch_size=batch_size)
         self.device = device
 
-    def fit(self, x_list, vx_list=None, tx_list=None, checkpoint='checkpoint.model'):
+    def fit(self, x_list, vx_list=None, tx_list=None, method='checkpoint.model'):
         x_list = [x.to(device) for x in x_list]
         data_size = x_list[0].size(0)
 
