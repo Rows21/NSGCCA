@@ -1,20 +1,6 @@
 import numpy as np
-import scipy
-import scipy.io
-import scipy.linalg
-
-import seaborn as sns
-
-import math
-
-import matplotlib.pyplot as plt
-from matplotlib.backends.backend_pdf import PdfPages
-
-import pandas as pd
-
 import torch
 
-import os
 
 def create_synthData_new(N=400, outDir='./', device='cpu',mode=1,F=20):
     '''

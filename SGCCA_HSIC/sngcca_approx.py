@@ -8,9 +8,9 @@ import torch.optim as optim
 
 
 class SNGCCA_APPROX():
-    def __init__(self, device):
+    def __init__(self, device, batch_size):
         self.device = device
-        self.batch_size = 100
+        self.batch_size = batch_size
 
     def projL1(self, v, b):
         if b < 0:
