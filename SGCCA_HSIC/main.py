@@ -79,7 +79,7 @@ class Solver():
                 obj_temp.append(self.SNGCCA.ff(K_test,cK_test))
 
             mean_obj = sum(obj_temp)/len(obj_temp)
-            print("Sparsity selection number=", count, "hyperparams=", aa, "obj=", mean_obj)
+            #print("Sparsity selection number=", count, "hyperparams=", aa, "obj=", mean_obj)
             if mean_obj > obj_validate:
                 b0 = aa
                 obj_validate = mean_obj
