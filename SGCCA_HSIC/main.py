@@ -79,7 +79,7 @@ class Solver():
                 obj_temp.append(self.SNGCCA.ff(K_test,cK_test))
 
             mean_obj = sum(obj_temp)/len(obj_temp)
-            #print("Sparsity selection number=", count, "hyperparams=", aa, "obj=", mean_obj)
+            print("Sparsity selection number=", count, "hyperparams=", aa, "obj=", mean_obj)
             if mean_obj > obj_validate:
                 b0 = aa
                 obj_validate = mean_obj
@@ -107,7 +107,7 @@ if __name__ == '__main__':
     print("Using", torch.cuda.device_count(), "GPUs")
 
     N = 400
-    views = create_synthData_new(N, mode=1, F=20)
+    views = create_synthData_new(N, mode=2, F=20)
 
     print(f'input views shape :')
     for i, view in enumerate(views):

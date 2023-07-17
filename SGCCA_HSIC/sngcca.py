@@ -112,7 +112,7 @@ class SNGCCA():
         while (diff > eps) & (ite < maxit):
             ite += 1
             obj_origin = self.ff(self.K_list,self.cK_list)
-            obj_new = obj_origin - 1
+            obj_new = obj_origin -1
             #while obj_origin > obj_new:
             for i, view in enumerate(views):
                 obj_old = self.ff(self.K_list,self.cK_list)
