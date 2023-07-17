@@ -28,7 +28,6 @@ ExpConcat = pd.concat([ExpFilter,y],axis=1,ignore_index=True)
 listname_new = np.append(listname,'Type')
 
 ExpConcat.columns = listname_new
-
 ExpConcat = ExpConcat.sort_values('Type')
 
 row_c = dict(zip(ExpConcat['Type'].unique(), ['green','yellow','pink','blue']))
@@ -52,11 +51,5 @@ sns.clustermap(ExpConcat, pivot_kws=None,
                cbar_pos=(0.02, 0.8, 0.05, 0.18),
                tree_kws=None,
                cmap='mako')
-
-
-
-
-
-
 
 plt.show()
