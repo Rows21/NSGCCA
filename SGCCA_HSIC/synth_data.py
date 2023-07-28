@@ -26,8 +26,8 @@ def create_synthData_new(N=400, outDir='./', device='cpu',mode=1,F=20):
         V3[:,0]=np.sin(V2[:,0]+V2[:,1])-V3[:,1]
         
     if mode==3:
-        V2[:,0]=1/(V1[:,0]+V1[:,1])-V2[:,1]
-        V3[:,0]=1/(V1[:,0]+V1[:,1])-V3[:,1]
+        V2[:,0]=(V1[:,0]+V1[:,1]) ** 3-V2[:,1]
+        V3[:,0]=(V1[:,0]+V1[:,1]) ** 2-V3[:,1]
 
     views.append(V2) 
     views.append(V3)
@@ -46,10 +46,10 @@ def create_synthData_multi(i, data_type,N=400, p=20, q=20, r=20,device='cpu'):
             Z[:, 0] = 2 * (X[:, 0] + X[:, 1]) - Z[:, 1] + torch.randn(N) * 0.05
         elif data_type == 2:
             Y[:, 0] = np.sin(X[:, 0] + X[:, 1]) - Y[:, 1] + torch.randn(N) * 0.05
-            Z[:, 0] = np.sin(X[:, 0] + X[:, 1]) - Z[:, 1] + torch.randn(N) * 0.05
+            Z[:, 0] = np.cos(X[:, 0] + X[:, 1]) - Z[:, 1] + torch.randn(N) * 0.05
         elif data_type == 3:
-            Y[:, 0] = 1 / (X[:, 0] + X[:, 1]) - Y[:, 1] + torch.randn(N) * 0.05
-            Z[:, 0] = 1 / (X[:, 0] + X[:, 1]) - Z[:, 1] + torch.randn(N) * 0.05
+            Y[:, 0] = (X[:, 0] + X[:, 1]) ** 3 - Y[:, 1] + torch.randn(N) * 0.05
+            Z[:, 0] = (X[:, 0] + X[:, 1]) ** 2 - Z[:, 1] + torch.randn(N) * 0.05
         elif data_type == 4:
             Y[:, 0] = torch.cos(X[:, 0] + X[:, 1]) - Y[:, 1]
             Z[:, 0] = torch.sin(X[:, 0] + X[:, 1]) - Z[:, 1]

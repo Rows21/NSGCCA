@@ -9,8 +9,10 @@ import pandas as pd
 
 if __name__ == '__main__':
     import sys
-    print(sys.argv)
-    rng1 = np.random.RandomState(int(sys.argv[1]))  # random seed
+
+    rs = os.environ.get('SLURM_JOB_ID')
+
+    torch.manual_seed(rs)  # random seed
 
     # Hyper Params Section
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
@@ -38,18 +40,18 @@ if __name__ == '__main__':
                 view = view.to("cpu")
 
             ## train hyper
-            b0, obj = Solver.tune_hyper(x_list=views, set_params=10,max_params = 50, iter=100)
+            b0, obj = Solver.tune_hyper(x_list=views, set_params=20,max_params=100, iter=100)
             print(b0)
 
             print("SNGCCA Started!")
-            for rep in range(1):
+            for rep in range(100):
                 if (rep + 1) % 100 == 0:
                     print("REP=", rep + 1)
 
                 ## fit results
-                u = Solver._get_outputs(views, 1e-7, 300, b0)
+                u = Solver._get_outputs(views, 1e-7, 300, (b0,b0,b0))
 
-                Label = torch.cat([torch.ones(2, dtype=torch.bool), torch.zeros(18, dtype=torch.bool)])
+                Label = torch.cat([torch.ones(i, dtype=torch.bool), torch.zeros(20-i, dtype=torch.bool)])
                 acc, f1, mcc = FS_MCC(u, Label)
                 ACC.append(acc)
                 FS.append(f1)

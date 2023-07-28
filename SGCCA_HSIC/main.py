@@ -16,13 +16,33 @@ class Solver():
         self.SNGCCA_APPROX = SNGCCA_APPROX(device,batch_size=batch_size)
         self.device = device
 
-    def fit(self, x_list, vx_list=None, tx_list=None, method='checkpoint.model'):
+    def fit(self, x_list, test_list=None, train_list=None, eps=1e-7, maxit=100, b=(100,100,100), k=3):
         x_list = [x.to(device) for x in x_list]
+        ## split
+        shuffled_index = np.random.permutation(len(x_list[0]))
+        split_index = int(len(x_list[0]) * 1 / k)
         data_size = x_list[0].size(0)
+        start_index = i * split_index
+        end_index = (i + 1) * split_index
+        fold_index = shuffled_index[start_index:end_index]
 
-    def tune_hyper(self,x_list,set_params,eps = 1e-6,iter = 20,k=5):
+        if test_list is None:
+            test_list = []
+        if train_list is None:
+            train_list = []
+
+        for _, view in enumerate(x_list):
+            test_list.append(view[fold_index, :])
+            non_fold_index = [num for num in shuffled_index if num not in fold_index]
+            train_list.append(view[non_fold_index, :])
+
+        u = Solver._get_outputs(train_list, eps, maxit, b)
+
+        return train_list,test_list,u
+
+    def tune_hyper(self,x_list,set_params, max_params, eps=1e-6, iter=20, k=5):
         ## set hyperparams set
-        a = np.exp(np.linspace(0, math.log(50), num=set_params))
+        a = (np.exp(np.linspace(0, math.log(2), num=set_params)) - 1) * max_params + 1
         print("Start Hyperparams Tuning")
         ## fixed folds number
 
@@ -40,8 +60,8 @@ class Solver():
         obj_validate = 0
         count = 0
 
-        for aa in combinations_with_replacement(a, 3):
-
+        #for aa in combinations_with_replacement(a, 3):
+        for aa in a:
             count +=1
             obj_temp = []
             for i in range(k):
@@ -59,7 +79,7 @@ class Solver():
                     non_fold_index = [num for num in shuffled_index if num not in fold_index[i]]
                     train_data.append(view[non_fold_index, :])
 
-                u = self.SNGCCA.fit(train_data,eps,iter,aa,logging=0)
+                u = self.SNGCCA.fit(train_data,eps,iter,(aa,aa,aa),logging=0)
 
                 # Save iterations
                 ## calculate K,cK for validation set
@@ -114,7 +134,7 @@ if __name__ == '__main__':
         print(f'view_{i} :  {view.shape}')
         view = view.to("cpu")
     Solver = Solver(device)
-
+    train,test,u = Solver.fit(views)
     b0, obj = Solver.tune_hyper(x_list=views, set_params=5, iter=50)
     print(b0)
 
