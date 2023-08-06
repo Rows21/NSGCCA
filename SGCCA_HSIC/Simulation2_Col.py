@@ -8,11 +8,10 @@ import numpy as np
 import pandas as pd
 
 if __name__ == '__main__':
+    # Slurm Object note
     import sys
-
-    rs = os.environ.get('SLURM_JOB_ID')
-
-    torch.manual_seed(rs)  # random seed
+    #rs = os.environ.get('SLURM_JOB_ID')
+    #torch.manual_seed(rs)  # random seed
 
     # Hyper Params Section
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
@@ -40,11 +39,11 @@ if __name__ == '__main__':
                 view = view.to("cpu")
 
             ## train hyper
-            b0, obj = Solver.tune_hyper(x_list=views, set_params=20,max_params=100, iter=100)
+            b0, obj = Solver.tune_hyper(x_list=views, set_params=3, max_params=50, iters=100)
             print(b0)
 
             print("SNGCCA Started!")
-            for rep in range(100):
+            for rep in range(1):
                 if (rep + 1) % 100 == 0:
                     print("REP=", rep + 1)
 

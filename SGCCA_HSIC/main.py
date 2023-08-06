@@ -1,7 +1,7 @@
 import torch
 import numpy as np
 import math
-from itertools import combinations_with_replacement
+
 torch.set_default_tensor_type(torch.DoubleTensor)
 
 from synth_data import create_synthData_new
@@ -18,7 +18,7 @@ class Solver():
 
     def fit(self, x_list, test_list=None, train_list=None, eps=1e-7, maxit=100, b=(100,100,100), k=3):
         x_list = [x.to(device) for x in x_list]
-        ## split
+        # split
         shuffled_index = np.random.permutation(len(x_list[0]))
         split_index = int(len(x_list[0]) * 1 / k)
         data_size = x_list[0].size(0)
@@ -38,21 +38,21 @@ class Solver():
 
         u = Solver._get_outputs(train_list, eps, maxit, b)
 
-        return train_list,test_list,u
+        return train_list, test_list, u
 
-    def tune_hyper(self,x_list,set_params, max_params, eps=1e-6, iter=20, k=5):
-        ## set hyperparams set
+    def tune_hyper(self, x_list, set_params, max_params, eps=1e-6, iters: int = 20, k=5):
+        # set hyperparams set
         a = (np.exp(np.linspace(0, math.log(2), num=set_params)) - 1) * max_params + 1
         print("Start Hyperparams Tuning")
-        ## fixed folds number
+        # fixed folds number
 
-        ## split
+        # split
         shuffled_index = np.random.permutation(len(x_list[0]))
         split_index = int(len(x_list[0]) * 1/k)
         fold_index = []
-        for i in range(k):
-            start_index = i * split_index
-            end_index = (i + 1) * split_index
+        for j in range(k):
+            start_index = j * split_index
+            end_index = (j + 1) * split_index
             fold_index.append(shuffled_index[start_index:end_index])
 
         # start cross validation
@@ -60,7 +60,7 @@ class Solver():
         obj_validate = 0
         count = 0
 
-        #for aa in combinations_with_replacement(a, 3):
+        # for aa in combinations_with_replacement(a, 3):
         for aa in a:
             count +=1
             obj_temp = []
@@ -79,13 +79,13 @@ class Solver():
                     non_fold_index = [num for num in shuffled_index if num not in fold_index[i]]
                     train_data.append(view[non_fold_index, :])
 
-                u = self.SNGCCA.fit(train_data,eps,iter,(aa,aa,aa),logging=0)
+                u = self.SNGCCA.fit(train_data, eps, iters, (aa, aa, aa), logging=0)
 
                 # Save iterations
-                ## calculate K,cK for validation set
+                # calculate K, cK for validation set
                 K_test = []
                 cK_test = []
-                for j,view in enumerate(test_data):
+                for j, view in enumerate(test_data):
                     Xu = view.to(self.device) @ u[j]
                     sigma = None
                     if sigma is None:
@@ -95,8 +95,8 @@ class Solver():
                     cK = self.SNGCCA.centre_kernel(K)
                     K_test.append(K)
                     cK_test.append(cK)
-                ## get obj
-                obj_temp.append(self.SNGCCA.ff(K_test,cK_test))
+                # get obj
+                obj_temp.append(self.SNGCCA.ff(K_test, cK_test))
 
             mean_obj = sum(obj_temp)/len(obj_temp)
             print("Sparsity selection number=", count, "hyperparams=", aa, "obj=", mean_obj)
@@ -106,11 +106,11 @@ class Solver():
             else:
                 continue
         print("Finish Tuning!")
-        return b0,obj_validate
+        return b0, obj_validate
 
-    def _get_outputs(self,views,eps,maxit,b,logging=0):
+    def _get_outputs(self, views, eps, maxit, b, logging=0):
         #print("SNGCCA Started!")
-        u = self.SNGCCA.fit(views, eps, maxit,b,loss="SGD",patience=10,logging=logging)
+        u = self.SNGCCA.fit(views, eps, maxit, b, loss="SGD", patience=10, logging=logging)
         return u
 
     def early_stop(self):
@@ -135,7 +135,7 @@ if __name__ == '__main__':
         view = view.to("cpu")
     Solver = Solver(device)
     train,test,u = Solver.fit(views)
-    b0, obj = Solver.tune_hyper(x_list=views, set_params=5, iter=50)
+    b0, obj = Solver.tune_hyper(x_list=views, set_params=5, iters=50)
     print(b0)
 
 

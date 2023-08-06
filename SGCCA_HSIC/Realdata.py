@@ -72,11 +72,11 @@ if __name__ == '__main__':
         '''
 
         # Hyper Params Section
-        b0, obj = Solver.tune_hyper(x_list=train_list, set_params=10,max_params=200,iter=100)
-        print(b0)
+        #b0, obj = Solver.tune_hyper(x_list=train_list, set_params=5,max_params=200,iter=100)
+        #print(b0)
 
         ## fit results
-        u = Solver._get_outputs(views, 1e-7, 300, (b0, b0, b0))
+        u = Solver._get_outputs(views, 1e-7, 300, (200, 200, 100))
         u_list.append(u)
 
         K_test = []

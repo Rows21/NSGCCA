@@ -27,19 +27,19 @@ if __name__ == '__main__':
         MCC_list = []
 
         for N in [100,800,1200,1500]:
-            print("Scenario=",scenario+1,"N=",N)
+            print("Scenario=",scenario+2,"N=",N)
 
             FS = []
             MCC = []
             ACC = []
-            views = create_synthData_multi(i=2, data_type=scenario+1, N=N, p=20, q=20, r=20)
+            views = create_synthData_multi(i=2, data_type=scenario+2, N=N, p=20, q=20, r=20)
             print(f'input views shape :')
             for j, view in enumerate(views):
                 print(f'view_{j} :  {view.shape}')
                 view = view.to("cpu")
 
             ## train hyper
-            b0, obj = Solver.tune_hyper(x_list=views, set_params=10,max_params = 100, iter=100)
+            b0, obj = Solver.tune_hyper(x_list=views, set_params=10, max_params=100, iters=100)
             print(b0)
 
             print("SNGCCA Started!")

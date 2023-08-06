@@ -10,8 +10,8 @@ import pandas as pd
 if __name__ == '__main__':
     import sys
 
-    rs = os.environ.get('SLURM_JOB_ID')
-    torch.manual_seed(rs)  # random seed
+    #rs = os.environ.get('SLURM_JOB_ID')
+    #torch.manual_seed(rs)  # random seed
 
     # Hyper Params Section
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
@@ -19,27 +19,27 @@ if __name__ == '__main__':
 
     Solver = Solver(device)
 
-    for scenario in range(3):
+    for scenario in range(1):
     ## Scenario
         ## Evaluation params
         ACC_list = []
         FS_list = []
         MCC_list = []
 
-        for N in [10,30,40]:
-            print("Scenario=",scenario+1,"Noise=",N)
+        for N in [40]:
+            print("Scenario=",scenario+2,"Noise=",N)
 
             FS = []
             MCC = []
             ACC = []
-            views = create_synthData_multi(i=2, data_type=scenario+1, N=400, p=N, q=N, r=N)
+            views = create_synthData_multi(i=2, data_type=scenario+2, N=400, p=N, q=N, r=N)
             print(f'input views shape :')
             for j, view in enumerate(views):
                 print(f'view_{j} :  {view.shape}')
                 view = view.to("cpu")
 
             ## train hyper
-            b0, obj = Solver.tune_hyper(x_list=views, set_params=20,max_params=100, iter=100)
+            b0, obj = Solver.tune_hyper(x_list=views, set_params=10, max_params=100, iters=100)
             print(b0)
 
             print("SNGCCA Started!")
@@ -64,7 +64,7 @@ if __name__ == '__main__':
             if not os.path.exists(dir_path):
                 os.mkdir(dir_path)
 
-            df.to_csv('./Simulation/Scenario' + str(scenario+1) + 'Noise' + str(N) + '.csv')
+            df.to_csv('./Simulation/Scenario' + str(scenario+2) + 'Noise' + str(N) + '.csv')
             macc = np.mean(ACC)
             sdacc = np.std(ACC)
             print(macc, sdacc)

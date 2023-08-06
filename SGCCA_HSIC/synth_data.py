@@ -23,7 +23,7 @@ def create_synthData_new(N=400, outDir='./', device='cpu',mode=1,F=20):
         
     if mode==2:
         V2[:,0]=np.sin(V1[:,0]+V1[:,1])-V2[:,1]
-        V3[:,0]=np.sin(V2[:,0]+V2[:,1])-V3[:,1]
+        V3[:,0]=np.sin(V2[:,0]+V2[:,1]) * (V2[:,0]+V2[:,1]) -V3[:,1]
         
     if mode==3:
         V2[:,0]=(V1[:,0]+V1[:,1]) ** 3-V2[:,1]
@@ -62,10 +62,10 @@ def create_synthData_multi(i, data_type,N=400, p=20, q=20, r=20,device='cpu'):
                 Z[:, 0] = 2 * torch.sum(X[:, :j], dim=1) - torch.sum(Z[:, 1:j], dim=1) + torch.randn(N) * 0.05
             elif data_type == 2:
                 Y[:, 0] = 1 * np.sin(1 * torch.sum(X[:, :j], dim=1)) - torch.sum(Y[:, 1:j], dim=1) + torch.randn(N) * 0.05
-                Z[:, 0] = 1 * np.sin(1 * torch.sum(X[:, :j], dim=1)) - torch.sum(Z[:, 1:j], dim=1) + torch.randn(N) * 0.05
+                Z[:, 0] = 1 * np.cos(1 * torch.sum(X[:, :j], dim=1)) - torch.sum(Z[:, 1:j], dim=1) + torch.randn(N) * 0.05
             elif data_type == 3:
-                Y[:, 0] = 1 / torch.sum(X[:, :j], dim=1) - torch.sum(Y[:, 1:j], dim=1) + torch.randn(N) * 0.05
-                Z[:, 0] = 1 / torch.sum(X[:, :j], dim=1) - torch.sum(Z[:, 1:j], dim=1) + torch.randn(N) * 0.05
+                Y[:, 0] = torch.sum(X[:, :j], dim=1) **3 - torch.sum(Y[:, 1:j], dim=1) + torch.randn(N) * 0.05
+                Z[:, 0] = torch.sum(X[:, :j], dim=1) **2 - torch.sum(Z[:, 1:j], dim=1) + torch.randn(N) * 0.05
             elif data_type == 4:
                 Y[:, 0] = torch.cos(torch.sum(X[:, :j], dim=1)) - torch.sum(Y[:, 1:j], dim=1)
                 Z[:, 0] = torch.sin(torch.sum(X[:, :j], dim=1)) - torch.sum(Y[:, 1:j], dim=1)
