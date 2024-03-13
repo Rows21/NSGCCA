@@ -3,7 +3,7 @@
 Official Pytorch implementation of SNGCCA, from the following paper:
 
 [Sparse Nonlinear Generalized Canonical Correlation Analysis with Applications in Multiview Genomic Datasets]().  \
-Rong Wu, Hai Shu. \
+Rong Wu, Ziqi Chen and Hai Shu. \
 New York University \
 [[`arXiv`]()]
 
