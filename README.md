@@ -20,7 +20,12 @@ We propose **SNGCCA**.
 
 
  ## Datasets
+  - [x] Synthetic Datasets [synth_data.py](synth_data.py)
+  - [x] TCGA Breast Cancer Database [TRAINING.md](TRAINING.md)
  
+ (Feel free to post suggestions in issues of recommending latest proposed transformer network for comparison. Currently, the network folder is to put the current SOTA transformer. We can further add the recommended network in it for training.)
+ 
+ <!-- ✅ ⬜️  -->
  ## Results 
  ### Simulation Studies
 
