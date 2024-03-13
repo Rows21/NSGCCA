@@ -20,9 +20,9 @@ library(RGCCA)
 
 ```{r evaluation}
 
-FS_MCC = function(U,V,W){
+FS_MCC = function(U,V,W,len){
   library(caret)
-  Label = c(rep(1,2),rep(0,18))
+  Label = c(rep(1,2),rep(0,len-2))
   tp = 0
   tn = 0
   fn = 0
@@ -79,10 +79,10 @@ gendata3 <- function(n,p,q,r,type){
   
   if(type == 1){
     Y[,1] = X[,1] + X[,2] - Y[,2] + matrix(rnorm(n,mean=0,sd=0.05),nrow=n,ncol=1)
-    Z[,1] = 2*(X[,1] + X[,2]) - Z[,2] + matrix(rnorm(n,mean=0,sd=0.05),nrow=n,ncol=1)
+    Z[,1] = (X[,1] + X[,2]) - Z[,2] + matrix(rnorm(n,mean=0,sd=0.05),nrow=n,ncol=1)
   }else if(type == 2 ){
-    Y[,1] = 1 * sin(1 *matrix(X[,1] + X[,2],nrow=nrow(X),ncol=1)) - Y[,2] + matrix(rnorm(n,mean=0,sd=0.05),nrow=n,ncol=1)
-    Z[,1] = 1 * cos(1 *matrix(Y[,1] + Y[,2],nrow=nrow(Y),ncol=1)) - Z[,2] + matrix(rnorm(n,mean=0,sd=0.05),nrow=n,ncol=1)
+    Y[,1] = 1 * cos(1 *matrix(X[,1] + X[,2],nrow=nrow(X),ncol=1))^2 - Y[,2] + matrix(rnorm(n,mean=0,sd=0.05),nrow=n,ncol=1)
+    Z[,1] = 1 * sin(1 *matrix(Y[,1] + Y[,2],nrow=nrow(Y),ncol=1)) - Z[,2] + matrix(rnorm(n,mean=0,sd=0.05),nrow=n,ncol=1)
   } else if(type == 3){
     Y[,1] = (X[,1] + X[,2])^3 - Y[,2] + matrix(rnorm(n,mean=0,sd=0.05),nrow=n,ncol=1)
     Z[,1] = (Y[,1] + Y[,2])^2 - Z[,2] + matrix(rnorm(n,mean=0,sd=0.05),nrow=n,ncol=1)
@@ -113,7 +113,7 @@ gendatan = function(i,n,p,q,r,type){
     Z[,1] = 2*(X[,1] + X[,2]) - Z[,2] + matrix(rnorm(n,mean=0,sd=0.05),nrow=n,ncol=1)
   }else if(type ==2 ){
     Y[,1] = 1 * sin(1 *matrix(X[,1] + X[,2],nrow=nrow(X),ncol=1)) - Y[,2] + matrix(rnorm(n,mean=0,sd=0.05),nrow=n,ncol=1)
-    Z[,1] = 1 * cos(1 *matrix(Y[,1] + Y[,2],nrow=nrow(Y),ncol=1)) - Z[,2] + matrix(rnorm(n,mean=0,sd=0.05),nrow=n,ncol=1)
+    Z[,1] = 1 * cos(1 *matrix(Y[,1] + Y[,2],nrow=nrow(Y),ncol=1))^2 - Z[,2] + matrix(rnorm(n,mean=0,sd=0.05),nrow=n,ncol=1)
   } else if(type ==3){
     Y[,1] = (X[,1] + X[,2])^3 - Y[,2] + matrix(rnorm(n,mean=0,sd=0.05),nrow=n,ncol=1)
     Z[,1] = (X[,1] + X[,2])^2 - Z[,2] + matrix(rnorm(n,mean=0,sd=0.05),nrow=n,ncol=1)
@@ -129,7 +129,7 @@ gendatan = function(i,n,p,q,r,type){
     Y[,1] = rowSums(X[,1:i]) - rowSums(Y[,2:i]) + matrix(rnorm(n,mean=0,sd=0.05),nrow=n,ncol=1)
     Z[,1] = 2*rowSums(X[,1:i]) - rowSums(Z[,2:i]) + matrix(rnorm(n,mean=0,sd=0.05),nrow=n,ncol=1)
   }else if(type ==2 ){
-    Y[,1] = 1 * sin(1 *matrix(rowSums(X[,1:i]),nrow=nrow(X),ncol=1)) - rowSums(Y[,2:i]) + matrix(rnorm(n,mean=0,sd=0.05),nrow=n,ncol=1)
+    Y[,1] = 1 * cos(1 *matrix(rowSums(X[,1:i]),nrow=nrow(X),ncol=1))^2 - rowSums(Y[,2:i]) + matrix(rnorm(n,mean=0,sd=0.05),nrow=n,ncol=1)
     Z[,1] = 1 * sin(1 *matrix(rowSums(X[,1:i]),nrow=nrow(Y),ncol=1)) - rowSums(Z[,2:i]) + matrix(rnorm(n,mean=0,sd=0.05),nrow=n,ncol=1)
   } else if(type ==3){
     Y[,1] = 20 / (rowSums(X[,1:i])) - rowSums(Y[,2:i]) + matrix(rnorm(n,mean=0,sd=0.05),nrow=n,ncol=1)
@@ -147,32 +147,78 @@ gendatan = function(i,n,p,q,r,type){
   return(list(X=X,Y=Y,Z=Z)) 
 }
 
-Data1 = gendatan(2,300,20,20,20,1)
+Data1 = gendatan(4,300,20,20,20,1)
 
-
+Data1$X
 
 ```
 
 ```{r}
-#U_view1 = list()
-#U_view2 = list()
-#U_view3 = list()
+X = read.table("C:/Users/Programer/Documents/GitHub/SGCCA_HSIC/SNGCCA/RealData/Exp664.txt", header = F, sep = " ")
+Y = read.table("C:/Users/Programer/Documents/GitHub/SGCCA_HSIC/SNGCCA/RealData/Meth664.txt", header = F, sep = " ")
+Z =  read.table("C:/Users/Programer/Documents/GitHub/SGCCA_HSIC/SNGCCA/RealData/miRNA664.txt", header = F, sep = " ")
 
-#for(i in 2:10){
-  #for(type in 1:4){
-    #Data1 = gendatan(i,300,20,20,20,type)
-      #result.rgcca = rgcca(Data1, connection = 1 - diag(length(Data1)), tau = rep(1, length(Data1)), ncomp = rep(1,length(Data1)), 
-                           #scheme = "centroid", init = "svd",bias = TRUE, tol = .Machine$double.eps, verbose = FALSE)
-      #result.sgcca = sgcca(Data1, connection = 1 - diag(length(Data1)), sparsity = rep(1, length(Data1)), ncomp = rep(1,length(Data1)), scheme = "centroid", init = "svd",
-                            #bias = TRUE, tol = .Machine$double.eps, verbose = FALSE)
-      
-  #}
+Data_real = list(X = t(X), Y = t(Y), Z = t(Z))
+result = rgcca(Data_real, connection = 1 - diag(length(Data_real)), tau = rep(1, length(Data_real)), ncomp = rep(1,
+length(Data_real)), scheme = "centroid", init = "svd",
+bias = TRUE, tol = .Machine$double.eps, verbose = FALSE)
+
+u=result$a[[1]]
+v=result$a[[2]]
+w=result$a[[3]]
+
+write.csv(u,'SGCCA_u.csv')
+write.csv(v,'SGCCA_v.csv')
+write.csv(w,'SGCCA_w.csv')
+count = 0
+for(i in 1:length(u)){
+  # print(u[i])
   
-#}
+  if (u[i] > 1/2642){
+    count =count + 1
+    #print(i)
+  }
+}
+print(count)
+count = 0
+for(i in 1:length(v)){
+  # print(u[i])
+  if (v[i] > 1/ length(v)){
+    #print(i)
+    count =count + 1
+  }
+}
+print(count)
+count = 0
+for(i in 1:length(w)){
+  # print(u[i])
+  if (w[i] > 1/length(w)){
+    #print(i)
+    count =count + 1
+  }
+}
 
-# F1 Score
-# MCC
-# 
+```
+
+```{r cluster}
+library(cluster)
+library(fpc)
+
+# 假设你的聚类结果存储在变量 cluster_result 中
+
+# 计算 Silhouette Score
+silhouette_score <- silhouette(cluster_result$cluster, dist(cluster_result$distance_matrix))
+
+# 计算 DB Score
+db_score <- cluster.stats(cluster_result$cluster, cluster_result$distance_matrix)$DB
+
+# 计算 CH Score
+ch_score <- cluster.stats(cluster_result$cluster, cluster_result$distance_matrix)$ch
+
+# 输出结果
+print(silhouette_score)
+print(db_score)
+print(ch_score)
 
 ```
 
@@ -225,11 +271,13 @@ data.3d = data.frame(rbind(cbind(as.matrix(data[,1:3]),type = "new"),cbind(as.ma
 
 plot_ly(data.3d,x=~x_new, y=~y_new, z=~z_new, type="scatter3d", mode="markers",color=~data.3d$type)
 
-ACC = rep(0,500)
-f1_score = rep(0,500)
-MCC = rep(0,500)
-for( i in 1:500){
-  if(i %% 100 == 0){print(i)}
+
+DATA_FINAL = data.frame(as.matrix())
+ACC = rep(0,100)
+f1_score = rep(0,100)
+MCC = rep(0,100)
+for( i in 1:100){
+  if(i %% 50 == 0){print(i)}
   Data1 = gendata3(400,20,20,20,1)
   result = rgcca(Data1, connection = 1 - diag(length(Data1)), tau = rep(1, length(Data1)), ncomp = rep(1,
   length(Data1)), scheme = "centroid", init = "svd",
@@ -253,6 +301,7 @@ sd(f1_score, na.rm = FALSE)
 
 mean(MCC)
 sd(MCC, na.rm = FALSE)
+
 ```
 
 
@@ -334,123 +383,248 @@ sd(f1_score, na.rm = FALSE)
 mean(MCC)
 sd(MCC, na.rm = FALSE)
 
+
+
 ## N = 100
-ACC = rep(0,500)
-f1_score = rep(0,500)
-MCC = rep(0,500)
-for( i in 1:500){
-  if(i %% 100 == 0){print(i)}
-  Data1 = gendata3(100,20,20,20,1)
-  result = rgcca(Data1, connection = 1 - diag(length(Data1)), tau = rep(1, length(Data1)), ncomp = rep(1,
-  length(Data1)), scheme = "centroid", init = "svd",
-  bias = TRUE, tol = .Machine$double.eps, verbose = FALSE)
-  trans=result$Y
-  u=result$a[[1]]
-  v=result$a[[2]]
-  w=result$a[[3]]
+DATA_FINAL <- data.frame()
+for (s in c(1,2)){
+  for (n in c(100,200,400)){
+
+ACC_R = rep(0,100)
+F1_R = rep(0,100)
+MCC_R = rep(0,100)
+ACC_S = rep(0,100)
+F1_S = rep(0,100)
+MCC_S = rep(0,100)
+current_time <- Sys.time()
+  for( i in 1:100){
+    if(i %% 100 == 0){print(i)}
+    Data1 = gendata3(n,20,20,20,s)
+    result = rgcca(Data1, ncomp = rep(1,
+    length(Data1)), scheme = "centroid", init = "svd",
+    bias = TRUE, tol = .Machine$double.eps, verbose = FALSE)
+    trans=result$Y
+    u=result$a[[1]]
+    v=result$a[[2]]
+    w=result$a[[3]]
+    
+    r.1 = FS_MCC(u,v,w,20)
   
-  r.1 = FS_MCC(u,v,w)
-
-  ACC[i] = r.1$Accruacy
-  f1_score[i] = r.1$F1
-  MCC[i] = r.1$MCC
-}
-mean(ACC)
-sd(ACC, na.rm = FALSE)
-
-mean(f1_score)
-sd(f1_score, na.rm = FALSE)
-
-mean(MCC)
-sd(MCC, na.rm = FALSE)
-
-# N = 800
-ACC = rep(0,500)
-f1_score = rep(0,500)
-MCC = rep(0,500)
-for( i in 1:500){
-  if(i %% 100 == 0){print(i)}
-  Data1 = gendata3(800,20,20,20,1)
-  result = rgcca(Data1, connection = 1 - diag(length(Data1)), tau = rep(1, length(Data1)), ncomp = rep(1,
-  length(Data1)), scheme = "centroid", init = "svd",
-  bias = TRUE, tol = .Machine$double.eps, verbose = FALSE)
-  trans=result$Y
-  u=result$a[[1]]
-  v=result$a[[2]]
-  w=result$a[[3]]
+    ACC_R[i] = r.1$Accruacy
+    F1_R[i] = r.1$F1
+    MCC_R[i] = r.1$MCC
+    
+    
+    result = rgcca(Data1, connection = 1 - diag(length(Data1)), sparsity = rep(1, length(Data1)), ncomp = rep(1,
+    length(Data1)), scheme = "centroid", init = "svd",
+    bias = TRUE, tol = .Machine$double.eps, verbose = FALSE)
+    trans=result$Y
+    u=result$a[[1]]
+    v=result$a[[2]]
+    w=result$a[[3]]
+    
+    
+    r.1 = FS_MCC(u,v,w,20)
+    ACC_S[i] = r.1$Accruacy
+    F1_S[i] = r.1$F1
+    MCC_S[i] = r.1$MCC
   
-  r.1 = FS_MCC(u,v,w)
+  }
+past_time <- Sys.time()
+diff <- difftime(current_time, past_time)
+print(diff)
+if(s == 1){Scenario = 'Linear'}else
+  if(s == 2){Scenario = 'Sin'}else
+  if(s == 3){Scenario = 'Rev'}
+DATA_FINAL = rbind(DATA_FINAL,
+                   data.frame(
+                    Methods = "RGCCA",
+                    Scenario = Scenario,
+                    n = n,
+                    ACC = mean(ACC_R),
+                    F1 = mean(F1_R),
+                    MCC = mean(MCC_R),
+                    SDACC = sd(ACC_R, na.rm = T),
+                    SDF1 = sd(F1_R, na.rm = T),
+                    SDMCC = sd(MCC_R, na.rm = T),
+                    stringsAsFactors = FALSE
+                  ),
+                  data.frame(
+                    Methods = "SGCCA",
+                    Scenario = Scenario,
+                    n = n,
+                    ACC = mean(ACC_S),
+                    F1 = mean(F1_S),
+                    MCC = mean(MCC_S),
+                    SDACC = sd(ACC_S, na.rm = T),
+                    SDF1 = sd(F1_S, na.rm = T),
+                    SDMCC = sd(MCC_S, na.rm = T),
+                    stringsAsFactors = FALSE
+                  ))
 
-  ACC[i] = r.1$Accruacy
-  f1_score[i] = r.1$F1
-  MCC[i] = r.1$MCC
 }
-mean(ACC)
-sd(ACC, na.rm = FALSE)
+}
 
-mean(f1_score)
-sd(f1_score, na.rm = FALSE)
+write.csv(DATA_FINAL,"simulation1_sample.csv")
 
-mean(MCC)
-sd(MCC, na.rm = FALSE)
-# N = 1200
-ACC = rep(0,500)
-f1_score = rep(0,500)
-MCC = rep(0,500)
-for( i in 1:500){
-  if(i %% 100 == 0){print(i)}
-  Data1 = gendata3(1200,20,20,20,1)
-  result = rgcca(Data1, connection = 1 - diag(length(Data1)), tau = rep(1, length(Data1)), ncomp = rep(1,
-  length(Data1)), scheme = "centroid", init = "svd",
-  bias = TRUE, tol = .Machine$double.eps, verbose = FALSE)
-  trans=result$Y
-  u=result$a[[1]]
-  v=result$a[[2]]
-  w=result$a[[3]]
+
+DATA_FINAL <- data.frame()
+for (s in c(1,2)){
+  for (n in c(100,150,200)){
+
+ACC_R = rep(0,100)
+F1_R = rep(0,100)
+MCC_R = rep(0,100)
+ACC_S = rep(0,100)
+F1_S = rep(0,100)
+MCC_S = rep(0,100)
+
+  for( i in 1:100){
+    if(i %% 100 == 0){print(i)}
+    Data1 = gendata3(100,n,n,n,s)
+    result = rgcca(Data1, ncomp = rep(1,
+    length(Data1)), scheme = "centroid", init = "svd",
+    bias = TRUE, tol = .Machine$double.eps, verbose = FALSE)
+    trans=result$Y
+    u=result$a[[1]]
+    v=result$a[[2]]
+    w=result$a[[3]]
+    
+    r.1 = FS_MCC(u,v,w,n)
   
-  r.1 = FS_MCC(u,v,w)
-
-  ACC[i] = r.1$Accruacy
-  f1_score[i] = r.1$F1
-  MCC[i] = r.1$MCC
-}
-mean(ACC)
-sd(ACC, na.rm = FALSE)
-
-mean(f1_score)
-sd(f1_score, na.rm = FALSE)
-
-mean(MCC)
-sd(MCC, na.rm = FALSE)
-# N = 1500
-ACC = rep(0,500)
-f1_score = rep(0,500)
-MCC = rep(0,500)
-for( i in 1:500){
-  if(i %% 100 == 0){print(i)}
-  Data1 = gendata3(1500,20,20,20,1)
-  result = rgcca(Data1, connection = 1 - diag(length(Data1)), tau = rep(1, length(Data1)), ncomp = rep(1,
-  length(Data1)), scheme = "centroid", init = "svd",
-  bias = TRUE, tol = .Machine$double.eps, verbose = FALSE)
-  trans=result$Y
-  u=result$a[[1]]
-  v=result$a[[2]]
-  w=result$a[[3]]
+    ACC_R[i] = r.1$Accruacy
+    F1_R[i] = r.1$F1
+    MCC_R[i] = r.1$MCC
+    
+    Data1 = gendata3(100,n,n,n,s)
+    result = rgcca(Data1, connection = 1 - diag(length(Data1)), sparsity = rep(1, length(Data1)), ncomp = rep(1,
+    length(Data1)), scheme = "centroid", init = "svd",
+    bias = TRUE, tol = .Machine$double.eps, verbose = FALSE)
+    trans=result$Y
+    u=result$a[[1]]
+    v=result$a[[2]]
+    w=result$a[[3]]
+    
+    
+    r.1 = FS_MCC(u,v,w,n)
+    ACC_S[i] = r.1$Accruacy
+    F1_S[i] = r.1$F1
+    MCC_S[i] = r.1$MCC
   
-  r.1 = FS_MCC(u,v,w)
+  }
 
-  ACC[i] = r.1$Accruacy
-  f1_score[i] = r.1$F1
-  MCC[i] = r.1$MCC
+if(s == 1){Scenario = 'Linear'}else
+  if(s == 2){Scenario = 'Sin'}else
+  if(s == 3){Scenario = 'Rev'}
+DATA_FINAL = rbind(DATA_FINAL,
+                   data.frame(
+                    Methods = "RGCCA",
+                    Scenario = Scenario,
+                    n = n,
+                    ACC = mean(ACC_R, na.rm = T),
+                    F1 = mean(F1_R, na.rm = T),
+                    MCC = mean(MCC_R, na.rm = T),
+                    SDACC = sd(ACC_R, na.rm = T),
+                    SDF1 = sd(F1_R, na.rm = T),
+                    SDMCC = sd(MCC_R, na.rm = T),
+                    stringsAsFactors = FALSE
+                  ),
+                  data.frame(
+                    Methods = "SGCCA",
+                    Scenario = Scenario,
+                    n = n,
+                    ACC = mean(ACC_S, na.rm = T),
+                    F1 = mean(F1_S, na.rm = T),
+                    MCC = mean(MCC_S, na.rm = T),
+                    SDACC = sd(ACC_S, na.rm = T),
+                    SDF1 = sd(F1_S, na.rm = T),
+                    SDMCC = sd(MCC_S, na.rm = T),
+                    stringsAsFactors = FALSE
+                  ))
+
 }
-mean(ACC)
-sd(ACC, na.rm = FALSE)
+}
 
-mean(f1_score)
-sd(f1_score, na.rm = FALSE)
+write.csv(DATA_FINAL,"simulation1_p_HD.csv")
 
-mean(MCC)
-sd(MCC, na.rm = FALSE)
+
+DATA_FINAL <- data.frame()
+for (s in c(1,2)){
+  for (vv in c(8)){
+
+ACC_R = rep(0,100)
+F1_R = rep(0,100)
+MCC_R = rep(0,100)
+ACC_S = rep(0,100)
+F1_S = rep(0,100)
+MCC_S = rep(0,100)
+
+  for( ii in 1:100){
+    if(ii %% 100 == 0){print(ii)}
+    #Data1 = gendata3(400,20,20,20,s)
+    Data1 = gendatan(vv,300,20,20,20,s)
+    result = rgcca(Data1, ncomp = rep(1,length(Data1)), scheme = "centroid", init = "svd")
+    trans=result$Y
+    u=result$a[[1]]
+    v=result$a[[2]]
+    w=result$a[[3]]
+    
+    r.1 = FS_MCC(u,v,w,20)
+  
+    ACC_R[i] = r.1$Accruacy
+    F1_R[i] = r.1$F1
+    MCC_R[i] = r.1$MCC
+    
+    
+    result = rgcca(Data1, connection = 1 - diag(length(Data1)), sparsity = rep(1, length(Data1)), ncomp = rep(1,
+    length(Data1)), scheme = "centroid", init = "svd",
+    bias = TRUE, tol = .Machine$double.eps, verbose = FALSE)
+    trans=result$Y
+    u=result$a[[1]]
+    v=result$a[[2]]
+    w=result$a[[3]]
+    
+    
+    r.1 = FS_MCC(u,v,w,20)
+    ACC_S[i] = r.1$Accruacy
+    F1_S[i] = r.1$F1
+    MCC_S[i] = r.1$MCC
+  
+  }
+
+if(s == 1){Scenario = 'Linear'}else
+  if(s == 2){Scenario = 'Sin'}else
+  if(s == 3){Scenario = 'Rev'}
+DATA_FINAL = rbind(DATA_FINAL,
+                   data.frame(
+                    Methods = "RGCCA",
+                    Scenario = Scenario,
+                    n = vv,
+                    ACC = mean(ACC_R),
+                    F1 = mean(F1_R),
+                    MCC = mean(MCC_R),
+                    SDACC = sd(ACC_R, na.rm = T),
+                    SDF1 = sd(F1_R, na.rm = T),
+                    SDMCC = sd(MCC_R, na.rm = T),
+                    stringsAsFactors = FALSE
+                  ),
+                  data.frame(
+                    Methods = "SGCCA",
+                    Scenario = Scenario,
+                    n = vv,
+                    ACC = mean(ACC_S),
+                    F1 = mean(F1_S),
+                    MCC = mean(MCC_S),
+                    SDACC = sd(ACC_S, na.rm = T),
+                    SDF1 = sd(F1_S, na.rm = T),
+                    SDMCC = sd(MCC_S, na.rm = T),
+                    stringsAsFactors = FALSE
+                  ))
+
+}
+}
+
+write.csv(DATA_FINAL,"simulation1_v.csv")
 ```
 
 ### Linear SGCCA

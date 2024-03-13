@@ -84,12 +84,14 @@ def create_synthData(N=400, outDir='./', device='cpu'):
     views = [torch.tensor(view).to(device) for view in views]
     return views
 
-def create_synthData_new(N=400, outDir='./', device='cpu',mode=1,F=20):
+def create_synthData_new(v=2, N=400, outDir='./', device='cpu', mode=1, F=20):
     '''
     creating Main paper Synth data,
     N : number of data
     F$ : number of features in view $ 
     '''
+    #np.random.seed(0)
+    torch.manual_seed(0)
     views  = []
     F1 = F
     F2 = F  
@@ -99,22 +101,38 @@ def create_synthData_new(N=400, outDir='./', device='cpu',mode=1,F=20):
     V2 = np.random.randn(N, F2)
     V3 = np.random.randn(N, F3)
     views.append(V1)
-    if mode==1:
-        V2[:,0]=V1[:,0]+V1[:,1]-V2[:,1]
-        V3[:,0]=V1[:,0]+2*V1[:,1]-V3[:,1]
-        
-    if mode==2:
-        V2[:,0]=np.sin(V1[:,0]+V1[:,1])-V2[:,1]
-        V3[:,0]=np.cos(V2[:,0]+V2[:,1])-V3[:,1]
-        
-    if mode==3:
-        V2[:,0]=(V1[:,0]+V1[:,1]) ** 3-V2[:,1]
-        V3[:,0]=(V1[:,0]+V1[:,1]) ** 2-V3[:,1]
+    if v == 2:
+        if mode == 1:
+            V2[:,0]=V1[:,0] + V1[:,1] + np.random.randn(N) * 0.05 - V2[:,1]
+            V3[:,0]=V1[:,0] + V1[:,1] + np.random.randn(N) * 0.05 - V3[:,1]
+            
+        if mode == 2:
+            V2[:,0]=np.exp(V1[:,0]+V1[:,1]) -V2[:,1]
+            V3[:,0]=np.sin(V1[:,0]+V1[:,1]) -V3[:,1]
+            
+        if mode == 3:
+            V2[:,0]=(V1[:,0]+V1[:,1]) ** 3-V2[:,1]
+            V3[:,0]=(V1[:,0]+V1[:,1]) ** 2-V3[:,1]
 
-    views.append(V2) 
+    if v == 4:
+        if mode == 1:
+            V2[:,0]=V1[:,0]+V1[:,1]+V1[:,2]+V1[:,3]-V2[:,1]-V2[:,2]-V2[:,3]
+            V3[:,0]=V1[:,0]+V1[:,1]+V1[:,2]+V1[:,3]-V3[:,1]-V3[:,2]-V3[:,3]
+            
+        if mode == 2:
+            V2[:,0]=np.sin(V1[:,0]+V1[:,1]+V1[:,2]+V1[:,3])-V2[:,1]-V2[:,2]-V2[:,3]
+            V3[:,0]=np.cos(V1[:,0]+V1[:,1]+V1[:,2]+V1[:,3])-V3[:,1]-V3[:,2]-V3[:,3]
+            
+        if mode == 3:
+            V2[:,0]=(V1[:,0]+V1[:,1]) ** 3-V2[:,1]
+            V3[:,0]=(V1[:,0]+V1[:,1]) ** 2-V3[:,1]
+
+    views.append(V2)
     views.append(V3)
 
+    correlation_matrix = np.corrcoef(V1.T, V2.T)
     views = [torch.tensor(view).to(device) for view in views]
     return views
+
 if __name__ == '__main__':
    create_synthData() 
