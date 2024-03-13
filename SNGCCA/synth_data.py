@@ -55,7 +55,7 @@ def create_synthData_new(v=2, N=400, outDir='./', device='cpu', mode=1, F=20):
         # Generate nonzero elements from a uniform distribution
         nonzero_values = np.random.uniform(low=-1, high=-0.9, size=nonzero_elements)
         nonzero_values = np.concatenate([nonzero_values, np.random.uniform(low=0.9, high=1, size=nonzero_elements)])
-        #nonzero_values = np.ones(1000)
+        # nonzero_values = np.ones(1000)
 
         # Shuffle the nonzero values
         np.random.shuffle(nonzero_values)
