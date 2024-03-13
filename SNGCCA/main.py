@@ -135,12 +135,6 @@ class Solver():
             u = self.SNGCCA.fit(views, eps, maxit, b, loss="SGD", patience=10, logging=logging)
         return u
 
-    def early_stop(self):
-        pass
-
-    def test(self):
-        pass
-
 
 if __name__ == '__main__':
     ############
