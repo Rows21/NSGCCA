@@ -28,7 +28,10 @@ We propose **SNGCCA**.
  <!-- ✅ ⬜️  -->
  ## Results 
  ### Simulation Studies
-
+<p>
+<img src="SNGCCA//Results/Figure2/Fig2c.png" width=100% height=40% 
+class="center">
+</p>
 
 ### TCGA breast cancer database
 

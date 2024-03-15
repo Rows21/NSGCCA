@@ -177,7 +177,7 @@ if __name__ == '__main__':
     while rep != 100:
         views = create_synthData_new(10,N, mode=2, F=100)
         solver = Solver(device)
-        b = [0.006,0.004,0.005]
+        b = [0.005,0.003,0.003]
         try:
             u = solver.SNGCCA.fit_admm2(views, lamb=b,logging=0)  
         except:
