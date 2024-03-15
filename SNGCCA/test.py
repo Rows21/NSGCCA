@@ -2,7 +2,7 @@ import torch
 import numpy as np
 import pandas as pd
 
-from main import Solver
+from SNGCCA.main import Solver
 torch.set_default_tensor_type(torch.DoubleTensor)
 
 from synth_data import create_synthData_new

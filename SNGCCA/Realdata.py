@@ -1,9 +1,9 @@
-from main import Solver
+#from SNGCCA.main import Solver
 import torch
 import numpy as np
 import pandas as pd
 import os
-from synth_data import create_synthData_new, create_synthData_multi
+#from synth_data import create_synthData_new, create_synthData_multi
 
 if __name__ == '__main__':
 
@@ -37,7 +37,7 @@ if __name__ == '__main__':
         print(f'view_{i} :  {view.shape}')
         view = view.to("cpu")
 
-    solver = Solver(device)
+    #solver = Solver(device)
 
     # Start Training
     u_list = []

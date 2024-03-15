@@ -18,10 +18,11 @@ library(ggthemr)
 ```{r Fig1a}
 data = read.csv('simu1_p.tsv', sep='\t')
 
-sp = ggplot(data = data, aes(x=n,y=Values,color=Methods)) + geom_line(size=0.5) + geom_point()
+sp = ggplot(data = data, aes(x=n,y=Values,color=Methods, group=Methods)) + geom_line(size=0.6,position = position_dodge(0.05)) + geom_point(position = position_dodge(0.05))+
+  geom_errorbar(aes(ymin = Values - 1.96 * Confidence/10, ymax = Values + 1.96 * Confidence/10),width=0.1,position = position_dodge(0.05))
 
 sp + facet_grid(Scenario ~ type) +xlab("Variable Number")+ylab("Scores")+
-  scale_color_manual(values = c("#f12711","#f7b733", "#11998e","#6b6b83", "#1c92d2"))+
+  scale_color_manual(values = c("#1c92d2","#f7b733", "#11998e","#6b6b83", "#f12711"))+
   theme(strip.text.x = element_text(size=12),
         strip.text.y = element_text(size=12),
         legend.position = 'bottom') + scale_x_log10()
@@ -34,10 +35,11 @@ ggsave('Fig2a.eps')
 ```{r Fig1b}
 data = read.csv('simu1_s.tsv', sep='\t')
 
-sp = ggplot(data = data, aes(x=n,y=Values,color=Methods)) + geom_line(size=0.6) + geom_point()
+sp = ggplot(data = data, aes(x=n,y=Values,color=Methods, group=Methods)) + geom_line(size=0.6,position = position_dodge(0.05)) + geom_point(position = position_dodge(0.05))+
+  geom_errorbar(aes(ymin = Values - 1.96 * Confidence/10, ymax = Values + 1.96 * Confidence/10),width=0.1,position = position_dodge(0.05))
 
 sp + facet_grid(Scenario ~ type) +xlab("Sample Size")+ylab("Scores")+
-  scale_color_manual(values = c("#f12711","#f7b733", "#11998e","#6b6b83", "#1c92d2"))+
+  scale_color_manual(values = c("#1c92d2","#f7b733", "#11998e","#6b6b83", "#f12711"))+
   theme(strip.text.x = element_text(size=12),
         strip.text.y = element_text(size=12),
         legend.position = 'bottom')
@@ -50,17 +52,18 @@ ggsave('Fig2b.png')
 ```{r Fig1c}
 data = read.csv('simu1_v.tsv', sep='\t')
 
-sp = ggplot(data = data, aes(x=n,y=Values,color=Methods)) + geom_line(size=0.6) + geom_point()
+sp = ggplot(data = data, aes(x=n,y=Values,color=Methods, group=Methods)) + geom_line(size=0.6,position = position_dodge(0.05)) + geom_point(position = position_dodge(0.05))+
+  geom_errorbar(aes(ymin = Values - 1.96 * Confidence/10, ymax = Values + 1.96 * Confidence/10),width=0.1,position = position_dodge(0.05))
 
 sp + facet_grid(Scenario ~ type) +xlab("Sparsity")+ylab("Scores")+
-  scale_color_manual(values = c("#f12711","#f7b733", "#11998e","#6b6b83", "#1c92d2"))+
+  scale_color_manual(values = c("#1c92d2","#f7b733", "#11998e","#6b6b83", "#f12711"))+
   theme(strip.text.x = element_text(size=12),
         strip.text.y = element_text(size=12),
         legend.position = 'bottom')+
   scale_x_log10()
 
 ggthemr('fresh')
-ggsave('Fig2c.eps')
+ggsave('Fig2c.png')
 
 ```
 
@@ -70,7 +73,7 @@ sp = ggplot(data, aes(x = Runtime, y = Accuracy, color = Method,shape=Settings))
   geom_point(size=4)
 
 ggthemr('fresh')
-sp +scale_color_manual(values = c("#f12711","#f7b733", "#11998e","#6b6b83", "#1c92d2"))+
+sp +scale_color_manual(values = c("#1c92d2","#f7b733", "#11998e","#6b6b83", "#f12711"))+
   theme(strip.text.x = element_text(size=12),
         strip.text.y = element_text(size=12),
         #legend.position = 'bottom'

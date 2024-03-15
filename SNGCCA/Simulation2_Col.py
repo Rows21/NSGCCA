@@ -1,4 +1,4 @@
-from main import Solver
+from SNGCCA.main import Solver
 import torch
 from synth_data import create_synthData_new, create_synthData_multi
 from validation_method import FS_MCC

@@ -8,7 +8,7 @@ import numpy as np
 def eval(U, Label):
     tp, tn, fn, fp = 0, 0, 0, 0
     for i in range(len(U)):
-        pred = torch.abs(U[i]) > torch.mean(torch.abs(U[i]))
+        pred = torch.abs(U[i]) > 1e-2
         C = confusion_matrix(pred, Label)
         tp += C[1][1]
         tn += C[0][0]
@@ -29,7 +29,7 @@ def eval(U, Label):
     return precision, recall, acc, f1, mcc
 
 def swiss_score(X, labels):
-    # 计算样本间的欧氏距离
+    # Cal Euclidean Distance
     distances = pairwise_distances(X, metric='euclidean')
     
     n = len(X)

@@ -99,19 +99,24 @@ def create_synthData_new(v=2, N=400, outDir='./', device='cpu', mode=1, F=20):
             # Generate random samples from a normal distribution with mean 0 and standard deviation 1
             samples = rng.normal(0, 1, N)
             # Scale and shift the samples to fit the desired range [-10π, 10π]
-            scaled_samples = samples * (2 * np.pi)
+            v1 = samples * (2 * np.pi)
+            v2 = np.cos(v1)
+            v3 = v1 * np.cos(v1)
+            scaled_v1 = ((v1 - np.mean(v1)) / np.std(v1)) * 2
+            scaled_v2 = ((v2 - np.mean(v2)) / np.std(v2)) * 2
+            scaled_v3 = ((v3 - np.mean(v2)) / np.std(v3)) * 2
 
-            V1[:,i] = scaled_samples
-            V2[:,i] = np.cos(scaled_samples) * 5
-            V3[:,i] = scaled_samples * np.cos(scaled_samples)
+            V1[:,i] = scaled_v1 + V1[:,i]
+            V2[:,i] = scaled_v2 + V2[:,i]
+            V3[:,i] = scaled_v3 + V3[:,i]
 
     views  = []
     views.append(V1)
     views.append(V2)
     views.append(V3)
     
-    print(np.sum(V1[:,0:v].T @ V2[:,0:v]))
-    print(np.sum(V1.T @ V2))
+    #print(np.sum(V1[:,0:v].T @ V2[:,0:v]))
+    #print(np.sum(V1.T @ V2))
     
     #correlation_matrix = np.corrcoef(V1.T, V2.T)
     #print(correlation_matrix)
@@ -121,12 +126,12 @@ def create_synthData_new(v=2, N=400, outDir='./', device='cpu', mode=1, F=20):
 
 if __name__ == '__main__':
     import matplotlib.pyplot as plt
-    views = create_synthData_new(10,100, mode=2, F=200)
-    x = views[0].numpy()[:,0:10]
+    views = create_synthData_new(5,100, mode=1, F=100)
+    x = views[0].numpy()[:,0]
     #x = np.sum(x, axis=1)
-    y = views[1].numpy()[:,0:10]
+    y = views[1].numpy()[:,0]
     #y = np.sum(y, axis=1)
-    z = views[2].numpy()[:,0:10]
+    z = views[2].numpy()[:,0]
     #z = np.sum(z, axis=1)
     plt.plot(x, y, 'bo', label='Data 1')
     plt.show()

@@ -27,7 +27,7 @@ from matplotlib.backends.backend_pdf import PdfPages
 import pandas as pd
 
 torch.set_default_tensor_type(torch.DoubleTensor)
-from main import Solver
+from SNGCCA.main import Solver
 from loss_objectives import new_loss
 
 ############
