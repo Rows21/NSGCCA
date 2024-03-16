@@ -325,7 +325,7 @@ class SNGCCA():
                 #print(f"outer_iter=: {outer_iter}, Loss: {sum(diff_list)}, diff_tol: {L_list}, diff_list: {diff_list}, obj: {F_trial}")
                 progress_bar.set_description(f"outer_iter=: {outer_iter},obj: {'{:.4g}'.format(F_trial)}, Loss: {loss}, diff_tol: {L_list}, diff_list: {diff_list}")
                 #progress_bar.set_postfix({'Iter': outer_iter+1})
-            if sum([abs(i.item()) for i in diff_list])/len(diff_list) < 1e-1/3:
+            if sum([abs(i.item()) for i in diff_list])/len(diff_list) < 6e-2/3:
                 return self.u_list
         return self.u_list
 
