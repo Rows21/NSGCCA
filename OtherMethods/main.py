@@ -3,7 +3,7 @@ import torch
 import torch.nn as nn
 import numpy as np
 from linear_gcca import linear_gcca
-from synth_data import create_synthData
+from synth_data import create_synthData_new
 from torch.utils.data import BatchSampler, SequentialSampler, RandomSampler
 from models import DeepGCCA
 # from utils import load_data, svm_classify
@@ -202,7 +202,7 @@ if __name__ == '__main__':
     ############
 
     N = 400
-    views = create_synthData(N)
+    views = create_synthData_new(N)
     print(f'input views shape :')
     for i, view in enumerate(views):
         print(f'view_{i} :  {view.shape}')
