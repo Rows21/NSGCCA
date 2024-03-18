@@ -66,18 +66,18 @@ apply_linear_gcca = True
 # 1
 N = 100
 U_sum = []
-u1 = np.empty((100, 30))
-u2 = np.empty((100, 30))
-u3 = np.empty((100, 30))
+u1 = np.empty((100, 200))
+u2 = np.empty((100, 200))
+u3 = np.empty((100, 200))
 outputs_sum = []
 test = []
 for i in range(3):
-    testm = torch.eye(30)
+    testm = torch.eye(200)
     test.append(testm)
 
 import pandas as pd
 for r in range(100):
-    views = create_synthData_new(v=5,N=N,mode=2,F=30)
+    views = create_synthData_new(v=5,N=N,mode=2,F=200)
     print(f'input views shape :')
     for i, view in enumerate(views):
         print(f'view_{i} :  {view.shape}')
