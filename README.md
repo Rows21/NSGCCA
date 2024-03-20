@@ -17,7 +17,11 @@ class="center">
 We propose **SNGCCA**.
 
  ## Installation
-
+Clone this repository and install other required packages:
+```
+git clone git@github.com:Rows21/SNGCCA
+pip install -r requirements.txt
+```
 
  ## Datasets
   - [x] Synthetic Datasets [synth_data.py](/SNGCCA/synth_data.py)
