@@ -28,6 +28,14 @@ We propose **SNGCCA**.
  <!-- ✅ ⬜️  -->
  ## Results 
  ### Simulation Studies
+ <p>
+<img src="SNGCCA/Results/Figure2/Fig2a.png" width=100% height=40% 
+class="center">
+</p>
+<p>
+<img src="SNGCCA/Results/Figure2/Fig2b.png" width=100% height=40% 
+class="center">
+</p>
 <p>
 <img src="SNGCCA/Results/Figure2/Fig2c.png" width=100% height=40% 
 class="center">

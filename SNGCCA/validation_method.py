@@ -21,12 +21,12 @@ def eval(U, Label):
         f1 = 2 * precision * recall / (precision + recall)
     else:
         f1 = 0
-
+    spe = tn / (tn + fp)
     acc = (tp + tn) / (tp+tn+fp+fn)
 
     mcc = (tp * tn - fp * fn) / np.sqrt((tp + fp) * (tp + fn) * (tn + fp) * (tn + fn))
 
-    return precision, recall, acc, f1, mcc
+    return spe, precision, recall, acc, f1, mcc
 
 def swiss_score(X, labels):
     # Cal Euclidean Distance

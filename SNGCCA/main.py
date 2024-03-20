@@ -162,8 +162,11 @@ if __name__ == '__main__':
     import numpy as np
     seed = 0
     torch.manual_seed(seed)
+
+    path = 'C:/Users/Programer/Documents/GitHub/SGCCA_HSIC/SNGCCA/Simulation/Nonlinear/100_100_5/'
+    u1 = np.genfromtxt(path + 'sgcca_u1.csv', delimiter=',')
     
-    N = 200
+    N = 100
     rep = 0
     u1 = []
     u2 = []
@@ -175,7 +178,7 @@ if __name__ == '__main__':
     REC = []
 
     while rep != 100:
-        views = create_synthData_new(5,N, mode=2, F=100)
+        views = create_synthData_new(5,N, mode=1, F=100)
         solver = Solver(device)
         b = [0.006,0.008,0.008]
         try:
@@ -184,7 +187,7 @@ if __name__ == '__main__':
             continue
         
         Label = torch.cat([torch.ones(5, dtype=torch.bool), torch.zeros(95, dtype=torch.bool)])
-        pre, rec, acc, f1, mcc = eval(u, Label)
+        spe, pre, rec, acc, f1, mcc = eval(u, Label)
         if mcc > 0.20:
             rep += 1
             print("REP=",rep)
@@ -197,7 +200,7 @@ if __name__ == '__main__':
             u2.append(u[1])
             u3.append(u[2])
 
-    merged_array = merged_array = np.empty((100, 50))
+    merged_array = merged_array = np.empty((100, 200))
 
     for i, arr in enumerate(u1):
         merged_array[i] = u1[i].numpy().flatten()

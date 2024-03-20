@@ -1,4 +1,4 @@
-#from SNGCCA.main import Solver
+from main import Solver
 import torch
 import numpy as np
 import pandas as pd
@@ -37,7 +37,7 @@ if __name__ == '__main__':
         print(f'view_{i} :  {view.shape}')
         view = view.to("cpu")
 
-    #solver = Solver(device)
+    solver = Solver(device)
 
     # Start Training
     u_list = []
@@ -59,11 +59,6 @@ if __name__ == '__main__':
 
         test_list = []
         train_list = []
-
-        for _, view in enumerate(views):
-            train_list.append(view[fold_index, :])
-            non_fold_index = [num for num in shuffled_index if num not in fold_index]
-            test_list.append(view[non_fold_index, :])
         '''
         print(f'input views shape :')
         for i, view in enumerate(test_list):
@@ -76,25 +71,8 @@ if __name__ == '__main__':
         #print(b0)
 
         ## fit results
-        b = [0.001,0.001,0.002]
+        b = [0.3,0.001,0.1]
         u = solver.SNGCCA.fit_admm2(views, lamb=b)
-            
-        K_test = []
-        cK_test = []
-        for j, view in enumerate(test_list):
-            Xu = view.to(device) @ u[j]
-            sigma = None
-            if sigma is None:
-                K, a = solver.SNGCCA.rbf_kernel(Xu)
-            else:
-                K, a = solver.SNGCCA.rbf_kernel(Xu, sigma)
-            cK = solver.SNGCCA.centre_kernel(K)
-            K_test.append(K)
-            cK_test.append(cK)
-
-        ## get obj
-        obj_temp.append(solver.SNGCCA.ff(K_test, cK_test))
-        test_total.append(test_list)
 
         df_u1 = pd.DataFrame(u[0], columns=['u1_' + str(rep + 1)])
         df_u1_total = pd.concat([df_u1_total, df_u1], axis=1)

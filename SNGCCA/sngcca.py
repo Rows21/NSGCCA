@@ -133,6 +133,7 @@ class SNGCCA():
             #y = torch.tensor(y).reshape(-1,1)
         
         for i, view in enumerate(views):
+            n, p = view.shape
             y = sum([self.y_lab[j] for j in range(len(views))])/(len(views)) # if j != i
             y = y / torch.sqrt(torch.sum(y ** 2))
             sigmaY2 = torch.var(y)
@@ -150,7 +151,7 @@ class SNGCCA():
             self.L_list.append(L[-1])
 
             # Set initial H, Gamma
-            H = sqcovx * Pi * sqcovx
+            H = self.sqcovx_list[i] * self.Pi_list[i] * self.sqcovx_list[i]
             self.H_list.append(H)
             Gamma = torch.zeros((p, p))
             self.Gamma_list.append(Gamma* (n_views - 1))
@@ -159,7 +160,7 @@ class SNGCCA():
         #lamb = [i/100 * 1.5 for i in L_list]
         outer_maxiter = 1000
         outer_tol = 1e-5
-        inner_maxiter = 1000
+        inner_maxiter = 500
         inner_tol = 1e-3
         outer_error = 1
         diff_list = [999] * n_views
@@ -297,8 +298,10 @@ class SNGCCA():
                         L, _ = torch.linalg.eigh((Coef + Coef.t()) / 2)
                         L_list[i] = L[-1]
                         
-                        sx = torch.diag(view @ Pi @ view.T).reshape(-1,1)
-                        Kx_new = sx + sx.T - 2 * view @ Pi @ view.T
+                        K0 = view @ Pi_list[i] @ view.T
+                        #K0 = K0 / torch.norm(K0)
+                        sx = torch.diag(K0).reshape(-1,1)
+                        Kx_new = sx + sx.T - 2 * K0
                         Kx_new = torch.exp(-Kx_new / 2)
                         self.K_list[i] = Kx_new
 
@@ -325,7 +328,7 @@ class SNGCCA():
                 #print(f"outer_iter=: {outer_iter}, Loss: {sum(diff_list)}, diff_tol: {L_list}, diff_list: {diff_list}, obj: {F_trial}")
                 progress_bar.set_description(f"outer_iter=: {outer_iter},obj: {'{:.4g}'.format(F_trial)}, Loss: {loss}, diff_tol: {L_list}, diff_list: {diff_list}")
                 #progress_bar.set_postfix({'Iter': outer_iter+1})
-            if sum([abs(i.item()) for i in diff_list])/len(diff_list) < 6e-2/3:
+            if sum([abs(i.item()) for i in diff_list])/len(diff_list) < 1e-1/3:
                 return self.u_list
         return self.u_list
 
