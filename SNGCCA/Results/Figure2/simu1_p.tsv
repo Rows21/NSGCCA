@@ -120,7 +120,7 @@ DGCCA	NonLinear	80	Recall	0.0313	0.0099
 DGCCA	NonLinear	100	Recall	0.0272	0.0085
 DGCCA	NonLinear	200	Recall	0.0147	0.0078
 RGCCA	Linear	30	Recall	0.1663	0.0095
-RGCCA	Linear	50	Recall	0.9975	0.0075
+RGCCA	Linear	50	Recall	0.0997	0.0075
 RGCCA	Linear	80	Recall	0.0628	0.0046
 RGCCA	Linear	100	Recall	0.0504	0.0039
 RGCCA	Linear	200	Recall	0.0246	0.0025
