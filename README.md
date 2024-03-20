@@ -28,16 +28,24 @@ We propose **SNGCCA**.
  <!-- ✅ ⬜️  -->
  ## Results 
  ### Simulation Studies
+ Variable Number
  <p>
 <img src="SNGCCA/Results/Figure2/Fig2a.png" width=100% height=40% 
 class="center">
 </p>
+Sample Size
 <p>
 <img src="SNGCCA/Results/Figure2/Fig2b.png" width=100% height=40% 
 class="center">
 </p>
+Sparsity
 <p>
 <img src="SNGCCA/Results/Figure2/Fig2c.png" width=100% height=40% 
+class="center">
+</p>
+Runtime vs Recall
+<p>
+<img src="SNGCCA/Results/Figure2/FigFR.png" width=100% height=40% 
 class="center">
 </p>
 

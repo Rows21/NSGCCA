@@ -72,18 +72,18 @@ u3 = np.empty((100, 200))
 outputs_sum = []
 test = []
 for i in range(3):
-    testm = torch.eye(200)
+    testm = torch.eye(100)
     test.append(testm)
 
 import pandas as pd
-for r in range(100):
-    views = create_synthData_new(v=5,N=N,mode=2,F=200)
+start_time = time.time()
+for r in range(10):
+    views = create_synthData_new(v=5,N=N,mode=2,F=100)
     print(f'input views shape :')
     for i, view in enumerate(views):
         print(f'view_{i} :  {view.shape}')
         view = view.to(device)
-
-
+    start_time = time.time()
     # size of the input for view 1 and view 2
     input_shape_list = [view.shape[-1] for view in views]
 
@@ -100,8 +100,7 @@ for r in range(100):
     # test1, test2 = data1[2][0], data2[2][0]
 
     solver.fit(views, checkpoint=save_name)
-
-
+    end_time = time.time()
     # TODO: Save l_gcca model if needed
     _ , _, outputs_def = solver.test(test, apply_linear_gcca)
 
@@ -120,6 +119,8 @@ for r in range(100):
     u3[r] = C.numpy().flatten()
     outputs_sum.append(os)
     
+
+time_diff = end_time - start_time
 np.savetxt('dgcca_u1.csv', u1, delimiter=',')
 np.savetxt('dgcca_u2.csv', u2, delimiter=',')
 np.savetxt('dgcca_u3.csv', u3, delimiter=',')
