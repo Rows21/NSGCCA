@@ -34,13 +34,13 @@ We propose **SNGCCA**.
 </div>
 <div class="images" >
 	<div class="mid">
-		<img src="SNGCCA/Results/Figure2/Fig2a.png" width=30% height=10% class="center"/>
+		<img src="SNGCCA/Results/Figure2/Fig2a.png" />
 	</div>
 	<div class="mid">
-		<img src="SNGCCA/Results/Figure2/Fig2b.png" width=30% height=10% class="center"/>
+		<img src="SNGCCA/Results/Figure2/Fig2b.png" />
 	</div>
 	<div class="mid">
-		<img src="SNGCCA/Results/Figure2/Fig2c.png" width=30% height=10% class="center"/>
+		<img src="SNGCCA/Results/Figure2/Fig2c.png" />
 	</div>
 </div>
 <div style="clear:both;"></div>
