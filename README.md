@@ -28,26 +28,19 @@ We propose **SNGCCA**.
  <!-- ✅ ⬜️  -->
  ## Results 
  ### Simulation Studies
- Variable Number
- <p>
-<img src="SNGCCA/Results/Figure2/Fig2a.eps" width=100% height=40% 
-class="center">
-</p>
-Sample Size
-<p>
-<img src="SNGCCA/Results/Figure2/Fig2b.eps" width=100% height=40% 
-class="center">
-</p>
-Sparsity
-<p>
-<img src="SNGCCA/Results/Figure2/Fig2c.eps" width=100% height=40% 
-class="center">
-</p>
-Runtime vs Recall
-<p>
-<img src="SNGCCA/Results/Figure2/FigFR.png" width=100% height=40% 
-class="center">
-</p>
+
+<div style="display: flex; flex-direction: row;">
+  <div style="flex: 1;">
+    <img src="SNGCCA/Results/Figure2/Fig2a.png" style="width: 100%; height: 100%;">
+  </div>
+  <div style="flex: 1;">
+    <img src="SNGCCA/Results/Figure2/Fig2b.png" style="width: 100%; height: 100%;">
+  </div>
+  <div style="flex: 1;">
+    <img src="SNGCCA/Results/Figure2/Fig2c.png" style="width: 100%; height: 100%;">
+  </div>
+</div>
+<p> <img src="SNGCCA/Results/Figure2/FigFR.png" width=100% height=40% class="center"> </p>
 
 ### Real-World Studies -- TCGA breast cancer database
 

@@ -28,7 +28,7 @@ sp + facet_grid(Scenario ~ type) +xlab("Variable Number")+ylab("Scores")+
         legend.position = 'bottom') + scale_x_log10()
 
 ggthemr('fresh')
-ggsave('Fig2a.eps')
+ggsave('Fig2a.png')
 
 ```
 
@@ -45,7 +45,7 @@ sp + facet_grid(Scenario ~ type) +xlab("Sample Size")+ylab("Scores")+
         legend.position = 'bottom') #+ scale_x_log10()
 
 ggthemr('fresh')
-ggsave('Fig2b.eps')
+ggsave('Fig2b.png')
 
 ```
 
@@ -62,7 +62,7 @@ sp + facet_grid(Scenario ~ type) +xlab("Sparsity")+ylab("Scores")+
         legend.position = 'bottom') + scale_x_log10()
 
 ggthemr('fresh')
-ggsave('Fig2c.eps')
+ggsave('Fig2c.png')
 
 ```
 
@@ -78,6 +78,6 @@ sp +scale_color_manual(values = c("#1c92d2","#f7b733", "#11998e","#6b6b83", "#f1
         #legend.position = 'bottom'
         ) + scale_x_log10()
 
-ggsave('FigFR.eps')
+ggsave('FigFR.png')
 
 ```
