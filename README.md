@@ -31,17 +31,16 @@ We propose **SNGCCA**.
 
 <div class="main">
 <div class="tag">
-	分类小贴士
 </div>
 <div class="images" >
 	<div class="mid">
-		<img src="SNGCCA/Results/Figure2/Fig2a.png" />
+		<img src="SNGCCA/Results/Figure2/Fig2a.png" width=30% height=10% class="center"/>
 	</div>
 	<div class="mid">
-		<img src="SNGCCA/Results/Figure2/Fig2b.png" />
+		<img src="SNGCCA/Results/Figure2/Fig2b.png" width=30% height=10% class="center"/>
 	</div>
 	<div class="mid">
-		<img src="SNGCCA/Results/Figure2/Fig2c.png" />
+		<img src="SNGCCA/Results/Figure2/Fig2c.png" width=30% height=10% class="center"/>
 	</div>
 </div>
 <div style="clear:both;"></div>
