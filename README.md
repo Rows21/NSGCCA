@@ -27,7 +27,7 @@ pip install -r requirements.txt
   - [x] Synthetic Datasets [synth_data.py](/SNGCCA/synth_data.py)
   - [x] TCGA Breast Cancer Database [RealData](/SNGCCA/RealData/) from (https://tcga-data.nci.nih.gov/docs/publications)
  
- (Feel free to post suggestions in issues of recommending latest proposed CCA network for comparison. Currently, the network folder is to put the current SOTA transformer. We can further add the recommended network in it for training.)
+ (Feel free to post suggestions in issues of recommending latest proposed CCA network for comparison. Currently, the network folder is to put the current SOTA models. We can further add the recommended network in it for training.)
  
  <!-- ✅ ⬜️  -->
  ## Results 
