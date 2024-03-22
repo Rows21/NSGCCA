@@ -7,17 +7,17 @@ import seaborn as sns
 from scipy.stats import spearmanr
 
 #pearson cor
-Labelpath1 = 'C:/Users/Programer/Documents/GitHub/SGCCA_HSIC/SNGCCA/RealData/Exp664_genes.txt'
-Datapath1 = "C:/Users/Programer/Documents/GitHub/SGCCA_HSIC/SNGCCA/RealData/Exp664.txt"
-Respath1 = "C:/Users/Programer/Documents/GitHub/SGCCA_HSIC/SNGCCA//Results/Exp_score.csv"
+Labelpath1 = './SNGCCA/RealData/Exp664_genes.txt'
+Datapath1 = "./SNGCCA/RealData/Exp664.txt"
+Respath1 = "./SNGCCA//Results/Exp_score.csv"
 
-Labelpath2 = 'C:/Users/Programer/Documents/GitHub/SGCCA_HSIC/SNGCCA/RealData/Meth664_probes.txt'
-Datapath2 = "C:/Users/Programer/Documents/GitHub/SGCCA_HSIC/SNGCCA/RealData/Meth664.txt"
-Respath2 = "C:/Users/Programer/Documents/GitHub/SGCCA_HSIC/SNGCCA//Results/Meth_score.csv"
+Labelpath2 = './SNGCCA/RealData/Meth664_probes.txt'
+Datapath2 = "./SNGCCA/RealData/Meth664.txt"
+Respath2 = "./SNGCCA//Results/Meth_score.csv"
 
-Labelpath3 = 'C:/Users/Programer/Documents/GitHub/SGCCA_HSIC/SNGCCA/RealData/miRNA664_miRNA.txt'
-Datapath3 = "C:/Users/Programer/Documents/GitHub/SGCCA_HSIC/SNGCCA/RealData/miRNA664.txt"
-Respath3 = "C:/Users/Programer/Documents/GitHub/SGCCA_HSIC/SNGCCA//Results/miRNA_score.csv"
+Labelpath3 = './SNGCCA/RealData/miRNA664_miRNA.txt'
+Datapath3 = "./SNGCCA/RealData/miRNA664.txt"
+Respath3 = "./SNGCCA//Results/miRNA_score.csv"
 
 def _getgradient(Labelpath, Datapath, Respath):
 
@@ -92,14 +92,13 @@ def cor_map(method,Labelpath,Datapath,ypath,Respath,savename):
                    #col_colors=None,
                    mask=None,
                    dendrogram_ratio=0.1,
-                   colors_ratio=0.05,
+                   colors_ratio=0.07,
                    cbar_pos=None,
                    tree_kws=None,
                    cmap='RdBu')
 
     plt.savefig(savename)
     plt.show()
-    return 1
 
 method = 'complete'
 num = 'res6/'
