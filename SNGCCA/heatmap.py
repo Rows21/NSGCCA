@@ -48,7 +48,7 @@ corr2,p2 = spearman_cor(Labelpath1, Datapath1, Respath1,Labelpath3, Datapath3, R
 corr3,p3 = spearman_cor(Labelpath2, Datapath2, Respath2,Labelpath3, Datapath3, Respath3)
 print(corr1,corr2,corr3)
 
-def cor_map(Labelpath,Datapath,ypath,Respath,savename):
+def cor_map(method,Labelpath,Datapath,ypath,Respath,savename):
     Exp_label = pd.read_csv(Labelpath, sep='\t',header = None)
     Exp_list = Exp_label.iloc[:, 0].values.tolist()
     Exp = pd.DataFrame(np.loadtxt(Datapath).T,columns = Exp_label)
@@ -76,7 +76,7 @@ def cor_map(Labelpath,Datapath,ypath,Respath,savename):
     ExpConcat = ExpConcat.T
 
     sns.clustermap(ExpConcat, pivot_kws=None,
-                   method='average',
+                   method=method,
                    metric='correlation',
                    z_score=None,
                    standard_scale=None,
@@ -98,27 +98,32 @@ def cor_map(Labelpath,Datapath,ypath,Respath,savename):
                    cmap='RdBu')
 
     plt.savefig(savename)
+    plt.show()
     return 1
 
-ypath = 'C:/Users/Programer/Documents/GitHub/SGCCA_HSIC/SNGCCA/RealData/PAM50label664.txt'
+method = 'complete'
+num = 'res6/'
+datapath = 'C:/Users/Programer/Documents/GitHub/SGCCA_HSIC/SNGCCA/RealData/'
+respath = datapath + num
+ypath = datapath + 'PAM50label664.txt'
 
-Labelpath = 'C:/Users/Programer/Documents/GitHub/SGCCA_HSIC/SNGCCA/RealData/Exp664_genes.txt'
-Datapath = "C:/Users/Programer/Documents/GitHub/SGCCA_HSIC/SNGCCA/RealData/Exp664.txt"
-Respath = "C:/Users/Programer/Documents/GitHub/SGCCA_HSIC/SNGCCA//Results/Exp_score.csv"
-savename = "C:/Users/Programer/Documents/GitHub/SGCCA_HSIC/SNGCCA//Results/Exp_plot.png"
+Labelpath = datapath + 'Exp664_genes.txt'
+Datapath = datapath + "Exp664.txt"
+Respath = respath + "Exp_score.csv"
+savename = respath + "Exp_plot.png"
 
-cor_map(Labelpath,Datapath,ypath,Respath,savename)
+cor_map(method,Labelpath,Datapath,ypath,Respath,savename)
 
-Labelpath = 'C:/Users/Programer/Documents/GitHub/SGCCA_HSIC/SNGCCA/RealData/miRNA664_miRNA.txt'
-Datapath = "C:/Users/Programer/Documents/GitHub/SGCCA_HSIC/SNGCCA/RealData/miRNA664.txt"
-Respath = "C:/Users/Programer/Documents/GitHub/SGCCA_HSIC/SNGCCA//Results/miRNA_score.csv"
-savename = "C:/Users/Programer/Documents/GitHub/SGCCA_HSIC/SNGCCA//Results/miRNA_plot.png"
+Labelpath = datapath + 'miRNA664_miRNA.txt'
+Datapath = datapath + "miRNA664.txt"
+Respath = respath + "miRNA_score.csv"
+savename = respath + "miRNA_plot.png"
 
-cor_map(Labelpath,Datapath,ypath,Respath,savename)
+cor_map(method,Labelpath,Datapath,ypath,Respath,savename)
 
-Labelpath = 'C:/Users/Programer/Documents/GitHub/SGCCA_HSIC/SNGCCA/RealData/Meth664_probes.txt'
-Datapath = "C:/Users/Programer/Documents/GitHub/SGCCA_HSIC/SNGCCA/RealData/Meth664.txt"
-Respath = "C:/Users/Programer/Documents/GitHub/SGCCA_HSIC/SNGCCA//Results/Meth_score.csv"
-savename = "C:/Users/Programer/Documents/GitHub/SGCCA_HSIC/SNGCCA/Results/Meth_plot.png"
+Labelpath = datapath + 'Meth664_probes.txt'
+Datapath = datapath + "Meth664.txt"
+Respath = respath + "Meth_score.csv"
+savename = respath + "Meth_plot.png"
 
-cor_map(Labelpath,Datapath,ypath,Respath,savename)
+cor_map(method,Labelpath,Datapath,ypath,Respath,savename)

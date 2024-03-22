@@ -7,7 +7,6 @@ torch.set_default_tensor_type(torch.DoubleTensor)
 
 from synth_data import create_synthData_new
 
-from validation_method import FS_MCC
 
 seed = 0
 torch.manual_seed(seed)

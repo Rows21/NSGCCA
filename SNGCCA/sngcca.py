@@ -1,5 +1,4 @@
 import torch
-import math
 import itertools
 import numpy as np
 from tqdm import tqdm
@@ -25,14 +24,14 @@ class SNGCCA():
         return D
 
     def rbf_kernel(self, X, sigma=None):
-        # 计算距离矩阵
+        # dist
         D = torch.sqrt(torch.abs(self.sqdist(X.t(), X.t())))
 
         if sigma is None:
-            # 中位数启发式法估计 sigma
+            # median sigma
             sigma = torch.median(D)
 
-        # 计算核矩阵
+        # kernel
         K = torch.exp(- (D ** 2) / (2 * sigma ** 2))
         return K, sigma
 
@@ -183,9 +182,6 @@ class SNGCCA():
             L_list = self.L_list
             Ly_list = self.Ly_list
 
-            if set(out_idx) == set(range(n_views)):
-                a=1
-
             for i, view in enumerate(views):
                 #print(sum(diff_log[i][-1:-11:-1]))
                 if i in out_idx:
@@ -263,47 +259,44 @@ class SNGCCA():
                 #diff_log[i].append(outer_error)
                 u_new = u_new /  torch.sqrt(torch.sum(u_new ** 2))
 
-                if (outer_error > outer_tol).item() or (sum(abs(self.u_list[i]) - abs(u_pre)).numpy()[0] == 0): # or torch.norm(u_new, p=1) - torch.norm(self.u_list[i], p=1) *2 < 0
-                        #if (self.u_list[1][-98:].sum() == 0).item() and (self.u_list[1][:1].sum() != 1).item() and (self.u_list[1][:1].sum() != 0).item():
-                        #    out_idx.append(i)
-                        self.u_list[i] = u_new
-                        #print(torch.norm(u_new))
-                        Pi_list[i] = Pi / torch.norm(Pi)
-                        H_list[i] = H
-                        Gamma_list[i] = Gamma
+                if (outer_error > outer_tol).item() or (sum(abs(self.u_list[i]) - abs(u_pre)).numpy()[0] == 0):
+
+                    self.u_list[i] = u_new
+                    #print(torch.norm(u_new))
+                    Pi_list[i] = Pi / torch.norm(Pi)
+                    H_list[i] = H
+                    Gamma_list[i] = Gamma
                             
-                        # normalize
-                        # new L
-                        self.y_lab[i] = view @ u_new
-                        y = sum([self.y_lab[j] for j in range(len(views)) if j != i])/(len(views)-1)
-                        y = y / torch.sqrt(torch.sum(y ** 2))
-                        #y = view @ u_new
-                        sigmaY2 = torch.var(y)
+                    # normalize
+                    # new L
+                    self.y_lab[i] = view @ u_new
+                    y = sum([self.y_lab[j] for j in range(len(views)) if j != i])/(len(views)-1)
+                    y = y / torch.sqrt(torch.sum(y ** 2))
+                    #y = view @ u_new
+                    sigmaY2 = torch.var(y)
 
-                        #print(sigmaY2)
-                        sy = torch.diag(y @ y.T).reshape(-1, 1)
+                    #print(sigmaY2)
+                    sy = torch.diag(y @ y.T).reshape(-1, 1)
 
-                        # new Ly
-                        Ly = sy + sy.T - 2 * (y @ y.T)
-                        Ly = torch.exp(-Ly / (2 * sigmaY2))
-                        Ly = self.centre_kernel(Ly)
-                        if torch.isnan(torch.sum(Ly)).item() == None:
-                            a = 1
-                        Ly_list[i] = Ly 
+                    # new Ly
+                    Ly = sy + sy.T - 2 * (y @ y.T)
+                    Ly = torch.exp(-Ly / (2 * sigmaY2))
+                    Ly = self.centre_kernel(Ly)
+                    Ly_list[i] = Ly 
 
-                        # new Lipchitz Constant L
-                        Coef = - Ly * (Ly < 0) / 4
-                        Coef = 2 * (torch.diag(torch.squeeze(torch.sum(Coef, dim=1, keepdim=True))) - Coef) / (n ** 2)
-                        Coef = view.T @ Coef @ view
-                        L, _ = torch.linalg.eigh((Coef + Coef.t()) / 2)
-                        L_list[i] = L[-1]
+                    # new Lipchitz Constant L
+                    Coef = - Ly * (Ly < 0) / 4
+                    Coef = 2 * (torch.diag(torch.squeeze(torch.sum(Coef, dim=1, keepdim=True))) - Coef) / (n ** 2)
+                    Coef = view.T @ Coef @ view
+                    L, _ = torch.linalg.eigh((Coef + Coef.t()) / 2)
+                    L_list[i] = L[-1]
                         
-                        K0 = view @ Pi_list[i] @ view.T
-                        #K0 = K0 / torch.norm(K0)
-                        sx = torch.diag(K0).reshape(-1,1)
-                        Kx_new = sx + sx.T - 2 * K0
-                        Kx_new = torch.exp(-Kx_new / 2)
-                        self.K_list[i] = Kx_new
+                    K0 = view @ Pi_list[i] @ view.T
+                    #K0 = K0 / torch.norm(K0)
+                    sx = torch.diag(K0).reshape(-1,1)
+                    Kx_new = sx + sx.T - 2 * K0
+                    Kx_new = torch.exp(-Kx_new / 2)
+                    self.K_list[i] = Kx_new
 
                 diff_list[i] = sum(torch.abs(self.u_list[i]) - torch.abs(u_pre))
                 if abs(diff_list[i].numpy()[0]) <= 1e-10:
@@ -328,7 +321,7 @@ class SNGCCA():
                 #print(f"outer_iter=: {outer_iter}, Loss: {sum(diff_list)}, diff_tol: {L_list}, diff_list: {diff_list}, obj: {F_trial}")
                 progress_bar.set_description(f"outer_iter=: {outer_iter},obj: {'{:.4g}'.format(F_trial)}, Loss: {loss}, diff_tol: {L_list}, diff_list: {diff_list}")
                 #progress_bar.set_postfix({'Iter': outer_iter+1})
-            if sum([abs(i.item()) for i in diff_list])/len(diff_list) < 1e-1/3:
+            if sum([abs(i.item()) for i in diff_list])/len(diff_list) < 1e-2/3:
                 return self.u_list
         return self.u_list
 
