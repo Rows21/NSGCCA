@@ -163,7 +163,7 @@ if __name__ == '__main__':
     seed = 0
     torch.manual_seed(seed)
     
-    N = 400
+    N = 100
     rep = 0
     u1 = []
     u2 = []
@@ -175,15 +175,15 @@ if __name__ == '__main__':
     REC = []
 
     while rep != 100:
-        views = create_synthData_new(5,N, mode=1, F=100)
+        views = create_synthData_new(5,N, mode=1, F=80)
         solver = Solver(device)
-        b = [0.005,0.005,0.005]
+        b = [0.01,0.007,0.007]
         try:
             u = solver.SNGCCA.fit_admm2(views, lamb=b,logging=0)  
         except:
             continue
         
-        Label = torch.cat([torch.ones(5, dtype=torch.bool), torch.zeros(95, dtype=torch.bool)])
+        Label = torch.cat([torch.ones(5, dtype=torch.bool), torch.zeros(75, dtype=torch.bool)])
         spe, pre, rec, acc, f1, mcc = eval(u, Label)
         if mcc > 0.60:
             rep += 1
@@ -197,7 +197,7 @@ if __name__ == '__main__':
             u2.append(u[1])
             u3.append(u[2])
 
-    merged_array = merged_array = np.empty((100, 100))
+    merged_array = merged_array = np.empty((100, 80))
 
     for i, arr in enumerate(u1):
         merged_array[i] = u1[i].numpy().flatten()
