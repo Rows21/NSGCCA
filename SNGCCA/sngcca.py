@@ -183,10 +183,7 @@ class SNGCCA():
             Ly_list = self.Ly_list
 
             for i, view in enumerate(views):
-                #print(sum(diff_log[i][-1:-11:-1]))
-                if i in out_idx:
-                    continue
-                    
+                #print(sum(diff_log[i][-1:-11:-1]))                    
                 #Ly_grad = [self.Ly_list[j] for j in range(len(views)) if j != i]
                 #Ly_grad = sum(Ly_grad)
                 Ly_grad = self.Ly_list[i]
@@ -298,7 +295,7 @@ class SNGCCA():
                     Kx_new = torch.exp(-Kx_new / 2)
                     self.K_list[i] = Kx_new
 
-                diff_list[i] = sum(torch.abs(self.u_list[i]) - torch.abs(u_pre))
+                diff_list[i] = sum(torch.abs(self.u_list[i]) - torch.abs(u_pre))/sum(torch.abs(self.u_list[i]))
                 if abs(diff_list[i].numpy()[0]) <= 1e-10:
                     #print(self.u_list[i])
                     self.u_list[i] = u_pre

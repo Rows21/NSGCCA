@@ -5,7 +5,7 @@ X_1=load(['Exp664.txt']);%mRNA
 X_2=load(['Meth664.txt']);
 X_3=load(['miRNA664.txt']);
 
-X_SNG1 = load(['Exp_score.csv']);
+%X_SNG1 = load(['Exp_score.csv']);
 %C_1=load(['C_k_3sets_Exp_centered_sig_level0.05_DGCCA.txt']);%mRNA
 %C_2=load(['C_k_3sets_miRNA_centered_sig_level0.05_DGCCA.txt']);
 %C_3=load(['C_k_3sets_Meth_centered_sig_level0.05_DGCCA.txt']);
@@ -16,17 +16,17 @@ X_SNG1 = load(['Exp_score.csv']);
 
 
 %% SWISS
-i = 2642;
+i = 1040;
 
-round(SWISS(X_1(i,:),[],label),3) 
+round(SWISS(X_1,[],label),3) 
 %round(SWISS(C_1(i,:),[],label),3) 
 %round(SWISS(D_1(i,:),[],label),3) 
-i = 3298;
-round(SWISS(X_2(i,:),[],label),3)
+
+round(SWISS(X_2,[],label),3)
 %round(SWISS(C_2(i,:),[],label),3)
 %round(SWISS(D_2(i,:),[],label),3)
-i = 437;
-round(SWISS(X_3(i,:),[],label),3)
+
+round(SWISS(X_3,[],label),3)
 %round(SWISS(C_3(i,:),[],label),3)
 %round(SWISS(D_3(i,:),[],label),3)
 
