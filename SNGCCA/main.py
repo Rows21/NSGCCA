@@ -175,15 +175,15 @@ if __name__ == '__main__':
     REC = []
 
     while rep != 100:
-        views = create_synthData_new(5,N, mode=1, F=80)
+        views = create_synthData_new(5,N, mode=2, F=200)
         solver = Solver(device)
-        b = [0.01,0.007,0.007]
+        b = [0.015,0.02,0.02]
         try:
             u = solver.SNGCCA.fit_admm2(views, lamb=b,logging=0)  
         except:
             continue
         
-        Label = torch.cat([torch.ones(5, dtype=torch.bool), torch.zeros(75, dtype=torch.bool)])
+        Label = torch.cat([torch.ones(5, dtype=torch.bool), torch.zeros(195, dtype=torch.bool)])
         spe, pre, rec, acc, f1, mcc = eval(u, Label)
         if mcc > 0.60:
             rep += 1

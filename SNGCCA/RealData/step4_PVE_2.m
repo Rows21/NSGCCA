@@ -1,9 +1,13 @@
 %analyze BRCA data 
 label=load('PAM50label664.txt');% subtype labels
 
-X_1=load(['Exp664.txt']);%mRNA
+X_1=load(['Exp664.txt']);%baseline
 X_2=load(['Meth664.txt']);
 X_3=load(['miRNA664.txt']);
+
+X_1SNG=load(['C:\Users\Programer\Documents\GitHub\SGCCA_HSIC\SNGCCA\RealData\res1\Exp_SNGCCA.txt']);%SNGCCA
+X_2SNG=load(['C:\Users\Programer\Documents\GitHub\SGCCA_HSIC\SNGCCA\RealData\res1\Meth_SNGCCA.txt']);
+X_3SNG=load(['C:\Users\Programer\Documents\GitHub\SGCCA_HSIC\SNGCCA\RealData\res1\miRNA_SNGCCA.txt']);
 
 %X_SNG1 = load(['Exp_score.csv']);
 %C_1=load(['C_k_3sets_Exp_centered_sig_level0.05_DGCCA.txt']);%mRNA
@@ -19,15 +23,15 @@ X_3=load(['miRNA664.txt']);
 i = 1040;
 
 round(SWISS(X_1,[],label),3) 
-%round(SWISS(C_1(i,:),[],label),3) 
+round(SWISS(X_1SNG,[],label),3) 
 %round(SWISS(D_1(i,:),[],label),3) 
 
 round(SWISS(X_2,[],label),3)
-%round(SWISS(C_2(i,:),[],label),3)
+round(SWISS(X_2SNG,[],label),3)
 %round(SWISS(D_2(i,:),[],label),3)
 
 round(SWISS(X_3,[],label),3)
-%round(SWISS(C_3(i,:),[],label),3)
+round(SWISS(X_3SNG,[],label),3)
 %round(SWISS(D_3(i,:),[],label),3)
 
 %% test SWISS difference in C and D

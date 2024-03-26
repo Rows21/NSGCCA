@@ -3,7 +3,7 @@ import numpy as np
 from validation_method import swiss_score
 from sklearn.metrics import silhouette_score, davies_bouldin_score, calinski_harabasz_score
 
-num = 'res6/'
+num = 'res1/'
 datapath = 'C:/Users/Programer/Documents/GitHub/SGCCA_HSIC/SNGCCA/RealData/'
 scorepath = datapath + num
 
@@ -26,7 +26,7 @@ Meth_value = np.loadtxt(datapath + 'Meth664.txt')
 miRNA_value = np.loadtxt(datapath + 'miRNA664.txt')
 
 Score1 = pd.read_csv(scorepath + 'U1.csv', header=None).iloc[1:,1].astype(float).tolist()
-Score2 = pd.read_csv(scorepath + 'U2.csv', header=None).iloc[1:,1].astype(float).tolist()
+Score2 = pd.read_csv(scorepath + 'U2.csv', header=None).iloc[1:,2].astype(float).tolist()
 Score3 = pd.read_csv(scorepath + 'U3.csv', header=None).iloc[1:,1].astype(float).tolist()
 
 Exp_df_S = pd.DataFrame({'Name': Exp_list, 'Score': Score1})
@@ -43,9 +43,9 @@ ss = silhouette_score(Exp_df_S.iloc[:,2:].T, y[0]) + silhouette_score(Meth_df_S.
 ch = calinski_harabasz_score(Exp_df_S.iloc[:,2:].T, y[0]) + calinski_harabasz_score(Meth_df_S.iloc[:,2:].T, y[0]) + calinski_harabasz_score(miRNA_df_S.iloc[:,2:].T, y[0])
 print(swiss, db/3, ss/3, ch/3)
 
-Filter_Exp = Exp_df_S[abs(Exp_df_S['Score']) > 0.05]
-Filter_Meth = Meth_df_S[abs(Meth_df_S['Score']) > 0.05]
-Filter_miRNA = miRNA_df_S[abs(miRNA_df_S['Score']) > 0.05]
+Filter_Exp = Exp_df_S[abs(Exp_df_S['Score']) > 0.01]
+Filter_Meth = Meth_df_S[abs(Meth_df_S['Score']) > 0.01]
+Filter_miRNA = miRNA_df_S[abs(miRNA_df_S['Score']) > 0.01]
 
 print(len(Filter_Exp), len(Filter_Meth), len(Filter_miRNA))
 
@@ -58,3 +58,7 @@ print(swiss, db/3, ss/3, ch/3)
 Filter_Exp.iloc[:,:2].to_csv(scorepath + 'Exp_score.csv', index=False)
 Filter_Meth.iloc[:,:2].to_csv(scorepath + 'Meth_score.csv', index=False)
 Filter_miRNA.iloc[:,:2].to_csv(scorepath + 'miRNA_score.csv', index=False)
+
+Filter_Exp.iloc[:,2:].to_csv(scorepath + 'Exp_SNGCCA.txt', index=False)
+Filter_Meth.iloc[:,2:].to_csv(scorepath + 'Meth_SNGCCA.txt', index=False)
+Filter_miRNA.iloc[:,2:].to_csv(scorepath + 'miRNA_SNGCCA.txt', index=False)
