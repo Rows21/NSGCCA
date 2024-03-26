@@ -50,7 +50,9 @@ pip install -r requirements.txt
 <div style="clear:both;"></div>
 <div style="margin-bottom:30px;">
 </div>
+<p> <img src="SNGCCA/Results/Figure2/FigFR.png" width=100% height=40% class="center"> </p>
 
+### Real-World Studies -- TCGA breast cancer database
 <div class="main">
 <div class="tag">
 </div>
@@ -68,11 +70,6 @@ pip install -r requirements.txt
 <div style="clear:both;"></div>
 <div style="margin-bottom:30px;">
 </div>
-
-<p> <img src="SNGCCA/Results/Figure2/FigFR.png" width=100% height=40% class="center"> </p>
-
-### Real-World Studies -- TCGA breast cancer database
-
 
 ## Acknowledgement
 This repository is built using the [timm](https://github.com/rwightman/pytorch-image-models) library.
