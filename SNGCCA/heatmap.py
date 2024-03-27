@@ -3,7 +3,7 @@ import numpy as np
 import pandas as pd
 from pandas import Series,DataFrame
 import seaborn as sns
-
+import scipy.spatial as sp, scipy.cluster.hierarchy as hc
 from scipy.stats import spearmanr
 
 #pearson cor
@@ -75,16 +75,21 @@ def cor_map(method,Labelpath,Datapath,ypath,Respath,savename):
     ExpConcat = ExpConcat.drop('Type', axis=1)
     ExpConcat = ExpConcat.T
 
+    linkage = None
+    DF_corr = ExpConcat.T.corr()
+    DF_dism = 1 - DF_corr
+    linkage = hc.linkage(sp.distance.squareform(DF_dism), method='ward')
+
     sns.clustermap(ExpConcat, pivot_kws=None,
                    method=method,
-                   metric='correlation',
+                   metric='euclidean',
                    z_score=None,
                    standard_scale=None,
                    figsize=(10, 10),
                    cbar_kws=None,
                    row_cluster=True,
                    col_cluster=None,
-                   row_linkage=None,
+                   row_linkage=linkage,
                    col_linkage=None,
                    xticklabels=False,
                    col_colors=row_list.map(row_c),
@@ -100,8 +105,8 @@ def cor_map(method,Labelpath,Datapath,ypath,Respath,savename):
     plt.savefig(savename)
     plt.show()
 
-method = 'complete'
-num = 'res6/'
+method = 'ward'
+num = 'res10/'
 datapath = 'C:/Users/Programer/Documents/GitHub/SGCCA_HSIC/SNGCCA/RealData/'
 respath = datapath + num
 ypath = datapath + 'PAM50label664.txt'

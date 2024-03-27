@@ -1,52 +1,74 @@
 import torch
 import numpy as np
 import pandas as pd
+from sklearn.metrics import davies_bouldin_score
 
-from SNGCCA.main import Solver
-torch.set_default_tensor_type(torch.DoubleTensor)
+Exp = None
+Meth = None
+miRNA = None
+for i in [1,3,7,9,10]:
+    num = 'res' + str(i) + '/'
+    datapath = 'C:/Users/Programer/Documents/GitHub/SGCCA_HSIC/SNGCCA/RealData/'
+    scorepath = datapath + num
 
-from synth_data import create_synthData_new
+    Expi = pd.read_csv(scorepath + 'Exp_score.csv')
+    Expi.columns = ['Name',i]
+    Methi = pd.read_csv(scorepath + 'Meth_score.csv')
+    Methi.columns = ['Name',i]
+    miRNAi = pd.read_csv(scorepath + 'miRNA_score.csv')
+    miRNAi.columns = ['Name',i]
+    if Exp is None:
+        Exp = Expi
+        Meth = Methi
+        miRNA = miRNAi
+    else:
+        Exp = pd.merge(Exp,Expi,on='Name',how='outer')
+        Meth = pd.merge(Meth,Methi,on='Name',how='outer')
+        miRNA = pd.merge(miRNA,miRNAi,on='Name',how='outer')
 
+fExp = Exp.dropna(thresh=5)
+fExp['mean'] = fExp.iloc[:, -5:].mean(axis=1)
+fExp = fExp[(abs(fExp['mean']) >= 0.01)]
+fExp_sorted = fExp.reindex(fExp['mean'].abs().sort_values(ascending=False).index)
 
-seed = 0
-torch.manual_seed(seed)
+fMeth = Meth.dropna(thresh=5)
+fMeth['mean'] = fMeth.iloc[:, -5:].mean(axis=1)
+fMeth = fMeth[(abs(fMeth['mean']) >= 0.01)]
+fMeth_sorted = fMeth.reindex(fMeth['mean'].abs().sort_values(ascending=False).index)
 
-device = 'cuda' if torch.cuda.is_available() else 'cpu'
-print("Using", torch.cuda.device_count(), "GPUs")
-N=100
-views = create_synthData_new(5,N, mode=2, F=30)
-solver = Solver(device)
-b = [0.05,0.01,0.03]
-#try:
-u1 = solver.SNGCCA.fit_admm2(views, lamb=b,logging=1) 
+fmiRNA = miRNA.dropna(thresh=5)
+fmiRNA['mean'] = fmiRNA.iloc[:, -5:].mean(axis=1)
+fmiRNA = fmiRNA[(abs(fmiRNA['mean']) >= 0.01)]
+fmiRNA_sorted = fmiRNA.reindex(fmiRNA['mean'].abs().sort_values(ascending=False).index)
 
-x = views[0].numpy()[:,0:5]
-gtx = np.sum(x, axis=1)
-y = views[1].numpy()[:,0:5]
-gty = np.sum(y, axis=1)
-z = views[2].numpy()[:,0:5]
-gtz = np.sum(y, axis=1)
+Exp_label = pd.read_csv(datapath + 'Exp664_genes.txt', sep='\t',header = None)
+Exp_list = Exp_label.iloc[:, 0].values.tolist()
 
-x1 = views[0] @ u1[0]
-y1 = views[1] @ u1[1]
-z1 = views[2] @ u1[2]
+Meth_label = pd.read_csv(datapath + 'Meth664_probes.txt', sep='\t',header = None)
+Meth_list = Meth_label.iloc[:, 0].values.tolist()
 
-import matplotlib.pyplot as plt
-plt.plot(x1, y1, 'bo', label='Data 1')
-plt.show()
-plt.plot(x1, z1, 'bo', label='Data 2')
-plt.show()
-plt.plot(y1, z1, 'bo', label='Data 3')
-plt.show()
+miRNA_label = pd.read_csv(datapath + 'miRNA664_miRNA.txt', sep='\t',header = None)
+miRNA_list = miRNA_label.iloc[:, 0].values.tolist()
 
-df = pd.DataFrame({'GTX': gtx,
-                   'GTY': gty,
-                   'GTZ': gtz,
-                   'XL': x1.reshape(-1).numpy(),
-                   'YL': y1.reshape(-1).numpy(),
-                   'ZL': z1.reshape(-1).numpy(),
-                   'XH': x1.reshape(-1).numpy(),
-                   'YH': x1.reshape(-1).numpy(),
-                   'ZH': x1.reshape(-1).numpy()})
+y = pd.read_csv(datapath + 'PAM50label664.txt',header = None)
 
-df.to_csv('.\SNGCCA\Results\Figure2\Fig1b.csv')
+Exp_value = np.loadtxt(datapath + 'Exp664.txt')
+Meth_value = np.loadtxt(datapath + 'Meth664.txt')
+miRNA_value = np.loadtxt(datapath + 'miRNA664.txt')
+
+Exp_df_S = pd.concat([pd.DataFrame({'Name': Exp_list}),pd.DataFrame(Exp_value)],axis=1)
+Meth_df_S = pd.concat([pd.DataFrame({'Name': Meth_list}),pd.DataFrame(Meth_value)],axis=1)
+miRNA_df_S = pd.concat([pd.DataFrame({'Name': miRNA_list}),pd.DataFrame(miRNA_value)],axis=1)
+
+ResExp = pd.merge(fExp_sorted[['Name','mean']],Exp_df_S,on='Name')
+ResMeth = pd.merge(fMeth_sorted[['Name','mean']],Meth_df_S,on='Name')
+ResmiRNA = pd.merge(fmiRNA_sorted[['Name','mean']],miRNA_df_S,on='Name')
+print(davies_bouldin_score(ResExp.iloc[:,2:].T, y[0]),davies_bouldin_score(ResMeth.iloc[:,2:].T, y[0]), davies_bouldin_score(ResmiRNA.iloc[:,2:].T, y[0]))
+savepath = datapath + 'rescv/'
+ResExp.iloc[:,:2].to_csv(savepath + 'Exp_score.csv', index=False)
+ResMeth.iloc[:,:2].to_csv(savepath + 'Meth_score.csv', index=False)
+ResmiRNA.iloc[:,:2].to_csv(savepath + 'miRNA_score.csv', index=False)
+
+ResExp.iloc[:,2:].to_csv(savepath + 'Exp_SNGCCA.txt', index=False)
+ResMeth.iloc[:,2:].to_csv(savepath + 'Meth_SNGCCA.txt', index=False)
+ResmiRNA.iloc[:,2:].to_csv(savepath + 'miRNA_SNGCCA.txt', index=False)
