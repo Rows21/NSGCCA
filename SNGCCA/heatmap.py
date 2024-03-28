@@ -78,11 +78,11 @@ def cor_map(method,Labelpath,Datapath,ypath,Respath,savename):
     linkage = None
     DF_corr = ExpConcat.T.corr()
     DF_dism = 1 - DF_corr
-    linkage = hc.linkage(sp.distance.squareform(DF_dism), method='ward')
+    linkage = hc.linkage(sp.distance.squareform(DF_dism), method=method)
 
     sns.clustermap(ExpConcat, pivot_kws=None,
                    method=method,
-                   metric='euclidean',
+                   metric='correlation',
                    z_score=None,
                    standard_scale=None,
                    figsize=(10, 10),
@@ -100,13 +100,14 @@ def cor_map(method,Labelpath,Datapath,ypath,Respath,savename):
                    colors_ratio=0.07,
                    cbar_pos=None,
                    tree_kws=None,
-                   cmap='RdBu')
+                   cmap='RdBu'
+                   )
 
     plt.savefig(savename)
     plt.show()
 
-method = 'ward'
-num = 'res2/'
+
+num = 'rescv/'
 datapath = 'C:/Users/Programer/Documents/GitHub/SGCCA_HSIC/SNGCCA/RealData/'
 respath = datapath + num
 ypath = datapath + 'PAM50label664.txt'
@@ -115,19 +116,19 @@ Labelpath = datapath + 'Exp664_genes.txt'
 Datapath = datapath + "Exp664.txt"
 Respath = respath + "Exp_score.csv"
 savename = respath + "Exp_plot.png"
-
+method = 'ward'
 cor_map(method,Labelpath,Datapath,ypath,Respath,savename)
 
 Labelpath = datapath + 'miRNA664_miRNA.txt'
 Datapath = datapath + "miRNA664.txt"
 Respath = respath + "miRNA_score.csv"
 savename = respath + "miRNA_plot.png"
-
+method = 'ward'
 cor_map(method,Labelpath,Datapath,ypath,Respath,savename)
 
 Labelpath = datapath + 'Meth664_probes.txt'
 Datapath = datapath + "Meth664.txt"
 Respath = respath + "Meth_score.csv"
 savename = respath + "Meth_plot.png"
-
+method = 'ward'
 cor_map(method,Labelpath,Datapath,ypath,Respath,savename)

@@ -6,8 +6,11 @@ X_2=load(['Meth664.txt']);
 X_3=load(['miRNA664.txt']);
 
 X_1SNG=load(['C:\Users\Programer\Documents\GitHub\SGCCA_HSIC\SNGCCA\RealData\rescv\Exp_SNGCCA.txt']);%SNGCCA
+X_1SNG=X_1SNG(2:end,1:end);
 X_2SNG=load(['C:\Users\Programer\Documents\GitHub\SGCCA_HSIC\SNGCCA\RealData\rescv\Meth_SNGCCA.txt']);
+X_2SNG=X_2SNG(2:end,1:end);
 X_3SNG=load(['C:\Users\Programer\Documents\GitHub\SGCCA_HSIC\SNGCCA\RealData\rescv\miRNA_SNGCCA.txt']);
+X_3SNG=X_3SNG(2:end,1:end);
 
 %X_SNG1 = load(['Exp_score.csv']);
 %C_1=load(['C_k_3sets_Exp_centered_sig_level0.05_DGCCA.txt']);%mRNA
@@ -20,17 +23,16 @@ X_3SNG=load(['C:\Users\Programer\Documents\GitHub\SGCCA_HSIC\SNGCCA\RealData\res
 
 
 %% SWISS
-i = 1040;
-paramstruct = struct('nsim',10000,'seed',0);
-round(SWISS(X_1,[],label),3) 
+%i = 1040;
+%round(SWISS(X_1,[],label),3) 
 round(SWISS(X_1SNG,[],label),3) 
 %round(SWISS(D_1(i,:),[],label),3) 
 
-round(SWISS(X_2,[],label),3)
+%round(SWISS(X_2,[],label),3)
 round(SWISS(X_2SNG,[],label),3)
 %round(SWISS(D_2(i,:),[],label),3)
 
-round(SWISS(X_3,[],label),3)
+%round(SWISS(X_3,[],label),3)
 round(SWISS(X_3SNG,[],label),3)
 %round(SWISS(D_3(i,:),[],label),3)
 
