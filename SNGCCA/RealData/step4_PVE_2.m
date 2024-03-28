@@ -5,11 +5,11 @@ X_1=load(['Exp664.txt']);%baseline
 X_2=load(['Meth664.txt']);
 X_3=load(['miRNA664.txt']);
 
-X_1SNG=load(['C:\Users\Programer\Documents\GitHub\SGCCA_HSIC\SNGCCA\RealData\rescv\Exp_SNGCCA.txt']);%SNGCCA
+X_1SNG=load(['C:\Users\Programer\Documents\GitHub\SGCCA_HSIC\SNGCCA\RealData\resk\Exp_sgcca.txt']);%SNGCCA
 X_1SNG=X_1SNG(2:end,1:end);
-X_2SNG=load(['C:\Users\Programer\Documents\GitHub\SGCCA_HSIC\SNGCCA\RealData\rescv\Meth_SNGCCA.txt']);
+X_2SNG=load(['C:\Users\Programer\Documents\GitHub\SGCCA_HSIC\SNGCCA\RealData\resk\Meth_sgcca.txt']);
 X_2SNG=X_2SNG(2:end,1:end);
-X_3SNG=load(['C:\Users\Programer\Documents\GitHub\SGCCA_HSIC\SNGCCA\RealData\rescv\miRNA_SNGCCA.txt']);
+X_3SNG=load(['C:\Users\Programer\Documents\GitHub\SGCCA_HSIC\SNGCCA\RealData\resk\miRNA_sgcca.txt']);
 X_3SNG=X_3SNG(2:end,1:end);
 
 %X_SNG1 = load(['Exp_score.csv']);

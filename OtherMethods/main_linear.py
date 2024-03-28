@@ -27,7 +27,7 @@ from matplotlib.backends.backend_pdf import PdfPages
 import pandas as pd
 
 torch.set_default_tensor_type(torch.DoubleTensor)
-from SNGCCA.main import Solver
+from main import Solver
 from loss_objectives import new_loss
 
 ############
@@ -50,7 +50,7 @@ layer_sizes_list = [layer_sizes1, layer_sizes2, layer_sizes3]
 
 # the parameters for training the network
 learning_rate = 5*1e-2
-epoch_num = 2
+epoch_num = 2000
 batch_size = 800
 
 # the regularization parameter of the network
@@ -85,52 +85,6 @@ y = pd.read_csv('C:/Users/Programer/Documents/GitHub/SGCCA_HSIC/SNGCCA/RealData/
 Exp_value = np.loadtxt("C:/Users/Programer/Documents/GitHub/SGCCA_HSIC/SNGCCA/RealData/Exp664.txt")
 Meth_value = np.loadtxt("C:/Users/Programer/Documents/GitHub/SGCCA_HSIC/SNGCCA/RealData/Meth664.txt")
 miRNA_value = np.loadtxt("C:/Users/Programer/Documents/GitHub/SGCCA_HSIC/SNGCCA/RealData/miRNA664.txt")
-
-Score = pd.read_csv('C:/Users/Programer/Documents/GitHub/SGCCA_HSIC/OtherMethods/KSSHIBA.csv').iloc[:,1].to_list()
-
-Exp_df_S = pd.DataFrame({'Name': Exp_list, 'Score': Score[:2642]})
-Meth_df_S = pd.DataFrame({'Name': Meth_list, 'Score': Score[2642:(2642+3298)]})
-miRNA_df_S = pd.DataFrame({'Name': miRNA_list, 'Score': Score[(2642+3298):(2642+3298+437)]})
-
-Exp_df_S = pd.concat([Exp_df_S,pd.DataFrame(Exp_value)],axis=1)
-Meth_df_S = pd.concat([Meth_df_S,pd.DataFrame(Meth_value)],axis=1)
-miRNA_df_S = pd.concat([miRNA_df_S,pd.DataFrame(miRNA_value)],axis=1)
-
-Filter_Exp = Exp_df_S[Exp_df_S['Score'] > np.mean(Exp_df_S['Score'])]
-Filter_Meth = Meth_df_S[Meth_df_S['Score'] > np.mean(Meth_df_S['Score'])]
-Filter_miRNA = miRNA_df_S[miRNA_df_S['Score'] > np.mean(miRNA_df_S['Score'])]
-
-print(len(Filter_Exp), len(Filter_Meth), len(Filter_miRNA))
-
-swiss = swiss_score(Filter_Exp.iloc[:,2:].T, y[0])
-db = davies_bouldin_score(Filter_Exp.iloc[:,2:].T, y[0])
-ss = silhouette_score(Filter_Exp.iloc[:,2:].T, y[0])
-ch = calinski_harabasz_score(Filter_Exp.iloc[:,2:].T, y[0])
-print(swiss, db, ss, ch)
-
-Score1 = pd.read_csv('C:/Users/Programer/Documents/GitHub/SGCCA_HSIC/OtherMethods/SGCCA_u.csv')['V1']
-Score2 = pd.read_csv('C:/Users/Programer/Documents/GitHub/SGCCA_HSIC/OtherMethods/SGCCA_v.csv')['V1']
-Score3 = pd.read_csv('C:/Users/Programer/Documents/GitHub/SGCCA_HSIC/OtherMethods/SGCCA_w.csv')['V1']
-
-Exp_df_S = pd.DataFrame({'Name': Exp_list, 'Score': Score1})
-Meth_df_S = pd.DataFrame({'Name': Meth_list, 'Score': Score2})
-miRNA_df_S = pd.DataFrame({'Name': miRNA_list, 'Score': Score3})
-
-Exp_df_S = pd.concat([Exp_df_S,pd.DataFrame(Exp_value)],axis=1)
-Meth_df_S = pd.concat([Meth_df_S,pd.DataFrame(Meth_value)],axis=1)
-miRNA_df_S = pd.concat([miRNA_df_S,pd.DataFrame(miRNA_value)],axis=1)
-
-Filter_Exp = Exp_df_S[Exp_df_S['Score'] > np.mean(Exp_df_S['Score'])]
-Filter_Meth = Meth_df_S[Meth_df_S['Score'] > np.mean(Meth_df_S['Score'])]
-Filter_miRNA = miRNA_df_S[miRNA_df_S['Score'] > np.mean(miRNA_df_S['Score'])]
-
-print(len(Filter_Exp), len(Filter_Meth), len(Filter_miRNA))
-
-swiss = swiss_score(Filter_Exp.iloc[:,2:].T, y[0])
-db = davies_bouldin_score(Filter_Exp.iloc[:,2:].T, y[0])
-ss = silhouette_score(Filter_Exp.iloc[:,2:].T, y[0])
-ch = calinski_harabasz_score(Filter_Exp.iloc[:,2:].T, y[0])
-print(swiss, db, ss, ch)
 
 views = [torch.tensor(Exp_value).T,torch.tensor(Meth_value).T,torch.tensor(miRNA_value).T]
 

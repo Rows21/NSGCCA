@@ -58,13 +58,13 @@ pip install -r requirements.txt
 </div>
 <div class="images" >
 	<div class="mid">
-		<img src="/screenshots/heatmap/Exp_plot.jpg" />
+		<img src="/screenshots/heatmap/Exp.JPG" />
 	</div>
 	<div class="mid">
-		<img src="/screenshots/heatmap/Meth_plot.jpg" />
+		<img src="/screenshots/heatmap/Meth.JPG" />
 	</div>
 	<div class="mid">
-		<img src="/screenshots/heatmap/miRNA_plot.jpg" />
+		<img src="/screenshots/heatmap/miRNA.JPG" />
 	</div>
 </div>
 <div style="clear:both;"></div>

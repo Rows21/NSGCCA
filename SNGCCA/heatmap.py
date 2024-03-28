@@ -43,11 +43,6 @@ def spearman_cor(Labelpath1, Datapath1, Respath1,Labelpath2, Datapath2, Respath2
 
     return corr,p
 
-corr1,p1 = spearman_cor(Labelpath1, Datapath1, Respath1,Labelpath2, Datapath2, Respath2)
-corr2,p2 = spearman_cor(Labelpath1, Datapath1, Respath1,Labelpath3, Datapath3, Respath3)
-corr3,p3 = spearman_cor(Labelpath2, Datapath2, Respath2,Labelpath3, Datapath3, Respath3)
-print(corr1,corr2,corr3)
-
 def cor_map(method,Labelpath,Datapath,ypath,Respath,savename):
     Exp_label = pd.read_csv(Labelpath, sep='\t',header = None)
     Exp_list = Exp_label.iloc[:, 0].values.tolist()
@@ -107,7 +102,7 @@ def cor_map(method,Labelpath,Datapath,ypath,Respath,savename):
     plt.show()
 
 
-num = 'rescv/'
+num = 'ressg/'
 datapath = 'C:/Users/Programer/Documents/GitHub/SGCCA_HSIC/SNGCCA/RealData/'
 respath = datapath + num
 ypath = datapath + 'PAM50label664.txt'
@@ -123,7 +118,7 @@ Labelpath = datapath + 'miRNA664_miRNA.txt'
 Datapath = datapath + "miRNA664.txt"
 Respath = respath + "miRNA_score.csv"
 savename = respath + "miRNA_plot.png"
-method = 'ward'
+method = 'weighted'
 cor_map(method,Labelpath,Datapath,ypath,Respath,savename)
 
 Labelpath = datapath + 'Meth664_probes.txt'
