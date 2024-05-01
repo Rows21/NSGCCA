@@ -46,7 +46,7 @@ ggvenn(
   #fill = c("#1c92d2","#f7b733","#6b6b83", "#f12711")
   #)
 ggsave('FigVenna.eps')
-
+ggsave('FigVenna.png')
 sgcca <- as.list(read.csv('D:/GitHub/SNGCCA/SNGCCA/RealData/ressg/Meth_score.csv')[1])$Name
 sngcca <- as.list(read.csv('D:/GitHub/SNGCCA/SNGCCA/RealData/rescv/Meth_score.csv')[1])$Name
 ksshiba <- as.list(read.csv('D:/GitHub/SNGCCA/SNGCCA/RealData/resk/Meth_score.csv')[1])$Name
@@ -71,6 +71,7 @@ ggvenn(
   stroke_size = 0.5, set_name_size = 4
   )
 ggsave('FigVennb.eps')
+ggsave('FigVennb.png')
 sgcca <- as.list(read.csv('D:/GitHub/SNGCCA/SNGCCA/RealData/ressg/miRNA_score.csv')[1])$Name
 sngcca <- as.list(read.csv('D:/GitHub/SNGCCA/SNGCCA/RealData/rescv/miRNA_score.csv')[1])$Name
 ksshiba <- as.list(read.csv('D:/GitHub/SNGCCA/SNGCCA/RealData/resk/miRNA_score.csv')[1])$Name
@@ -95,6 +96,7 @@ ggvenn(
   stroke_size = 0.5, set_name_size = 4
   )
 ggsave('FigVennc.eps')
+ggsave('FigVennc.png')
 ```
 ```{r tsne}
 y <- as.list(read.table("D:/GitHub/SNGCCA/SNGCCA/RealData/PAM50label664.txt"))$V1

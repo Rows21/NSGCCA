@@ -71,6 +71,24 @@ pip install -r requirements.txt
 <div style="margin-bottom:30px;">
 </div>
 
+<div class="main">
+<div class="tag">
+</div>
+<div class="images" >
+	<div class="mid">
+		<img src="/screenshots/venndiagram/FigVenna.png" />
+	</div>
+	<div class="mid">
+		<img src="/screenshots/venndiagram/FigVennb.png" />
+	</div>
+	<div class="mid">
+		<img src="/screenshots/venndiagram/FigVennc.png" />
+	</div>
+</div>
+<div style="clear:both;"></div>
+<div style="margin-bottom:30px;">
+</div>
+
 ## Acknowledgement
 This repository is built using the [timm](https://github.com/rwightman/pytorch-image-models) library.
 
