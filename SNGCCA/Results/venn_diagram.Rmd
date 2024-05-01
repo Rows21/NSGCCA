@@ -1,0 +1,61 @@
+---
+title: "venn_diagram"
+output: html_document
+date: "2024-05-01"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+if (!require(devtools)) install.packages("devtools")
+devtools::install_github("yanlinlin82/ggvenn")
+```
+
+## Venn Diagram
+
+```{r venn}
+library(VennDiagram)
+
+sgcca <- as.list(read.csv('D:/GitHub/SNGCCA/SNGCCA/RealData/ressg/miRNA_score.csv')[1])
+sngcca <- as.list(read.csv('D:/GitHub/SNGCCA/SNGCCA/RealData/rescv/miRNA_score.csv')[1])
+ksshiba <- as.list(read.csv('D:/GitHub/SNGCCA/SNGCCA/RealData/resk/Exp_score.csv')[1])
+dgcca <- as.list(read.csv('D:/GitHub/SNGCCA/SNGCCA/RealData/resdg/Exp_dgcca.csv')[1])
+
+x <- list(
+  A = sgcca, 
+  B = sngcca, 
+  C = ksshiba,
+  D = dgcca
+  )
+
+# Helper function to display Venn diagram
+display_venn <- function(x, ...){
+  library(VennDiagram)
+  grid.newpage()
+  venn_object <- venn.diagram(x, filename = NULL, ...)
+  grid.draw(venn_object)
+}
+ggvenn(
+  x, 
+  fill_color = c("#0073C2FF", 
+                 "#EFC000FF", 
+                 "#868686FF", 
+                 "#CD534CFF"),
+  stroke_size = 0.5, set_name_size = 4
+  )
+
+display_venn(
+  x,
+  category.names = c("Set 1" , 
+                     "Set 2 " , 
+                     "Set 3", 
+                     "Set 4"),
+  fill = c("#999999", 
+           "#E69F00", 
+           "#56B4E9", 
+           "#009E73")
+  )
+```
+
+
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
