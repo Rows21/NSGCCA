@@ -6,8 +6,9 @@ date: "2024-05-01"
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
-if (!require(devtools)) install.packages("devtools")
-devtools::install_github("yanlinlin82/ggvenn")
+
+library(Rtsne)
+library(ggplot2)
 ```
 
 ## Venn Diagram
@@ -55,7 +56,78 @@ display_venn(
            "#009E73")
   )
 ```
+```{r tsne}
+y <- as.list(read.table("D:/GitHub/SNGCCA/SNGCCA/RealData/PAM50label664.txt"))$V1
+exp <- t(read.table("D:/GitHub/SNGCCA/SNGCCA/RealData/Exp664.txt"))
+expnames <- as.list(read.table("D:/GitHub/SNGCCA/SNGCCA/RealData/Exp664_genes.txt"))
+colnames(exp) <- expnames$V1
+sngcca <- as.list(read.csv('D:/GitHub/SNGCCA/SNGCCA/RealData/rescv/Exp_score.csv'))$Name
+selected <- exp[,colnames(exp) %in% sngcca]
 
+tsne <- Rtsne(as.matrix(selected), check_duplicates = FALSE, pca = TRUE,
+              perplexity=30, theta=0.0, dims=2)
 
+jiangwei <- as.data.frame(tsne$Y)
 
+jiangwei$Class<-as.factor(y)
+
+length(unique(jiangwei$Class))
+mainPalette <- rainbow(4)
+
+ggplot(jiangwei, aes(x=V1, y=V2, color=Class)) +
+  geom_point(size=1.25) +
+  labs(title = "t-SNE Plot",
+       x = "DIM 1",
+       y = "DIM 2") +
+  theme(plot.title = element_text(hjust = 0.5))
+
+#============================================================================================
+meth <- t(read.table("D:/GitHub/SNGCCA/SNGCCA/RealData/Meth664.txt"))
+RNAnames <- as.list(read.table("D:/GitHub/SNGCCA/SNGCCA/RealData/Meth664_probes.txt"))
+colnames(meth) <- RNAnames$V1
+sngcca <- as.list(read.csv('D:/GitHub/SNGCCA/SNGCCA/RealData/rescv/Meth_score.csv'))$Name
+selected <- meth[,colnames(meth) %in% sngcca]
+
+tsne <- Rtsne(as.matrix(selected), check_duplicates = FALSE, pca = TRUE,
+              perplexity=30, theta=0.0, dims=2)
+
+jiangwei <- as.data.frame(tsne$Y)
+
+jiangwei$Class<-as.factor(y)
+
+length(unique(jiangwei$Class))
+mainPalette <- rainbow(4)
+
+ggplot(jiangwei, aes(x=V1, y=V2, color=Class)) +
+  geom_point(size=1.25) +
+  labs(title = "t-SNE Plot",
+       x = "DIM 1",
+       y = "DIM 2") +
+  theme(plot.title = element_text(hjust = 0.5))
+
+#============================================================================================
+miRNA <- t(read.table("D:/GitHub/SNGCCA/SNGCCA/RealData/miRNA664.txt"))
+RNAnames <- as.list(read.table("D:/GitHub/SNGCCA/SNGCCA/RealData/miRNA664_miRNA.txt"))
+colnames(miRNA) <- RNAnames$V1
+sngcca <- as.list(read.csv('D:/GitHub/SNGCCA/SNGCCA/RealData/rescv/miRNA_score.csv'))$Name
+selected <- miRNA[,colnames(miRNA) %in% sngcca]
+
+tsne <- Rtsne(as.matrix(selected), check_duplicates = FALSE, pca = TRUE,
+              perplexity=30, theta=0.0, dims=2)
+
+jiangwei <- as.data.frame(tsne$Y)
+
+jiangwei$Class<-as.factor(y)
+
+length(unique(jiangwei$Class))
+mainPalette <- rainbow(4)
+
+ggplot(jiangwei, aes(x=V1, y=V2, color=Class)) +
+  geom_point(size=1.25) +
+  labs(title = "t-SNE Plot",
+       x = "DIM 1",
+       y = "DIM 2") +
+  theme(plot.title = element_text(hjust = 0.5))
+
+```
 Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
