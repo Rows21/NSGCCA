@@ -34,8 +34,10 @@ display_venn <- function(x, ...){
   venn_object <- venn.diagram(x, filename = NULL, ...)
   grid.draw(venn_object)
 }
+#names(x) <- c('DGCCA\n(1325)','KSSHIBA\n(311)', 'SGCCA\n(302)', 'SNGCCA\n(336)')
 ggvenn(
   x, 
+  show_percentage = F,
   fill_color = c("#1c92d2","#f7b733","#6b6b83", "#f12711"),
   stroke_size = 0.5, set_name_size = 4
   )
@@ -58,15 +60,10 @@ x <- list(
   SGCCA = sgcca, 
   SNGCCA = sngcca
   )
-
-display_venn <- function(x, ...){
-  library(VennDiagram)
-  grid.newpage()
-  venn_object <- venn.diagram(x, filename = NULL, ...)
-  grid.draw(venn_object)
-}
+#names(x) <- c('DGCCA\n(1650)','KSSHIBA\n(1725)', 'SGCCA\n(346)', 'SNGCCA\n(269)')
 ggvenn(
   x, 
+  show_percentage = F,
   fill_color = c("#1c92d2","#f7b733","#6b6b83", "#f12711"),
   stroke_size = 0.5, set_name_size = 4
   )
@@ -83,15 +80,10 @@ x <- list(
   SGCCA = sgcca, 
   SNGCCA = sngcca
   )
-
-display_venn <- function(x, ...){
-  library(VennDiagram)
-  grid.newpage()
-  venn_object <- venn.diagram(x, filename = NULL, ...)
-  grid.draw(venn_object)
-}
+#names(x) <- c('DGCCA\n(209)','KSSHIBA\n(222)', 'SGCCA\n(256)', 'SNGCCA\n(89)')
 ggvenn(
   x, 
+  show_percentage = F,
   fill_color = c("#1c92d2","#f7b733","#6b6b83", "#f12711"),
   stroke_size = 0.5, set_name_size = 4
   )
