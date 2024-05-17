@@ -4,7 +4,7 @@ from validation_method import swiss_score
 from sklearn.metrics import silhouette_score, davies_bouldin_score, calinski_harabasz_score
 
 num = 'rescv/'
-datapath = 'C:/Users/Programer/Documents/GitHub/SGCCA_HSIC/SNGCCA/RealData/'
+datapath = 'D:/GitHub/SNGCCA/SNGCCA/RealData/'
 scorepath = datapath + num
 
 Exp_label = pd.read_csv(datapath + 'Exp664_genes.txt', sep='\t',header = None)

@@ -71,7 +71,7 @@ if __name__ == '__main__':
         #print(b0)
 
         ## fit results
-        b = [0.2,0.001,0.01]
+        b = [0.001,0.001,0.001]
         u = solver.SNGCCA.fit_admm2(views, lamb=b)
 
         df_u1 = pd.DataFrame(u[0], columns=['u1_' + str(rep + 1)])

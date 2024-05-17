@@ -7,7 +7,7 @@ def create_synthData_new(v=2, N=400, outDir='./', device='cpu', mode=1, F=20):
     N : number of data
     F$ : number of features in view $ 
     '''
-    #np.random.seed(0)
+    #np.random.seed(1)
     #torch.manual_seed(0)
 
     random_seeds = np.random.randint(0, 2**16 - 1, size=3)

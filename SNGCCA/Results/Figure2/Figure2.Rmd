@@ -8,10 +8,11 @@ output: html_document
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 library(ggplot2)
+#install.packages('openxlsx')
 library(openxlsx)
 library(gridExtra)
+#devtools::install_github('Mikata-Project/ggthemr')
 library(ggthemr)
-
 ```
 
 

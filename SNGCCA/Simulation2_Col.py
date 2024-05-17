@@ -1,81 +1,63 @@
-from SNGCCA.main import Solver
 import torch
-from synth_data import create_synthData_new, create_synthData_multi
-from validation_method import FS_MCC
-
-import os
 import numpy as np
-import pandas as pd
+from validation_method import eval
 
-if __name__ == '__main__':
-    # Slurm Object note
-    import sys
-    #rs = os.environ.get('SLURM_JOB_ID')
-    #torch.manual_seed(rs)  # random seed
+num = 20
+sample = 100
+tol = 100
+root = 'D:/GitHub/SNGCCA/SNGCCA/Simulation/'
+dir_sce = 'Linear/' + str(sample) + '_' + str(tol) + '_' + str(num) + '/'
+print(dir_sce)
+path = root + dir_sce
+u1 = np.genfromtxt(path + 'u1.csv', delimiter=',')
+u2 = np.genfromtxt(path + 'u2.csv', delimiter=',')
+u3 = np.genfromtxt(path + 'u3.csv', delimiter=',')
+Label = torch.cat([torch.ones(num, dtype=torch.bool), torch.zeros(tol-num, dtype=torch.bool)])
 
-    # Hyper Params Section
-    device = 'cuda' if torch.cuda.is_available() else 'cpu'
-    print("Using", torch.cuda.device_count(), "GPUs")
+FS = []
+MCC = []
+PRE = []
+REC = []
+SPE = []
+for i in range(100):
+    u = [torch.tensor(u1[i]),torch.tensor(u2[i]),torch.tensor(u3[i])]
+    spe, pre, rec, acc, f1, mcc = eval(u, Label)
+    SPE.append(spe)
+    PRE.append(pre)
+    REC.append(rec)
+    FS.append(f1)
+    MCC.append(mcc)
 
-    Solver = Solver(device)
+print("Specificity:",np.mean(SPE),np.std(SPE))
+print("Precision:",np.mean(PRE),np.std(PRE))
+print("Recall:",np.mean(REC),np.std(REC))
+print("FS:",np.mean(FS),np.std(FS))
+print("MCC:",np.mean(MCC),np.std(MCC))
 
-    for scenario in [3]:
-    ## Scenario
-        ## Evaluation params
-        ACC_list = []
-        FS_list = []
-        MCC_list = []
+dir_sce = 'Nonlinear/' + str(sample) + '_' + str(tol) + '_' + str(num) + '/'
+print(dir_sce)
+path = root + dir_sce
+u1 = np.genfromtxt(path + 'u1.csv', delimiter=',')
+u2 = np.genfromtxt(path + 'u2.csv', delimiter=',')
+u3 = np.genfromtxt(path + 'u3.csv', delimiter=',')
+Label = torch.cat([torch.ones(num, dtype=torch.bool), torch.zeros(tol-num, dtype=torch.bool)])
 
-        for i in range(4, 11, 2):
-            print("Scenario=",scenario,"Column=",i)
-            FS = []
-            MCC = []
-            ACC = []
-            N = 400
-            views = create_synthData_multi(i=i, data_type=scenario, N=400, p=20, q=20, r=20)
-            print(f'input views shape :')
-            for j, view in enumerate(views):
-                print(f'view_{j} :  {view.shape}')
-                view = view.to("cpu")
+FS = []
+MCC = []
+PRE = []
+REC = []
+SPE = []
+for i in range(100):
+    u = [torch.tensor(u1[i]),torch.tensor(u2[i]),torch.tensor(u3[i])]
+    spe, pre, rec, acc, f1, mcc = eval(u, Label)
+    SPE.append(spe)
+    PRE.append(pre)
+    REC.append(rec)
+    FS.append(f1)
+    MCC.append(mcc)
 
-            ## train hyper
-            b0, obj = Solver.tune_hyper(x_list=views, set_params=6, max_params=50,loss="SGD", iters=100)
-            print(b0)
-
-            print("SNGCCA Started!")
-            for rep in range(100):
-                if (rep + 1) % 100 == 0:
-                    print("REP=", rep + 1)
-
-                ## fit results
-                u = Solver._get_outputs(views, 1e-7, 300, (b0,b0,b0))
-
-                Label = torch.cat([torch.ones(i, dtype=torch.bool), torch.zeros(20-i, dtype=torch.bool)])
-                acc, f1, mcc = FS_MCC(u, Label)
-                ACC.append(acc)
-                FS.append(f1)
-                MCC.append(mcc)
-
-            df = pd.DataFrame({'Accuracy': ACC,
-                               'F-Score': FS,
-                               'MCC': MCC})
-
-            dir_path = "./Simulation"
-            if not os.path.exists(dir_path):
-                os.mkdir(dir_path)
-
-            df.to_csv('./Simulation/Scenario' + str(scenario) + 'Colunm' + str(i) + '.csv')
-            macc = np.mean(ACC)
-            sdacc = np.std(ACC)
-            print(macc, sdacc)
-            ACC_list.append([macc, sdacc])
-
-            mf = np.mean(FS)
-            sdf = np.std(FS)
-            print(mf, sdf)
-            FS_list.append([mf, sdf])
-
-            mmcc = np.mean(MCC)
-            sdmcc = np.std(MCC)
-            print(mmcc, sdmcc)
-            MCC_list.append([mmcc, sdmcc])
+print("Specificity:",np.mean(SPE),np.std(SPE))
+print("Precision:",np.mean(PRE),np.std(PRE))
+print("Recall:",np.mean(REC),np.std(REC))
+print("FS:",np.mean(FS),np.std(FS))
+print("MCC:",np.mean(MCC),np.std(MCC))

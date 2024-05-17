@@ -174,30 +174,29 @@ if __name__ == '__main__':
     PRE = []
     REC = []
 
-    while rep != 100:
-        views = create_synthData_new(5,N, mode=2, F=200)
+    for rep in range(100):
+        print("REP=",rep)
+        views = create_synthData_new(5,N, mode=1, F=100)
         solver = Solver(device)
-        b = [0.015,0.02,0.02]
-        try:
-            u = solver.SNGCCA.fit_admm2(views, lamb=b,logging=0)  
-        except:
-            continue
-        
-        Label = torch.cat([torch.ones(5, dtype=torch.bool), torch.zeros(195, dtype=torch.bool)])
-        spe, pre, rec, acc, f1, mcc = eval(u, Label)
-        if mcc > 0.60:
-            rep += 1
-            print("REP=",rep)
-            PRE.append(pre)
-            REC.append(rec)
-            ACC.append(acc)
-            FS.append(f1)
-            MCC.append(mcc)
-            u1.append(u[0])
-            u2.append(u[1])
-            u3.append(u[2])
+        b = [0.004,0.004,0.004]
+        b = [i *1 for i in b]
+        u = solver.SNGCCA.fit_admm2(views, lamb=b,logging=0)
 
-    merged_array = merged_array = np.empty((100, 80))
+        Label = torch.cat([torch.ones(5, dtype=torch.bool), torch.zeros(95, dtype=torch.bool)])
+        spe, pre, rec, acc, f1, mcc = eval(u, Label)
+        print(mcc)
+
+        
+        PRE.append(pre)
+        REC.append(rec)
+        ACC.append(acc)
+        FS.append(f1)
+        MCC.append(mcc)
+        u1.append(u[0])
+        u2.append(u[1])
+        u3.append(u[2])
+
+    merged_array = merged_array = np.empty((100, 100))
 
     for i, arr in enumerate(u1):
         merged_array[i] = u1[i].numpy().flatten()

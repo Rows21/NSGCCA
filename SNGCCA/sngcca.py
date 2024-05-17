@@ -89,8 +89,8 @@ class SNGCCA():
         self.L_list = []
         self.Ly_list = []
         for i, view in enumerate(views):
-            n, p = view.shape
 
+            n, p = view.shape
             # set sqcovx
             covx = torch.cov(view.T)
             self.covx_list.append(covx)
@@ -112,7 +112,7 @@ class SNGCCA():
             u = torch.ones((p, 1))
             u = torch.sqrt(u / torch.norm(u, p=2))
             self.u_list[i] = u
-            u = u / torch.sqrt(u.t() @ sqcovx @ u)
+            u = u * torch.sqrt(view.shape[0] / (u.t() @ view.t() @ view @ u)) 
             initPi = u @ u.t()
             initPi = torch.zeros((p,p))
             Pi = initPi#/torch.norm(initPi)
@@ -123,18 +123,12 @@ class SNGCCA():
             Kx = sx + sx.T - 2 * view @ Pi @ view.T
             Kx = torch.exp(-Kx / 2)
             self.K_list.append(Kx)
-
             self.y_lab.append(view @ u)
-
-            # construct Lipchitz Constant L
-            # product kernel
-            #y = np.genfromtxt('ydata.csv', delimiter=',')
-            #y = torch.tensor(y).reshape(-1,1)
         
         for i, view in enumerate(views):
             n, p = view.shape
-            y = sum([self.y_lab[j] for j in range(len(views))])/(len(views)) # if j != i
-            y = y / torch.sqrt(torch.sum(y ** 2))
+            y = sum([self.y_lab[j] for j in range(len(views)) if j != i])#/(len(views)) # if j != i
+            #y = y / torch.sqrt(torch.sum(y ** 2))
             sigmaY2 = torch.var(y)
             sy = torch.diag(y @ y.T).reshape(-1, 1)
 
@@ -157,42 +151,23 @@ class SNGCCA():
 
         print(self.L_list)
         #lamb = [i/100 * 1.5 for i in L_list]
-        outer_maxiter = 1000
+        outer_maxiter = 2000
         outer_tol = 1e-5
         inner_maxiter = 500
         inner_tol = 1e-3
         outer_error = 1
         diff_list = [999] * n_views
-
-        diff_log = [[999], [999], [999]]
-        norms = [None] * n_views
-        diff_L = self.L_list
-        out_idx = []
-        criterion = 1e-3/3
+        criterion = 1e-3
 
         progress_bar = tqdm(total=outer_maxiter, ncols=200)
         
         for outer_iter in range(outer_maxiter):
-            #if outer_error < outer_tol:
-            #    return Pi_list
-            Pi_list = self.Pi_list
-            H_list = self.H_list
-            Gamma_list = self.Gamma_list
-
-            L_list = self.L_list
-            Ly_list = self.Ly_list
-
             for i, view in enumerate(views):
-                #print(sum(diff_log[i][-1:-11:-1]))                    
-                #Ly_grad = [self.Ly_list[j] for j in range(len(views)) if j != i]
-                #Ly_grad = sum(Ly_grad)
+
                 Ly_grad = self.Ly_list[i]
-                    
                 #L_grad = [self.L_list[j] for j in range(len(views)) if j != i]
                 L_grad = self.L_list[i]#sum(L_grad)/len(L_grad)
-
                 u_pre = self.u_list[i]
-                    
                 Coeft = self.K_list[i] * Ly_grad /2
 
                 n = Coeft.shape[0]
@@ -204,7 +179,7 @@ class SNGCCA():
 
                 L = L_grad
                 a = Pi - dF / L
-                Pi_pre = Pi
+                #Pi_pre = Pi
                 inner_error = 1
                 inner_iter = 0
 
@@ -218,8 +193,6 @@ class SNGCCA():
                 while (inner_iter <= inner_maxiter) & (inner_error > inner_tol):
                     #print(inner_iter)
                     temp = Pi-(rho/tau) * covx @ Pi @ covx + (rho/tau) * sqcovx @ (H-Gamma) @ sqcovx
-                    #if (sum(sum(temp)) == torch.tensor(0)).item():
-                    #    break
                     temp = tau/(tau+L)*temp+L/(tau+L) * a
                     
                     Pi = torch.max((torch.abs(temp)- lamb[i]/(L + tau)), torch.zeros(temp.size())) * torch.sign(temp)                                
@@ -247,28 +220,23 @@ class SNGCCA():
                     Pi = torch.tensor(np.real(Pi))
 
                 outer_error = torch.norm(torch.abs(u_new-self.u_list[i]))
-                outer_error_P = torch.norm(torch.abs(Pi-Pi_pre))
-                #print(outer_error_P)
-                #print(u_new-self.u_list[i])
-                
-                #print(torch.norm(Pi))
-                #diff_list[i] = outer_error
-                #diff_log[i].append(outer_error)
-                u_new = u_new /  torch.sqrt(torch.sum(u_new ** 2))
+                #u_new = u_new * torch.sqrt(view.shape[0] / (u_new.t() @ view.t() @ view @ u_new)) 
 
                 if (outer_error > outer_tol).item() or (sum(abs(self.u_list[i]) - abs(u_pre)).numpy()[0] == 0):
 
                     self.u_list[i] = u_new
                     #print(torch.norm(u_new))
-                    Pi_list[i] = Pi / torch.norm(Pi)
-                    H_list[i] = H
-                    Gamma_list[i] = Gamma
+                    self.Pi_list[i] = Pi #/ torch.norm(Pi)
+                    self.H_list[i] = H
+                    self.Gamma_list[i] = Gamma
                             
                     # normalize
                     # new L
                     self.y_lab[i] = view @ u_new
-                    y = sum([self.y_lab[j] for j in range(len(views)) if j != i])/(len(views)-1)
-                    y = y / torch.sqrt(torch.sum(y ** 2))
+                    y_list = [self.y_lab[j] for j in range(len(views))]# if j != i
+                    y = torch.cat(y_list, dim=1)
+                    y = y / torch.std(y)
+                    #y = y / torch.sqrt(torch.sum(y ** 2))
                     #y = view @ u_new
                     sigmaY2 = torch.var(y)
 
@@ -279,16 +247,16 @@ class SNGCCA():
                     Ly = sy + sy.T - 2 * (y @ y.T)
                     Ly = torch.exp(-Ly / (2 * sigmaY2))
                     Ly = self.centre_kernel(Ly)
-                    Ly_list[i] = Ly 
+                    self.Ly_list[i] = Ly 
 
                     # new Lipchitz Constant L
                     Coef = - Ly * (Ly < 0) / 4
                     Coef = 2 * (torch.diag(torch.squeeze(torch.sum(Coef, dim=1, keepdim=True))) - Coef) / (n ** 2)
                     Coef = view.T @ Coef @ view
                     L, _ = torch.linalg.eigh((Coef + Coef.t()) / 2)
-                    L_list[i] = L[-1]
+                    self.L_list[i] = L[-1]
                         
-                    K0 = view @ Pi_list[i] @ view.T
+                    K0 = view @ self.Pi_list[i] @ view.T
                     #K0 = K0 / torch.norm(K0)
                     sx = torch.diag(K0).reshape(-1,1)
                     Kx_new = sx + sx.T - 2 * K0
@@ -299,12 +267,6 @@ class SNGCCA():
                 if abs(diff_list[i].numpy()[0]) <= 1e-10:
                     #print(self.u_list[i])
                     self.u_list[i] = u_pre
-            
-            self.Pi_list = Pi_list
-            self.H_list = H_list
-            self.Gamma_list = Gamma_list
-            self.L_list = L_list
-            self.Ly_list = Ly_list
 
             F_trial = - sum([lamb[i] * torch.norm(self.Pi_list[i], p=1) for i in range(len(self.Pi_list))])
             for items in itertools.combinations(range(len(self.K_list)), 2):
@@ -313,13 +275,11 @@ class SNGCCA():
             loss = '{:.4g}'.format(sum([abs(i.item()) for i in diff_list]))
             if logging == 1:
                 
-                print('outer_iter=', outer_iter, 'loss=', sum(diff_list), "diff_tol=",L_list, "diff_list=", diff_list, 'obj=', F_trial)
+                print('outer_iter=', outer_iter, 'loss=', sum(diff_list), "diff_tol=",self.L_list, "diff_list=", diff_list, 'obj=', F_trial)
             elif logging == 0:
                 #print(f"outer_iter=: {outer_iter}, Loss: {sum(diff_list)}, diff_tol: {L_list}, diff_list: {diff_list}, obj: {F_trial}")
-                progress_bar.set_description(f"outer_iter=: {outer_iter},obj: {'{:.4g}'.format(F_trial)}, Loss: {loss}, diff_tol: {L_list}, diff_list: {diff_list}")
+                progress_bar.set_description(f"outer_iter=: {outer_iter},obj: {'{:.4g}'.format(F_trial)}, Loss: {loss}, diff_tol: {self.L_list}, diff_list: {diff_list}")
                 #progress_bar.set_postfix({'Iter': outer_iter+1})
             if sum([abs(i.item()) for i in diff_list])/len(diff_list) < criterion:
                 return self.u_list
         return self.u_list
-
-

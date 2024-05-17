@@ -87,6 +87,7 @@ ggvenn(
   fill_color = c("#1c92d2","#f7b733","#6b6b83", "#f12711"),
   stroke_size = 0.5, set_name_size = 4
   )
+#"#88AEFA","#8CE6C2","#909DB7","#F8CF57","#998DFC","#9DDFF9","#B38CCE","#F7AE73"
 ggsave('FigVennc.eps')
 ggsave('FigVennc.png')
 ```
