@@ -1,74 +1,43 @@
 import torch
-import numpy as np
+from synth_data import create_synthData_new
 import pandas as pd
-from sklearn.metrics import davies_bouldin_score
+import os
 
-Exp_label = pd.read_csv('C:/Users/Programer/Documents/GitHub/SGCCA_HSIC/SNGCCA/RealData/Exp664_genes.txt', sep='\t',header = None)
-Exp_list = Exp_label.iloc[:, 0].values.tolist()
-Exp = pd.DataFrame(np.loadtxt("C:/Users/Programer/Documents/GitHub/SGCCA_HSIC/SNGCCA/RealData/Exp664.txt").T,columns = Exp_label)
+# Hyper Params Section
+device = 'cuda' if torch.cuda.is_available() else 'cpu'
+print("Using", torch.cuda.device_count(), "GPUs")
 
-Meth_label = pd.read_csv('C:/Users/Programer/Documents/GitHub/SGCCA_HSIC/SNGCCA/RealData/Meth664_probes.txt', sep='\t',header = None)
-Meth_list = Meth_label.iloc[:, 0].values.tolist()
-Meth = pd.DataFrame(np.loadtxt("C:/Users/Programer/Documents/GitHub/SGCCA_HSIC/SNGCCA/RealData/Meth664.txt").T,columns = Meth_label)
+import numpy as np
 
-miRNA_label = pd.read_csv('C:/Users/Programer/Documents/GitHub/SGCCA_HSIC/SNGCCA/RealData/miRNA664_miRNA.txt', sep='\t',header = None)
-miRNA_list = miRNA_label.iloc[:, 0].values.tolist()
-miRNA = pd.DataFrame(np.loadtxt("C:/Users/Programer/Documents/GitHub/SGCCA_HSIC/SNGCCA/RealData/miRNA664.txt").T,columns = miRNA_label)
+num = 5
+sample = 400
+tol = 100
+root = 'D:/GitHub/SNGCCA/SNGCCA/Data/'
+dir_sce1 = 'Linear/' + str(sample) + '_' + str(tol) + '_' + str(num) + '/'
+dir_sce2 = 'Nonlinear/' + str(sample) + '_' + str(tol) + '_' + str(num) + '/'
 
-y = pd.read_csv('C:/Users/Programer/Documents/GitHub/SGCCA_HSIC/SNGCCA/RealData/PAM50label664.txt',header = None)
+N = 100
+rep = 0
+u1 = []
+u2 = []
+u3 = []
 
-Exp_value = np.loadtxt("C:/Users/Programer/Documents/GitHub/SGCCA_HSIC/SNGCCA/RealData/Exp664.txt")
-Meth_value = np.loadtxt("C:/Users/Programer/Documents/GitHub/SGCCA_HSIC/SNGCCA/RealData/Meth664.txt")
-miRNA_value = np.loadtxt("C:/Users/Programer/Documents/GitHub/SGCCA_HSIC/SNGCCA/RealData/miRNA664.txt")
+for rep in range(100):
+    #print("REP=",rep)
+    folder_path = root+dir_sce1
+    if not os.path.exists(folder_path):
+        os.makedirs(folder_path)
 
-Score1 = pd.read_csv('C:/Users/Programer/Documents/GitHub/SGCCA_HSIC/SNGCCA/RealData/ressg/SGCCA_u.csv')['V1']
-Score2 = pd.read_csv('C:/Users/Programer/Documents/GitHub/SGCCA_HSIC/SNGCCA/RealData/ressg/SGCCA_v.csv')['V1']
-Score3 = pd.read_csv('C:/Users/Programer/Documents/GitHub/SGCCA_HSIC/SNGCCA/RealData/ressg/SGCCA_w.csv')['V1']
+    folder_path = root+dir_sce2
+    if not os.path.exists(folder_path):
+        os.makedirs(folder_path)
+    views = create_synthData_new(num,sample, mode=1, F=tol)
+    pd.DataFrame(views[0]).to_csv(root+dir_sce1+'data1_'+str(rep)+'.csv', index=False, header=False)
+    pd.DataFrame(views[1]).to_csv(root+dir_sce1+'data2_'+str(rep)+'.csv', index=False, header=False)
+    pd.DataFrame(views[2]).to_csv(root+dir_sce1+'data3_'+str(rep)+'.csv', index=False, header=False)
 
-Exp_df_S = pd.DataFrame({'Name': Exp_list, 'Score': Score1})
-Meth_df_S = pd.DataFrame({'Name': Meth_list, 'Score': Score2})
-miRNA_df_S = pd.DataFrame({'Name': miRNA_list, 'Score': Score3})
-
-Exp_df_S = pd.concat([Exp_df_S,pd.DataFrame(Exp_value)],axis=1)
-Meth_df_S = pd.concat([Meth_df_S,pd.DataFrame(Meth_value)],axis=1)
-miRNA_df_S = pd.concat([miRNA_df_S,pd.DataFrame(miRNA_value)],axis=1)
-
-Filter_Exp = Exp_df_S[abs(Exp_df_S['Score'])> 0.03]
-Filter_Meth = Meth_df_S[abs(Meth_df_S['Score']) > 0.03]
-Filter_miRNA = miRNA_df_S[abs(miRNA_df_S['Score']) > 0.03]
-
-print(len(Filter_Exp), len(Filter_Meth), len(Filter_miRNA))
-print(davies_bouldin_score(Filter_Exp.iloc[:,2:].T, y[0]), davies_bouldin_score(Filter_Meth.iloc[:,2:].T, y[0]), davies_bouldin_score(Filter_miRNA.iloc[:,2:].T, y[0]))
-scorepath = 'C:/Users/Programer/Documents/GitHub/SGCCA_HSIC/SNGCCA/RealData/ressg/'
-Filter_Exp.iloc[:,:2].to_csv(scorepath + 'Exp_score.csv', index=False)
-Filter_Meth.iloc[:,:2].to_csv(scorepath + 'Meth_score.csv', index=False)
-Filter_miRNA.iloc[:,:2].to_csv(scorepath + 'miRNA_score.csv', index=False)
-
-Filter_Exp.iloc[:,2:].to_csv(scorepath + 'Exp_sgcca.txt', index=False)
-Filter_Meth.iloc[:,2:].to_csv(scorepath + 'Meth_sgcca.txt', index=False)
-Filter_miRNA.iloc[:,2:].to_csv(scorepath + 'miRNA_sgcca.txt', index=False)
-
-Score = pd.read_csv('C:/Users/Programer/Documents/GitHub/SGCCA_HSIC/SNGCCA/RealData/resk/KSSHIBA.csv').iloc[:,1].to_list()
-
-Exp_df_S = pd.DataFrame({'Name': Exp_list, 'Score': Score[:2642]})
-Meth_df_S = pd.DataFrame({'Name': Meth_list, 'Score': Score[2642:(2642+3298)]})
-miRNA_df_S = pd.DataFrame({'Name': miRNA_list, 'Score': Score[(2642+3298):(2642+3298+437)]})
-
-Exp_df_S = pd.concat([Exp_df_S,pd.DataFrame(Exp_value)],axis=1)
-Meth_df_S = pd.concat([Meth_df_S,pd.DataFrame(Meth_value)],axis=1)
-miRNA_df_S = pd.concat([miRNA_df_S,pd.DataFrame(miRNA_value)],axis=1)
-
-Filter_Exp = Exp_df_S[Exp_df_S['Score'] > np.mean(Exp_df_S['Score'])]
-Filter_Meth = Meth_df_S[Meth_df_S['Score'] > np.mean(Meth_df_S['Score'])]
-Filter_miRNA = miRNA_df_S[miRNA_df_S['Score'] > 0.0003]
-
-print(len(Filter_Exp), len(Filter_Meth), len(Filter_miRNA))
-print(davies_bouldin_score(Filter_Exp.iloc[:,2:].T, y[0]), davies_bouldin_score(Filter_Meth.iloc[:,2:].T, y[0]), davies_bouldin_score(Filter_miRNA.iloc[:,2:].T, y[0]))
-scorepath = 'C:/Users/Programer/Documents/GitHub/SGCCA_HSIC/SNGCCA/RealData/resk/'
-Filter_Exp.iloc[:,:2].to_csv(scorepath + 'Exp_score.csv', index=False)
-Filter_Meth.iloc[:,:2].to_csv(scorepath + 'Meth_score.csv', index=False)
-Filter_miRNA.iloc[:,:2].to_csv(scorepath + 'miRNA_score.csv', index=False)
-
-Filter_Exp.iloc[:,2:].to_csv(scorepath + 'Exp_sgcca.txt', index=False)
-Filter_Meth.iloc[:,2:].to_csv(scorepath + 'Meth_sgcca.txt', index=False)
-Filter_miRNA.iloc[:,2:].to_csv(scorepath + 'miRNA_sgcca.txt', index=False)
+    views = create_synthData_new(num,sample, mode=2, F=tol)
+    pd.DataFrame(views[0]).to_csv(root+dir_sce2+'data1_'+str(rep)+'.csv', index=False, header=False)
+    pd.DataFrame(views[1]).to_csv(root+dir_sce2+'data2_'+str(rep)+'.csv', index=False, header=False)
+    pd.DataFrame(views[2]).to_csv(root+dir_sce2+'data3_'+str(rep)+'.csv', index=False, header=False)
+    

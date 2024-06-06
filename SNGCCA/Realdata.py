@@ -71,8 +71,8 @@ if __name__ == '__main__':
         #print(b0)
 
         ## fit results
-        b = [0.001,0.001,0.001]
-        u = solver.SNGCCA.fit_admm2(views, lamb=b)
+        b = [0.025,0.0004,0.015]
+        u = solver.SNGCCA.fit_admm2(views, lamb=b, logging=1)
 
         df_u1 = pd.DataFrame(u[0], columns=['u1_' + str(rep + 1)])
         df_u1_total = pd.concat([df_u1_total, df_u1], axis=1)

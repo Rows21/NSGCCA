@@ -17,7 +17,7 @@ library(ggplot2)
 library(VennDiagram)
 library(ggvenn)
 sgcca <- as.list(read.csv('D:/GitHub/SNGCCA/SNGCCA/RealData/ressg/Exp_score.csv')[1])$Name
-sngcca <- as.list(read.csv('D:/GitHub/SNGCCA/SNGCCA/RealData/rescv/Exp_score.csv')[1])$Name
+sngcca <- as.list(read.csv('D:/GitHub/SNGCCA/SNGCCA/RealData/res5/Exp_score.csv')[1])$Name
 ksshiba <- as.list(read.csv('D:/GitHub/SNGCCA/SNGCCA/RealData/resk/Exp_score.csv')[1])$Name
 dgcca <- as.list(read.csv('D:/GitHub/SNGCCA/SNGCCA/RealData/resdg/Exp_dgcca.csv')[1])$Name
 
@@ -50,7 +50,7 @@ ggvenn(
 ggsave('FigVenna.eps')
 ggsave('FigVenna.png')
 sgcca <- as.list(read.csv('D:/GitHub/SNGCCA/SNGCCA/RealData/ressg/Meth_score.csv')[1])$Name
-sngcca <- as.list(read.csv('D:/GitHub/SNGCCA/SNGCCA/RealData/rescv/Meth_score.csv')[1])$Name
+sngcca <- as.list(read.csv('D:/GitHub/SNGCCA/SNGCCA/RealData/res5/Meth_score.csv')[1])$Name
 ksshiba <- as.list(read.csv('D:/GitHub/SNGCCA/SNGCCA/RealData/resk/Meth_score.csv')[1])$Name
 dgcca <- as.list(read.csv('D:/GitHub/SNGCCA/SNGCCA/RealData/resdg/Meth_dgcca.csv')[1])$Name
 
@@ -70,7 +70,7 @@ ggvenn(
 ggsave('FigVennb.eps')
 ggsave('FigVennb.png')
 sgcca <- as.list(read.csv('D:/GitHub/SNGCCA/SNGCCA/RealData/ressg/miRNA_score.csv')[1])$Name
-sngcca <- as.list(read.csv('D:/GitHub/SNGCCA/SNGCCA/RealData/rescv/miRNA_score.csv')[1])$Name
+sngcca <- as.list(read.csv('D:/GitHub/SNGCCA/SNGCCA/RealData/res5/miRNA_score.csv')[1])$Name
 ksshiba <- as.list(read.csv('D:/GitHub/SNGCCA/SNGCCA/RealData/resk/miRNA_score.csv')[1])$Name
 dgcca <- as.list(read.csv('D:/GitHub/SNGCCA/SNGCCA/RealData/resdg/miRNA_dgcca.csv')[1])$Name
 

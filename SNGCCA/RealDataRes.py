@@ -3,7 +3,7 @@ import numpy as np
 from validation_method import swiss_score
 from sklearn.metrics import silhouette_score, davies_bouldin_score, calinski_harabasz_score
 
-num = 'rescv/'
+num = 'res5/'
 datapath = 'D:/GitHub/SNGCCA/SNGCCA/RealData/'
 scorepath = datapath + num
 
@@ -45,7 +45,7 @@ ch = calinski_harabasz_score(Exp_df_S.iloc[:,2:].T, y[0]) + calinski_harabasz_sc
 
 Filter_Exp = Exp_df_S[abs(Exp_df_S['Score']) > 0.03]
 Filter_Meth = Meth_df_S[abs(Meth_df_S['Score']) > 0.03]
-Filter_miRNA = miRNA_df_S[abs(miRNA_df_S['Score']) > 0.05]
+Filter_miRNA = miRNA_df_S[abs(miRNA_df_S['Score']) > 0.03]
 
 print(len(Filter_Exp), len(Filter_Meth), len(Filter_miRNA))
 

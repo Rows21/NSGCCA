@@ -102,8 +102,8 @@ def cor_map(method,Labelpath,Datapath,ypath,Respath,savename):
     plt.show()
 
 
-num = 'ressg/'
-datapath = 'C:/Users/Programer/Documents/GitHub/SGCCA_HSIC/SNGCCA/RealData/'
+num = 'res6/'
+datapath = 'D:/GitHub/SNGCCA/SNGCCA/RealData/'
 respath = datapath + num
 ypath = datapath + 'PAM50label664.txt'
 
@@ -118,7 +118,7 @@ Labelpath = datapath + 'miRNA664_miRNA.txt'
 Datapath = datapath + "miRNA664.txt"
 Respath = respath + "miRNA_score.csv"
 savename = respath + "miRNA_plot.png"
-method = 'weighted'
+method = 'ward'
 cor_map(method,Labelpath,Datapath,ypath,Respath,savename)
 
 Labelpath = datapath + 'Meth664_probes.txt'

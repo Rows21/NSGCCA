@@ -157,7 +157,7 @@ class SNGCCA():
         inner_tol = 1e-3
         outer_error = 1
         diff_list = [999] * n_views
-        criterion = 1e-3
+        criterion = 1e-2
 
         progress_bar = tqdm(total=outer_maxiter, ncols=200)
         
@@ -231,16 +231,13 @@ class SNGCCA():
                     self.Gamma_list[i] = Gamma
                             
                     # normalize
-                    # new L
-                    self.y_lab[i] = view @ u_new
+                    # new L 
+                    self.y_lab[i] =  view @ u_new
+                    #self.y_lab[i] = self.y_lab[i] / torch.std(self.y_lab[i])
                     y_list = [self.y_lab[j] for j in range(len(views))]# if j != i
                     y = torch.cat(y_list, dim=1)
                     y = y / torch.std(y)
-                    #y = y / torch.sqrt(torch.sum(y ** 2))
-                    #y = view @ u_new
                     sigmaY2 = torch.var(y)
-
-                    #print(sigmaY2)
                     sy = torch.diag(y @ y.T).reshape(-1, 1)
 
                     # new Ly
