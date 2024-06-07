@@ -41,29 +41,35 @@ def res(num_total, sample_total, tol_total):
                             u = [u[i]/torch.norm(u[i]) for i in range(3)]
                             
                             spe, pre, rec, acc, f1, mcc = eval(u, Label)
-                            spe, pre, rec, acc, f1, mcc = eval_topk(u, Label, num)
+                            #spe, pre, rec, acc, f1, mcc = eval_topk(u, Label, num)
                             SPE.append(spe)
                             PRE.append(pre)
                             REC.append(rec)
                             FS.append(f1)
                             MCC.append(mcc)
 
+                        if len(tol_total) > 1:
+                            param = tol
+                        elif len(sample_total) > 1:
+                            param = sample
+                        elif len(num_total) > 1:
+                            param = num
                         if method == '':
                             methname = 'SNGCCA'
                         elif method == 'K_':
                             methname = 'KSSHIBA'
                         else:
                             methname = method.replace("_","").upper()
-                        new_spe = [methname, linear,tol,'Specificity',np.mean(SPE),np.std(SPE)]
+                        new_spe = [methname, linear,param,'Specificity',np.mean(SPE),np.std(SPE)]
                         if df is None:
                             df = pd.DataFrame([new_spe], columns=['Methods', 'Scenario', 'n', 'type', 'Values', 'std'])
                         else:
                             df.loc[len(df)] = new_spe
                         
-                        #df.loc[len(df)] = [methname, linear,tol,'Precision',np.mean(PRE),np.std(PRE)]
-                        df.loc[len(df)] = [methname, linear,tol,'Recall',np.mean(REC),np.std(REC)]
-                        #df.loc[len(df)] = [methname, linear,tol,'FS',np.mean(FS),np.std(FS)]
-                        df.loc[len(df)] = [methname, linear,tol,'MCC',np.mean(MCC),np.std(MCC)]
+                        df.loc[len(df)] = [methname, linear,param,'Precision',np.mean(PRE),np.std(PRE)]
+                        df.loc[len(df)] = [methname, linear,param,'Recall',np.mean(REC),np.std(REC)]
+                        df.loc[len(df)] = [methname, linear,param,'FS',np.mean(FS),np.std(FS)]
+                        df.loc[len(df)] = [methname, linear,param,'MCC',np.mean(MCC),np.std(MCC)]
 
     return df
 
@@ -71,7 +77,7 @@ if __name__ == '__main__':
     # 
     num_total = [5]
     sample_total = [100]
-    tol_total = [30,100]
+    tol_total = [30,50,80,100,200]
     df = res(num_total, sample_total, tol_total)
     df.to_csv('D:/GitHub/SNGCCA/SNGCCA/Simulation/simu1_p.csv')
 

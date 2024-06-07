@@ -17,10 +17,10 @@ library(ggthemr)
 
 
 ```{r Fig1a}
-data = read.csv('simu1_p.tsv', sep='\t')
+data = read.csv('simu1_p.csv')
 
 sp = ggplot(data = data, aes(x=n,y=Values,color=Methods, group=Methods)) + geom_line(size=0.6,position = position_dodge(0.05)) + geom_point(size=1,position = position_dodge(0.05))+
-  geom_errorbar(aes(ymin = Values - Confidence, ymax = Values + Confidence), width=0.1, position = position_dodge(0.05))
+  geom_errorbar(aes(ymin = Values - std, ymax = Values + std), width=0.1, position = position_dodge(0.05))
 
 sp + facet_grid(Scenario ~ type) +xlab("Variable Number")+ylab("Scores")+
   scale_color_manual(values = c("#1c92d2","#f7b733", "#11998e","#6b6b83", "#f12711"))+
@@ -34,7 +34,7 @@ ggsave('Fig2a.eps')
 ```
 
 ```{r Fig1b}
-data = read.csv('simu1_s.tsv', sep='\t')
+data = read.csv('simu1_s.csv')
 
 sp = ggplot(data = data, aes(x=n,y=Values,color=Methods, group=Methods)) + geom_line(size=0.6,position = position_dodge(0.05)) + geom_point(size=1,position = position_dodge(0.05))+
   geom_errorbar(aes(ymin = Values - Confidence, ymax = Values + Confidence), width=0.1, position = position_dodge(0.05))
@@ -51,7 +51,7 @@ ggsave('Fig2b.eps')
 ```
 
 ```{r Fig1c}
-data = read.csv('simu1_v.tsv', sep='\t')
+data = read.csv('simu1_v.csv')
 
 sp = ggplot(data = data, aes(x=n,y=Values,color=Methods, group=Methods)) + geom_line(size=0.6,position = position_dodge(0.05)) + geom_point(size=1,position = position_dodge(0.05))+
   geom_errorbar(aes(ymin = Values - Confidence, ymax = Values + Confidence), width=0.1, position = position_dodge(0.05))
