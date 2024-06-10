@@ -41,7 +41,7 @@ def res(num_total, sample_total, tol_total):
                             u = [u[i]/torch.norm(u[i]) for i in range(3)]
                             
                             spe, pre, rec, acc, f1, mcc = eval(u, Label)
-                            #spe, pre, rec, acc, f1, mcc = eval_topk(u, Label, num)
+                            spe, pre, rec, acc, f1, mcc = eval_topk(u, Label, num)
                             SPE.append(spe)
                             PRE.append(pre)
                             REC.append(rec)
@@ -77,7 +77,7 @@ if __name__ == '__main__':
     # 
     num_total = [5]
     sample_total = [100]
-    tol_total = [30,50,80,100,200]
+    tol_total = [30,100]
     df = res(num_total, sample_total, tol_total)
     df.to_csv('D:/GitHub/SNGCCA/SNGCCA/Simulation/simu1_p.csv')
 

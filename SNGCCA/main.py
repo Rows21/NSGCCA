@@ -176,18 +176,16 @@ if __name__ == '__main__':
 
     for rep in range(100):
         print("REP=",rep)
-        views = create_synthData_new(5,N, mode=1, F=30)
+        views = create_synthData_new(5,N, mode=1, F=100)
         solver = Solver(device)
-        b = [0.006,0.006,0.006]
-        b = [i *1 for i in b]
+        b = [0.008,0.008,0.008]
         u = solver.SNGCCA.fit_admm2(views, lamb=b,logging=0)
 
         Label = torch.cat([torch.ones(5, dtype=torch.bool), torch.zeros(95, dtype=torch.bool)])
         spe, pre, rec, acc, f1, mcc = eval(u, Label)
-        spe, pre, rec, acc, f1, mcc = eval_topk(u, Label, 5)
+        #spe, pre, rec, acc, f1, mcc = eval_topk(u, Label, 5)
         print(mcc)
 
-        
         PRE.append(pre)
         REC.append(rec)
         ACC.append(acc)

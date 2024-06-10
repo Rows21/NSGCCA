@@ -121,7 +121,7 @@ def create_synthData_new(v=2, N=400, outDir='./', device='cpu', mode=1, F=20):
     #correlation_matrix = np.corrcoef(V1.T, V2.T)
     #print(correlation_matrix)
     print("------------------")
-    #views = [torch.tensor(view).to(device) for view in views]
+    views = [torch.tensor(view).to(device) for view in views]
     return views
 
 if __name__ == '__main__':
