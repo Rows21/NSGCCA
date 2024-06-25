@@ -20,7 +20,6 @@ We propose **SNGCCA**.
 Clone this repository and install other required packages:
 ```
 git clone git@github.com:Rows21/SNGCCA
-pip install -r requirements.txt
 ```
 
  ## Datasets
