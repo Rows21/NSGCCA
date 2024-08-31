@@ -22,6 +22,18 @@ class SNGCCA():
         D = torch.sum(X1 ** 2, dim=0).reshape(-1, 1).repeat(1, n2) + torch.sum(X2 ** 2, dim=0).reshape(1, -1).repeat(n1,
             1) - 2 * torch.mm(X1.T, X2)
         return D
+    
+    def projL1(self, v, b):
+        if b < 0:
+            raise ValueError("Radius of L1 ball is negative: {}".format(b))
+        if torch.norm(v, 1) < b:
+            return v
+        u, indices = torch.sort(torch.abs(v), descending=True)
+        sv = torch.cumsum(u, dim=0)
+        rho = torch.sum(u > (sv - b) / torch.arange(1, len(u) + 1), dim=0)
+        theta = torch.max(torch.zeros_like(sv), (sv[rho - 1] - b) / rho)
+        w = torch.sign(v) * torch.max(torch.abs(v) - theta, torch.zeros_like(v))
+        return w
 
     def rbf_kernel(self, X, sigma=None):
         # dist
@@ -47,26 +59,26 @@ class SNGCCA():
         D, V = torch.linalg.eigh(temp)
         #D,V = eigs(temp.numpy())
         d = D.reshape(-1,1)
+        d_final = self.projL1(d, 1)
+        #if torch.sum(torch.min(torch.tensor(1.0), torch.max(d, torch.zeros_like(d)))) <= 1:
+        #    gamma = 0
+        #else:
+        #    knots = torch.unique(torch.cat([(d - 1), d]))
+        #    knots = torch.sort(knots, descending=True).values
 
-        if torch.sum(torch.min(torch.tensor(1.0), torch.max(d, torch.zeros_like(d)))) <= 1:
-            gamma = 0
-        else:
-            knots = torch.unique(torch.cat([(d - 1), d]))
-            knots = torch.sort(knots, descending=True).values
-
-            temp = torch.where(torch.sum(torch.min(torch.tensor(1.0), torch.max(D - knots.unsqueeze(1), torch.tensor(0.0))), dim=1) <= 1)
-            temp = temp[0]
-            lentemp = temp[-1]
+        #    temp = torch.where(torch.sum(torch.min(torch.tensor(1.0), torch.max(D - knots.unsqueeze(1), torch.tensor(0.0))), dim=1) <= 1)
+        #    temp = temp[0]
+        #    lentemp = temp[-1]
             #if len(lentemp) != 0:
-            a = knots[lentemp]
-            b = knots[lentemp + 1]
-            fa = torch.sum(torch.min(torch.tensor(1.0),torch.max(d - a, torch.tensor(0.0))))
-            fb = torch.sum(torch.min(torch.tensor(1.0),torch.max(d - b, torch.tensor(0.0))))
-            gamma = a + (b - a) * (1 - fa) / (fb - fa)
+        #    a = knots[lentemp]
+        #    b = knots[lentemp + 1]
+        #    fa = torch.sum(torch.min(torch.tensor(1.0),torch.max(d - a, torch.tensor(0.0))))
+        #    fb = torch.sum(torch.min(torch.tensor(1.0),torch.max(d - b, torch.tensor(0.0))))
+        #    gamma = a + (b - a) * (1 - fa) / (fb - fa)
             #else:
             #  gamma = 0
 
-        d_final = torch.min(torch.tensor(1.0), torch.max(d - gamma, torch.tensor(0.0)))
+        #d_final = torch.min(torch.tensor(1.0), torch.max(d - gamma, torch.tensor(0.0)))
         H = V @ torch.diag(d_final.squeeze()) @ V.T
         return H
 
@@ -157,15 +169,17 @@ class SNGCCA():
         inner_tol = 1e-3
         outer_error = 1
         diff_list = [999] * n_views
-        criterion = 1e-2
+        criterion = 1e-3
 
         progress_bar = tqdm(total=outer_maxiter, ncols=200)
         
         for outer_iter in range(outer_maxiter):
             for i, view in enumerate(views):
 
-                Ly_grad = self.Ly_list[i]
-                #L_grad = [self.L_list[j] for j in range(len(views)) if j != i]
+                #Ly_grad = self.Ly_list[i]
+                #Ly_grad = sum(self.Ly_list)
+                Ly_grad = sum([self.Ly_list[j] for j in range(len(views)) if j != i])
+
                 L_grad = self.L_list[i]#sum(L_grad)/len(L_grad)
                 u_pre = self.u_list[i]
                 Coeft = self.K_list[i] * Ly_grad /2
@@ -192,7 +206,7 @@ class SNGCCA():
                 
                 while (inner_iter <= inner_maxiter) & (inner_error > inner_tol):
                     #print(inner_iter)
-                    temp = Pi-(rho/tau) * covx @ Pi @ covx + (rho/tau) * sqcovx @ (H-Gamma) @ sqcovx
+                    temp = Pi - (rho/tau) * covx @ Pi @ covx + (rho/tau) * sqcovx @ (H-Gamma) @ sqcovx
                     temp = tau/(tau+L)*temp+L/(tau+L) * a
                     
                     Pi = torch.max((torch.abs(temp)- lamb[i]/(L + tau)), torch.zeros(temp.size())) * torch.sign(temp)                                

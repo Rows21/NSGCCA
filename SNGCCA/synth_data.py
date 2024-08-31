@@ -100,15 +100,15 @@ def create_synthData_new(v=2, N=400, outDir='./', device='cpu', mode=1, F=20):
             samples = rng.normal(0, 1, N)
             # Scale and shift the samples to fit the desired range [-10π, 10π]
             v1 = samples * (2 * np.pi)
-            v2 = np.cos(v1)
+            v2 = v1 ** 2
             v3 = v1 * np.cos(v1)
-            scaled_v1 = ((v1 - np.mean(v1)) / np.std(v1)) * 2
-            scaled_v2 = ((v2 - np.mean(v2)) / np.std(v2)) * 2
-            scaled_v3 = ((v3 - np.mean(v2)) / np.std(v3)) * 2
+            #scaled_v1 = ((v1 - np.mean(v1)) / np.std(v1)) * 2
+            #scaled_v2 = ((v2 - np.mean(v2)) / np.std(v2)) * 2
+            #scaled_v3 = ((v3 - np.mean(v2)) / np.std(v3)) * 2
 
-            V1[:,i] = scaled_v1 + V1[:,i]
-            V2[:,i] = scaled_v2 + V2[:,i]
-            V3[:,i] = scaled_v3 + V3[:,i]
+            V1[:,i] = v1 + V1[:,i]
+            V2[:,i] = v2 + V2[:,i]
+            V3[:,i] = v3 + V3[:,i]
 
     views  = []
     views.append(V1)

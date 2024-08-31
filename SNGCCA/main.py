@@ -142,28 +142,18 @@ if __name__ == '__main__':
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
     print("Using", torch.cuda.device_count(), "GPUs")
 
-    # views = create_synthData_hd()
-    '''
-    N = 100
-    views = create_synthData_new(N, mode=1, F=60)
-
-    print(f'input views shape :')
-    for i, view in enumerate(views):
-        print(f'view_{i} :  {view.shape}')
-        view = view.to("cpu")
-    Solver = Solver(device)
-    u = Solver._get_outputs(views, 1e-7, 300, (10, 10, 10)) 
-    #train,test,u = Solver.fit(views)
-    print(u)
-    #b0, obj = Solver.tune_hyper(x_list=views, set_params=5, max_params=50, iters=100)
-    #print(b0)
-    '''
-
     import numpy as np
-    seed = 0
-    torch.manual_seed(seed)
     
+    mode = 1
     N = 100
+    num = 20
+    tol = 200
+    if mode == 1:
+        folder = 'Linear/'
+    else:
+        folder = 'Nonlinear/'
+    
+    
     rep = 0
     u1 = []
     u2 = []
@@ -176,12 +166,12 @@ if __name__ == '__main__':
 
     for rep in range(100):
         print("REP=",rep)
-        views = create_synthData_new(5,N, mode=1, F=100)
+        views = create_synthData_new(num,N, mode=mode, F=tol)
         solver = Solver(device)
-        b = [0.008,0.008,0.008]
+        b = [0.02,0.02,0.02]
         u = solver.SNGCCA.fit_admm2(views, lamb=b,logging=0)
 
-        Label = torch.cat([torch.ones(5, dtype=torch.bool), torch.zeros(95, dtype=torch.bool)])
+        Label = torch.cat([torch.ones(num, dtype=torch.bool), torch.zeros(tol-num, dtype=torch.bool)])
         spe, pre, rec, acc, f1, mcc = eval(u, Label)
         #spe, pre, rec, acc, f1, mcc = eval_topk(u, Label, 5)
         print(mcc)
@@ -195,17 +185,18 @@ if __name__ == '__main__':
         u2.append(u[1])
         u3.append(u[2])
 
-    merged_array = merged_array = np.empty((100, 100))
-
+    merged_array = merged_array = np.empty((100,tol))
+    
+    path = 'E:/GitHub/SNGCCA/SNGCCA/Simulation/' + folder + '/' + str(N) + '_' + str(tol) + '_' + str(num) + '/'
     for i, arr in enumerate(u1):
         merged_array[i] = u1[i].numpy().flatten()
-    np.savetxt('u1.csv', merged_array, delimiter=',')
+    np.savetxt(path + 'u1.csv', merged_array, delimiter=',')
     for i, arr in enumerate(u2):
         merged_array[i] = u2[i].numpy().flatten()
-    np.savetxt('u2.csv', merged_array, delimiter=',')
+    np.savetxt(path + 'u2.csv', merged_array, delimiter=',')
     for i, arr in enumerate(u3):
         merged_array[i] = u3[i].numpy().flatten()
-    np.savetxt('u3.csv', merged_array, delimiter=',')
+    np.savetxt(path + 'u3.csv', merged_array, delimiter=',')
 
     macc = np.mean(ACC)
     sdacc = np.std(ACC)
@@ -218,3 +209,4 @@ if __name__ == '__main__':
     mmcc = np.mean(MCC)
     sdmcc = np.std(MCC)
     print(mmcc, sdmcc)
+ 

@@ -102,8 +102,8 @@ def cor_map(method,Labelpath,Datapath,ypath,Respath,savename):
     plt.show()
 
 
-num = 'res6/'
-datapath = 'D:/GitHub/SNGCCA/SNGCCA/RealData/'
+num = 'res4/'
+datapath = 'E:/GitHub/SNGCCA/SNGCCA/RealData/'
 respath = datapath + num
 ypath = datapath + 'PAM50label664.txt'
 
