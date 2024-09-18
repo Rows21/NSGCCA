@@ -228,7 +228,7 @@ Data_real = list(X = t(X), Y = t(Y), Z = t(Z))
 result = rgcca(Data_real, connection = 1 - diag(length(Data_real)), tau = rep(1, length(Data_real)), ncomp = rep(1,
 length(Data_real)), scheme = "centroid", init = "svd",
 bias = TRUE, tol = .Machine$double.eps, verbose = FALSE)
-?rgcca
+?rgcca_cv
 u=result$a[[1]]
 v=result$a[[2]]
 w=result$a[[3]]
@@ -290,6 +290,7 @@ print(ch_score)
 ```{r}
 
 simu <- function(n,p,v,r){
+
 cor_matrix <- matrix(c(1, 0.7, 0.7,
                         0.7, 1, 0,
                         0.7, 0, 1), 
@@ -305,35 +306,45 @@ SGCCA_u3 <- array(NA, dim = c(r, p))
 
 for( i in 1:100){
   if(i %% 10 == 0){print(i)}
-  root <- paste0('D:/GitHub/SNGCCA/SNGCCA/Data/Linear/',n,'_',p,'_',v)
+  root <- paste0('E:/GitHub/SNGCCA/SNGCCA/Data/Linear/',n,'_',p,'_',v)
   X = read.csv(paste0(root,'/data1_',i-1,'.csv'),header = F)
   Y = read.csv(paste0(root,'/data2_',i-1,'.csv'),header = F)
   Z = read.csv(paste0(root,'/data3_',i-1,'.csv'),header = F)
-  Data1 = list(X,Y,Z)
-
-  res1 = rgcca(Data1, method = "rgcca")
+  Data1 <- list(X,Y,Z)
+  cv_tau <- rgcca_cv(Data1, response = 3, method = "rgcca",
+                   par_type = "tau",
+                   par_length = 5,
+                   prediction_model = "glmnet", #caret::modelLookup()
+                   metric = "RMSE",
+                   k=3, n_run = 3,
+                   verbose = TRUE)
+  
+  res1 = rgcca(Data1, method = "rgcca", tau = cv_tau$call$tau)
   RGCCA_u1[i,] = res1$a[[1]]
   RGCCA_u2[i,] = res1$a[[2]]
   RGCCA_u3[i,] = res1$a[[3]]
-  
-  #perm_out <- rgcca_permutation(Data1,
-  #n_cores = 1,
-  #par_type = "tau",
-  #n_perms = 50
-  #)
-  #res2 = rgcca(Data1, connection = 1 - cor_matrix, tau = perm_out$best_params, method = "sgcca")
-  #SGCCA_u1[i,] = res2$a[[1]]
-  #SGCCA_u2[i,] = res2$a[[2]]
-  #SGCCA_u3[i,] = res2$a[[3]]
+
+  cv_s <- rgcca_cv(Data1, response = 3, ncomp = 1,
+                   prediction_model = "glmnet", lambda = .001,
+                   par_type = "sparsity",
+                   par_value = c(.7, .2, 1),
+                   metric = "RMSE",
+                   n_cores = 2,
+ )
+
+  res2 = rgcca(Data1, connection = 1 - cor_matrix, tau = c(1,1,1), sparsity = cv_s$best_params, method = "sgcca")
+  SGCCA_u1[i,] = res2$a[[1]]
+  SGCCA_u2[i,] = res2$a[[2]]
+  SGCCA_u3[i,] = res2$a[[3]]
   
 }
 
-write.csv(RGCCA_u1,paste0('D:/GitHub/SNGCCA/SNGCCA/Simulation/Linear/',n,'_',p,'_',v,"/rgcca_u1.csv"), row.names = FALSE)
-write.csv(RGCCA_u2,paste0('D:/GitHub/SNGCCA/SNGCCA/Simulation/Linear/',n,'_',p,'_',v,"/rgcca_u2.csv"), row.names = FALSE)
-write.csv(RGCCA_u3,paste0('D:/GitHub/SNGCCA/SNGCCA/Simulation/Linear/',n,'_',p,'_',v,"/rgcca_u3.csv"), row.names = FALSE)
-#write.csv(SGCCA_u1,paste0('D:/GitHub/SNGCCA/SNGCCA/Simulation/Linear/',n,'_',p,'_',v,"/sgcca_u1.csv"), row.names = FALSE)
-#write.csv(SGCCA_u2,paste0('D:/GitHub/SNGCCA/SNGCCA/Simulation/Linear/',n,'_',p,'_',v,"/sgcca_u2.csv"), row.names = FALSE)
-#write.csv(SGCCA_u3,paste0('D:/GitHub/SNGCCA/SNGCCA/Simulation/Linear/',n,'_',p,'_',v,"/sgcca_u3.csv"), row.names = FALSE)
+write.csv(RGCCA_u1,paste0('E:/GitHub/SNGCCA/SNGCCA/Simulation/Linear/',n,'_',p,'_',v,"/rgcca_u1.csv"), row.names = FALSE)
+write.csv(RGCCA_u2,paste0('E:/GitHub/SNGCCA/SNGCCA/Simulation/Linear/',n,'_',p,'_',v,"/rgcca_u2.csv"), row.names = FALSE)
+write.csv(RGCCA_u3,paste0('E:/GitHub/SNGCCA/SNGCCA/Simulation/Linear/',n,'_',p,'_',v,"/rgcca_u3.csv"), row.names = FALSE)
+write.csv(SGCCA_u1,paste0('E:/GitHub/SNGCCA/SNGCCA/Simulation/Linear/',n,'_',p,'_',v,"/sgcca_u1.csv"), row.names = FALSE)
+write.csv(SGCCA_u2,paste0('E:/GitHub/SNGCCA/SNGCCA/Simulation/Linear/',n,'_',p,'_',v,"/sgcca_u2.csv"), row.names = FALSE)
+write.csv(SGCCA_u3,paste0('E:/GitHub/SNGCCA/SNGCCA/Simulation/Linear/',n,'_',p,'_',v,"/sgcca_u3.csv"), row.names = FALSE)
 
 #========================================================================
 RGCCA_u1 <- array(NA, dim = c(r, p))
@@ -345,35 +356,45 @@ SGCCA_u3 <- array(NA, dim = c(r, p))
 
 for( i in 1:100){
   if(i %% 10 == 0){print(i)}
-  root <- paste0('D:/GitHub/SNGCCA/SNGCCA/Data/Nonlinear/',n,'_',p,'_',v)
+  root <- paste0('E:/GitHub/SNGCCA/SNGCCA/Data/Nonlinear/',n,'_',p,'_',v)
   X = read.csv(paste0(root,'/data1_',i-1,'.csv'),header = F)
   Y = read.csv(paste0(root,'/data2_',i-1,'.csv'),header = F)
   Z = read.csv(paste0(root,'/data3_',i-1,'.csv'),header = F)
-  Data1 = list(X,Y,Z)
-
-  res1 = rgcca(Data1, method = "rgcca")
+  Data1 <- list(X,Y,Z)
+  cv_tau <- rgcca_cv(Data1, response = 3, method = "rgcca",
+                   par_type = "tau",
+                   par_length = 5,
+                   prediction_model = "glmnet", #caret::modelLookup()
+                   metric = "RMSE",
+                   k=3, n_run = 3,
+                   verbose = TRUE)
+  
+  res1 = rgcca(Data1, method = "rgcca", tau = cv_tau$call$tau)
   RGCCA_u1[i,] = res1$a[[1]]
   RGCCA_u2[i,] = res1$a[[2]]
   RGCCA_u3[i,] = res1$a[[3]]
-  
-  #perm_out <- rgcca_permutation(Data1,
-  #n_cores = 1,
-  #par_type = "tau",
-  #n_perms = 50
-  #)
-  #res2 = rgcca(Data1, connection = 1 - cor_matrix, tau = perm_out$best_params, method = "sgcca")
-  #SGCCA_u1[i,] = res2$a[[1]]
-  #SGCCA_u2[i,] = res2$a[[2]]
-  #SGCCA_u3[i,] = res2$a[[3]]
+
+  cv_s <- rgcca_cv(Data1, response = 3, ncomp = 1,
+                   prediction_model = "glmnet", lambda = .001,
+                   par_type = "sparsity",
+                   par_value = c(.7, .2, 1),
+                   metric = "RMSE",
+                   n_cores = 2,
+ )
+
+  res2 = rgcca(Data1, connection = 1 - cor_matrix, tau = c(1,1,1), sparsity = cv_s$best_params, method = "sgcca")
+  SGCCA_u1[i,] = res2$a[[1]]
+  SGCCA_u2[i,] = res2$a[[2]]
+  SGCCA_u3[i,] = res2$a[[3]]
   
 }
 
-write.csv(RGCCA_u1,paste0('D:/GitHub/SNGCCA/SNGCCA/Simulation/Nonlinear/',n,'_',p,'_',v,"/rgcca_u1.csv"), row.names = FALSE)
-write.csv(RGCCA_u2,paste0('D:/GitHub/SNGCCA/SNGCCA/Simulation/Nonlinear/',n,'_',p,'_',v,"/rgcca_u2.csv"), row.names = FALSE)
-write.csv(RGCCA_u3,paste0('D:/GitHub/SNGCCA/SNGCCA/Simulation/Nonlinear/',n,'_',p,'_',v,"/rgcca_u3.csv"), row.names = FALSE)
-#write.csv(SGCCA_u1,paste0('D:/GitHub/SNGCCA/SNGCCA/Simulation/Nonlinear/',n,'_',p,'_',v,"/sgcca_u1.csv"), row.names = FALSE)
-#write.csv(SGCCA_u2,paste0('D:/GitHub/SNGCCA/SNGCCA/Simulation/Nonlinear/',n,'_',p,'_',v,"/sgcca_u2.csv"), row.names = FALSE)
-#write.csv(SGCCA_u3,paste0('D:/GitHub/SNGCCA/SNGCCA/Simulation/Nonlinear/',n,'_',p,'_',v,"/sgcca_u3.csv"), row.names = FALSE)
+write.csv(RGCCA_u1,paste0('E:/GitHub/SNGCCA/SNGCCA/Simulation/Nonlinear/',n,'_',p,'_',v,"/rgcca_u1.csv"), row.names = FALSE)
+write.csv(RGCCA_u2,paste0('E:/GitHub/SNGCCA/SNGCCA/Simulation/Nonlinear/',n,'_',p,'_',v,"/rgcca_u2.csv"), row.names = FALSE)
+write.csv(RGCCA_u3,paste0('E:/GitHub/SNGCCA/SNGCCA/Simulation/Nonlinear/',n,'_',p,'_',v,"/rgcca_u3.csv"), row.names = FALSE)
+write.csv(SGCCA_u1,paste0('E:/GitHub/SNGCCA/SNGCCA/Simulation/Nonlinear/',n,'_',p,'_',v,"/sgcca_u1.csv"), row.names = FALSE)
+write.csv(SGCCA_u2,paste0('E:/GitHub/SNGCCA/SNGCCA/Simulation/Nonlinear/',n,'_',p,'_',v,"/sgcca_u2.csv"), row.names = FALSE)
+write.csv(SGCCA_u3,paste0('E:/GitHub/SNGCCA/SNGCCA/Simulation/Nonlinear/',n,'_',p,'_',v,"/sgcca_u3.csv"), row.names = FALSE)
 }
 
 simu(100,30,5,100)

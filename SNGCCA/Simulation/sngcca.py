@@ -1,0 +1,337 @@
+import torch
+import itertools
+import numpy as np
+from tqdm import tqdm
+from scipy.sparse.linalg import eigs
+
+class SNGCCA():
+    def __init__(self, device):
+        self.K_list = []
+        self.a_list = []
+        self.cK_list = []
+        self.u_list = []
+        self.device = device
+
+        self.Momentum_V: list = [None] * 3
+        self.Adam_V: list = [None] * 3
+        self.Adam_M: list = [None] * 3
+
+    def sqdist(self, X1, X2):
+        n1 = X1.shape[1]
+        n2 = X2.shape[1]
+        D = torch.sum(X1 ** 2, dim=0).reshape(-1, 1).repeat(1, n2) + torch.sum(X2 ** 2, dim=0).reshape(1, -1).repeat(n1,
+            1) - 2 * torch.mm(X1.T, X2)
+        return D
+
+    def Z(self, x):
+        n = x.shape[0]
+        Z = torch.zeros(n, n)
+        for i in range(n):
+            for j in range(n):
+                Z[i, j] = torch.norm(torch.ger(x[i] - x[j], x[i] - x[j]), p='fro')
+        return Z 
+    def rbf_kernel(self, X, sigma=None):
+        # dist
+        D = torch.sqrt(torch.abs(self.sqdist(X.t(), X.t())))
+
+        if sigma is None:
+            # median sigma
+            sigma = torch.median(D)
+
+        # kernel
+        K = torch.exp(- (D ** 2) / (2 * sigma ** 2))
+        return K, sigma
+
+    def centre_kernel(self, K):
+        return K + torch.mean(K) - (torch.mean(K, dim=0).reshape((1, -1)) + torch.mean(K, dim=1).reshape((-1, 1)))
+
+    def projL1(self, v, b):
+        #if b < 0:
+        #    raise ValueError("Radius of L1 ball is negative: {}".format(b))
+        #if torch.sum(torch.min(torch.tensor(1.0), torch.max(v, torch.zeros_like(v)))) <= b:
+        #    return v
+        u, indices = torch.sort(v, descending=True)
+        u = u.flip(dims=(0,))
+        sv = torch.cumsum(u, dim=0)
+        #rho = torch.sum(u > (sv - b) / torch.arange(1, len(u) + 1), dim=0)
+        rho = torch.max(torch.max(u - (sv - b) / torch.arange(1, len(u) + 1).reshape(-1,1),torch.zeros_like(sv)),0)[1].item() + 1
+        #theta = torch.max(torch.max(torch.zeros_like(sv), (sv[rho - 1] - b) / (rho.reshape(-1,1))))
+        theta = torch.max(torch.tensor(0),((sv[rho - 1] - b) / rho))
+        w = torch.sign(v) * torch.max(v - theta, torch.zeros_like(v))
+        return w
+    
+    def __FantopeProjection(self, W):
+        temp = (W + W.T)/2
+        
+        D, V = torch.linalg.eigh(temp)
+        d = D.reshape(-1,1)
+        d_final = self.projL1(d, 1)
+        H = V @ torch.diag(d_final.squeeze()) @ V.T
+        return H
+    
+    def _FantopeProjection(self, W):
+        # This code is to solve the projection problem onto the fantope constraint
+        # min_H || H - W ||
+        # s.t. || H || _{*} <= K, || H || _{sp} <= 1
+        temp = (W + W.T)/2
+        
+        D, V = torch.linalg.eigh(temp)
+        #D,V = eigs(temp.numpy())
+        d = D.reshape(-1,1)
+
+        if torch.sum(torch.min(torch.tensor(1.0), torch.max(d, torch.zeros_like(d)))) <= 0:
+            gamma = 0
+        else:
+            knots = torch.unique(torch.cat([(d - 1), d]))
+            knots = torch.sort(knots, descending=True).values
+
+            temp = torch.where(torch.sum(torch.min(torch.tensor(1.0), torch.max(D - knots.unsqueeze(1), torch.tensor(0.0))), dim=1) <= 1)
+            temp = temp[0]
+            lentemp = temp[-1]
+            #if len(lentemp) != 0:
+            a = knots[lentemp]
+            b = knots[lentemp + 1]
+            fa = torch.sum(torch.min(torch.tensor(1.0),torch.max(d - a, torch.tensor(0.0))))
+            fb = torch.sum(torch.min(torch.tensor(1.0),torch.max(d - b, torch.tensor(0.0))))
+            gamma = a + (b - a) * (1 - fa) / (fb - fa)
+            #else:
+            #  gamma = 0
+
+        d_final = torch.min(torch.tensor(1.0), torch.max(d - gamma, torch.tensor(0.0)))
+        H = V @ torch.diag(d_final.squeeze()) @ V.T
+        return H
+
+    def fit_admm2(self, views, lamb, logging=1):
+        n_views = len(views)
+        self.K_list = []
+        self.a_list = []
+        self.cK_list = []
+        self.u_list = [None] * n_views
+        rho = 1
+        # p = 150
+
+        self.covx_list = []
+        self.y_lab = []
+        self.sqcovx_list = []
+        self.tau_list = []
+        self.H_list = []
+        self.Gamma_list = []
+        self.Pi_list = []
+        self.L_list = []
+        self.Z_list = []
+        for i, view in enumerate(views):
+
+            n, p = view.shape
+            # set sqcovx
+            covx = torch.cov(view.T)
+            self.covx_list.append(covx)
+
+            eigval, eigvec = torch.linalg.eigh((covx + covx.T) / 2)
+            # covx max eigval
+            eigenvalues = torch.real(eigval)
+            eigenvalues = torch.where(eigenvalues < 0, torch.zeros_like(eigenvalues), eigenvalues)
+            sqrt_eigenvalues = torch.sqrt(eigenvalues)
+            # eigvec * sqrt(max(eigval, 0)) * eigvec'
+            sqcovx = eigvec @ torch.diag(sqrt_eigenvalues) @ eigvec.t()
+            self.sqcovx_list.append(sqcovx)
+
+            # set tau
+            tau = 4 * rho * torch.max(eigenvalues) ** 2
+            self.tau_list.append(tau)
+
+            # set init u
+            u = torch.ones((p, 1))
+            #u = torch.sqrt(u / torch.norm(u, p=2))
+            self.u_list[i] = u
+            #u = u * torch.sqrt(view.shape[0] / (u.t() @ view.t() @ view @ u)) 
+            initPi = u @ u.t() / (u.t() @ covx @ u)
+            #initPi = torch.zeros((p,p))
+            #initPi += torch.diag(u/sum(torch.diag(covx) * u.reshape(-1)))
+            #initPi = initPi / torch.trace(sqcovx @ initPi @ sqcovx) 
+            Pi = initPi#/torch.norm(initPi)
+            self.Pi_list.append(Pi)
+
+            # set Label kernel
+            sx = torch.diag(view @ Pi @ view.T)
+            Kx = sx + sx.T - 2 * view @ Pi @ view.T
+            Kx = torch.exp(-Kx / 2)
+            self.K_list.append(Kx)
+            #self.y_lab.append(view @ u)
+        
+        for i, view in enumerate(views):
+            n, p = view.shape
+            #y = sum([self.y_lab[j] for j in range(len(views)) if j != i])#/(len(views)) # if j != i
+            #y = y / torch.sqrt(torch.sum(y ** 2))
+            #sigmaY2 = torch.var(y)
+            #sy = torch.diag(y @ y.T).reshape(-1, 1)
+
+            #Ly = sy + sy.T - 2*(y @ y.T)
+            #Ly = torch.exp(-Ly/(2*sigmaY2))
+            #Ly = self.centre_kernel(Ly)
+            Zk = self.Z(view)
+            #Ly = sum([self.K_list[j] for j in range(len(views)) if j != i])
+            #Ly = self.centre_kernel(Ly)
+            self.Z_list.append(Zk)
+
+            #Coef = - Ly * (Ly < 0)/4
+            #Coef = (2 * torch.diag(torch.squeeze(torch.sum(Coef,dim=1,keepdim=True))) - Coef)/(n ** 2)
+            #Coef = view.T @ Coef @ view
+            #L, _ = torch.linalg.eigh((Coef + Coef.t())/2)
+            
+            #L = sum(sum(torch.abs(Ly) * Zk / (2*n**2)))
+            #self.L_list.append(L)
+
+            # Set initial H, Gamma
+            H = self.sqcovx_list[i] * self.Pi_list[i] * self.sqcovx_list[i]
+            self.H_list.append(H)
+            Gamma = torch.zeros((p, p))
+            self.Gamma_list.append(Gamma* (n_views - 1))
+
+        #print(self.L_list)
+        #lamb = [i/100 * 1.5 for i in L_list]
+        outer_maxiter = 2000
+        outer_tol = 1e-5
+        inner_maxiter = 200
+        inner_tol = 1e-3
+        outer_error = 1
+        diff_list = [999] * n_views
+        criterion = 1e-2
+
+        progress_bar = tqdm(total=outer_maxiter, ncols=200)
+        
+        for outer_iter in range(outer_maxiter):
+            for i, view in enumerate(views):
+                
+                Ly_grad = sum([self.K_list[j] for j in range(len(views)) if j != i])
+                cLy_grad = self.centre_kernel(Ly_grad)
+                #Ly_grad = self.Z_list[i]
+                #L_grad = [self.L_list[j] for j in range(len(views)) if j != i]
+                Coeft = self.K_list[i] * cLy_grad / 2
+
+                n = Coeft.shape[0]
+                sum_Coeft = torch.sum(Coeft, dim=1)
+                diag_sum_Coeft = torch.diag(sum_Coeft)
+                dF = torch.matmul(torch.matmul(view.T, (2 * (diag_sum_Coeft - Coeft)) / (n ** 2)), view)
+                #dF = view.t() @ (((diag_sum_Coeft - Coeft)) / (n ** 2)) @ view
+                Pi = self.Pi_list[i]
+
+                Zk = self.Z_list[i]
+                L = sum(sum(torch.abs(Ly_grad) * Zk / (2*n**2)))
+                print(L)
+                #L = self.L_list[i]
+                a = Pi - dF / L
+                Pi_pre = Pi
+                inner_error = 1
+                inner_iter = 0
+
+                sqcovx = self.sqcovx_list[i]
+                covx = self.covx_list[i]
+                tau = self.tau_list[i]
+
+                H = self.H_list[i]
+                Gamma = self.Gamma_list[i]
+                #print(torch.trace(sqcovx @ Pi @ sqcovx) )
+                while (inner_iter <= inner_maxiter) & (inner_error > inner_tol):
+                    #print(inner_iter)
+                    #print("Pi",torch.trace(sqcovx @ Pi @ sqcovx) )
+                    temp = Pi-(rho/tau) * covx @ Pi @ covx + (rho/tau) * sqcovx @ (H-Gamma) @ sqcovx
+                    temp = tau/(tau+L)*temp+L/(tau+L) * a
+                    
+                    Pi = torch.max((temp - lamb[i]/(L + tau)), torch.zeros(temp.size())) * torch.sign(temp)                                
+                    H = self._FantopeProjection(sqcovx @ Pi @ sqcovx + Gamma)
+                    #print("H",torch.trace(H) )
+                    #if torch.trace(Pi) >= 1e+5 or torch.trace(Pi) <= -1e+5:
+                    #    print("H",torch.trace(H) )
+                    #    return self.u_list
+                    Gamma = Gamma + sqcovx @ Pi @ sqcovx - H
+                    
+                    inner_error = torch.max(torch.max(torch.abs(sqcovx @ Pi @ sqcovx - H)), torch.max(torch.abs(Pi-Pi_pre)))
+                    #inner_error = torch.norm(sqcovx @ Pi @ sqcovx - H, 'fro')
+                    inner_iter = inner_iter + 1
+
+                #try:
+                print(sum(sum(Pi)))
+                _, u_new_meta = torch.linalg.eigh((Pi + Pi.T) / 2)
+                l1_norms = torch.sum(torch.abs(u_new_meta),dim=0)
+                top_indices = np.argsort(l1_norms)[-1:]
+                u_new_meta = u_new_meta[:, top_indices]
+                    #u_new = u_new / torch.sqrt(u_new.T @ sqcovx_list[i] @ u_new)
+                u_new = u_new_meta
+
+                #except:
+                #    Pi = Pi.numpy()
+                #    _, u_new_meta = eigs((Pi + Pi.T) / 2)
+                #    l1_norms = np.sum(np.abs(u_new_meta), axis=0)
+                #    top_indices = np.argsort(l1_norms)[-1:]
+                #    u_new_meta = u_new_meta[:, top_indices]
+                #    u_new = torch.tensor(np.real(u_new_meta))
+                #    Pi = torch.tensor(np.real(Pi))
+
+                #outer_error = torch.norm(torch.abs(u_new-self.u_list[i]))
+                #u_new = u_new * torch.sqrt(view.shape[0] / (u_new.t() @ view.t() @ view @ u_new)) 
+
+                #if (outer_error > outer_tol).item() or (sum(abs(self.u_list[i]) - abs(u_pre)).numpy()[0] == 0):
+
+                self.u_list[i] = u_new
+                #print(torch.norm(u_new))
+                self.Pi_list[i] = Pi #/ torch.norm(Pi)
+                self.H_list[i] = H
+                self.Gamma_list[i] = Gamma
+                                
+                # normalize
+                # new L 
+                #self.y_lab[i] =  view @ u_new
+                #self.y_lab[i] = self.y_lab[i] / torch.std(self.y_lab[i])
+                #y_list = [self.y_lab[j] for j in range(len(views))]# if j != i
+                #y = torch.cat(y_list, dim=1)
+                #y = y / torch.std(y)
+                #y = sum([self.y_lab[j] for j in range(len(views)) if j != i])
+                #sigmaY2 = torch.var(y)
+                #sy = torch.diag(y @ y.T).reshape(-1, 1)
+
+                # new Ly
+                #Ly = sy + sy.T - 2 * (y @ y.T)
+                #Ly = torch.exp(-Ly / (2 * sigmaY2))
+                #Ly = self.centre_kernel(Ly)
+                #Ly = sum([self.K_list[j] for j in range(len(views)) if j != i])
+                #self.Z_list[i] = Ly
+
+                # new Lipchitz Constant L
+                #Coef = - Ly * (Ly < 0) / 4
+                #Coef = (2 * torch.diag(torch.squeeze(torch.sum(Coef, dim=1, keepdim=True))) - Coef) / (n ** 2)
+                #Coef = view.T @ Coef @ view
+                #L, _ = torch.linalg.eigh((Coef + Coef.t()) / 2)
+                #self.L_list[i] = sum(sum(torch.abs(Ly) * Zk / (2*n**2)))#L[-1]
+                            
+                K0 = view @ self.Pi_list[i] @ view.T
+                #K0 = K0 / torch.norm(K0)
+                sx = torch.diag(K0).reshape(-1,1)
+                Kx_new = sx + sx.T - 2 * K0
+                Kx_new = torch.exp(-Kx_new / 2)
+                self.K_list[i] = Kx_new
+
+                #diff_list[i] = sum(torch.abs(self.u_list[i]) - torch.abs(u_pre))/sum(torch.abs(self.u_list[i]))
+                #if abs(diff_list[i].numpy()[0]) <= 1e-10:
+                    #print(self.u_list[i])
+                #    self.u_list[i] = u_pre
+                diff_list[i] = torch.max(torch.abs(Pi - Pi_pre))
+                
+                    
+            #error_iter = sum([abs(i.item()) for i in diff_list])/len(diff_list)
+            error_iter = torch.max(torch.stack(diff_list))
+            F_trial = - sum([lamb[i] * torch.norm(self.Pi_list[i], p=1) for i in range(len(self.Pi_list))])
+            for items in itertools.combinations(range(len(self.K_list)), 2):
+                F_trial += torch.mean(torch.mean(self.K_list[items[0]] @ self.K_list[items[1]]))
+
+            loss = '{:.4g}'.format(sum([abs(i.item()) for i in diff_list]))
+            if logging == 1:
+                
+                print('outer_iter=', outer_iter, 'loss=', sum(diff_list), "diff_tol=",self.L_list, "diff_list=", diff_list, 'obj=', F_trial)
+            elif logging == 0:
+                #print(f"outer_iter=: {outer_iter}, Loss: {sum(diff_list)}, diff_tol: {L_list}, diff_list: {diff_list}, obj: {F_trial}")
+                progress_bar.set_description(f"outer_iter=: {outer_iter},obj: {'{:.4g}'.format(F_trial)}, Loss: {loss}, diff_list: {diff_list}")
+                                #diff_tol: {self.L_list}, 
+                #progress_bar.set_postfix({'Iter': outer_iter+1})
+            if error_iter < criterion:
+                return self.u_list
+        return self.u_list

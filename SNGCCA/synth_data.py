@@ -39,10 +39,10 @@ def create_synthData_new(v=2, N=400, outDir='./', device='cpu', mode=1, F=20):
         data = np.dot(data, L.T)
 
         # Verify the covariance matrix and correlation
-        print("Covariance matrix:")
-        print(np.cov(data, rowvar=False))
-        print("Correlation matrix:")
-        print(np.corrcoef(data, rowvar=False))
+        #print("Covariance matrix:")
+        #print(np.cov(data, rowvar=False))
+        #print("Correlation matrix:")
+        #print(np.corrcoef(data, rowvar=False))
         
         # Define the dimensions of the vectors
         w1_dim = F
@@ -97,14 +97,11 @@ def create_synthData_new(v=2, N=400, outDir='./', device='cpu', mode=1, F=20):
         for i, seed in enumerate(random_seeds):
             rng = np.random.RandomState(seed)
             # Generate random samples from a normal distribution with mean 0 and standard deviation 1
-            samples = rng.normal(0, 1, N)
+            samples = rng.uniform(0, 4 * np.pi, N)
             # Scale and shift the samples to fit the desired range [-10π, 10π]
-            v1 = samples * (2 * np.pi)
-            v2 = v1 ** 2
-            v3 = v1 * np.cos(v1)
-            #scaled_v1 = ((v1 - np.mean(v1)) / np.std(v1)) * 2
-            #scaled_v2 = ((v2 - np.mean(v2)) / np.std(v2)) * 2
-            #scaled_v3 = ((v3 - np.mean(v2)) / np.std(v3)) * 2
+            v1 = samples
+            v2 = 0.5 * samples ** 2
+            v3 = samples * np.cos(samples)
 
             V1[:,i] = v1 + V1[:,i]
             V2[:,i] = v2 + V2[:,i]

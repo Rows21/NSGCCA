@@ -8,7 +8,7 @@ from synth_data import create_synthData_new
 from sngcca import SNGCCA
 
 from validation_method import eval, eval_topk
-
+torch.manual_seed(0)
 class Solver():
     def __init__(self,device,batch_size=0.5):
         self.SNGCCA = SNGCCA(device)
@@ -146,13 +146,13 @@ if __name__ == '__main__':
     
     mode = 1
     N = 100
-    num = 20
-    tol = 200
+    num = 5
+    tol = 100
     if mode == 1:
         folder = 'Linear/'
     else:
         folder = 'Nonlinear/'
-    
+    data_path = 'E:/GitHub/SNGCCA/SNGCCA/Data/' + folder + '/' + str(N) + '_' + str(tol) + '_' + str(num) + '/'
     
     rep = 0
     u1 = []
@@ -166,28 +166,39 @@ if __name__ == '__main__':
 
     for rep in range(100):
         print("REP=",rep)
-        views = create_synthData_new(num,N, mode=mode, F=tol)
+        #views = create_synthData_new(num,N, mode=mode, F=tol)
+        view1 = np.genfromtxt(data_path + 'data' + str(1) + '_' + str(rep) + '.csv', delimiter=',')
+        view2 = np.genfromtxt(data_path + 'data' + str(2) + '_' + str(rep) + '.csv', delimiter=',')
+        view3 = np.genfromtxt(data_path + 'data' + str(3) + '_' + str(rep) + '.csv', delimiter=',')
+        views = [torch.tensor(view1), torch.tensor(view2), torch.tensor(view3)]
+        #for i in range(len(views)):
+            #views[i].numpy().tofile(data_path + 'data' + str(i+1) + '_' + str(rep) + '.csv', sep=',')
+            #np.savetxt(data_path + 'data' + str(i+1) + '_' + str(rep) + '.csv', views[i].numpy(), delimiter=',')
         solver = Solver(device)
-        b = [0.02,0.02,0.02]
+        b = [80,80,80]
+        #b = [0.01,0.01,0.01]
         u = solver.SNGCCA.fit_admm2(views, lamb=b,logging=0)
 
         Label = torch.cat([torch.ones(num, dtype=torch.bool), torch.zeros(tol-num, dtype=torch.bool)])
-        spe, pre, rec, acc, f1, mcc = eval(u, Label)
+        spe, pre, rec, acc, f1, mcc, sr = eval(u, Label, 5)
         #spe, pre, rec, acc, f1, mcc = eval_topk(u, Label, 5)
         print(mcc)
 
-        PRE.append(pre)
-        REC.append(rec)
-        ACC.append(acc)
-        FS.append(f1)
-        MCC.append(mcc)
-        u1.append(u[0])
-        u2.append(u[1])
-        u3.append(u[2])
+        #PRE.append(pre)
+        #REC.append(rec)
+        #ACC.append(acc)
+        #FS.append(f1)
+        #MCC.append(mcc)
+        #u1.append(u[0])
+        #u2.append(u[1])
+        #u3.append(u[2])
 
     merged_array = merged_array = np.empty((100,tol))
     
+    # Save results
+    # Save data
     path = 'E:/GitHub/SNGCCA/SNGCCA/Simulation/' + folder + '/' + str(N) + '_' + str(tol) + '_' + str(num) + '/'
+        
     for i, arr in enumerate(u1):
         merged_array[i] = u1[i].numpy().flatten()
     np.savetxt(path + 'u1.csv', merged_array, delimiter=',')
