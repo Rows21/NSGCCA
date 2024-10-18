@@ -46,16 +46,16 @@ class SNGCCA():
         n = x.shape[0]
         Z_F2 = torch.zeros(n, n)
         Z_FT = torch.zeros(n, n)
-        Z = torch.zeros(n, n, p, p)
+        #Z = torch.zeros(n, n, p, p)
         for i in range(n):
             for j in range(n):
-                Z[i,j,:,:] = torch.ger(x[i] - x[j], x[i] - x[j])
-                Z_F2[i, j] = torch.norm(Z[i,j,:,:], p='fro') ** 2
-                Z_FT[i, j] = torch.norm(Z[i,j,:,:], p='fro') * torch.trace(Z[i,j,:,:])
+                #Z[i,j,:,:] = torch.ger(x[i] - x[j], x[i] - x[j])
+                Z_F2[i, j] = torch.norm(torch.ger(x[i] - x[j], x[i] - x[j]), p='fro') ** 2
+                #Z_FT[i, j] = torch.norm(Z[i,j,:,:], p='fro') * torch.trace(Z[i,j,:,:])
         
-        return {"Z_ij":Z, "Z_Fnorm2":Z_F2, "Z_FT":Z_FT} # "Z_Fnorm22":Z_F22
+        return Z_F2#{"Z_ij":Z, "Z_Fnorm2":Z_F2, "Z_FT":Z_FT} # "Z_Fnorm22":Z_F22
     
-    def delta_Pi(self, Coeft, Z):
+    def delta_Pi(self, x, Coeft, Z):
         n = Coeft.shape[0]
         p = Z.shape[-1]
         temp = torch.zeros(p, p)
@@ -199,7 +199,7 @@ class SNGCCA():
         inner_tol = 1e-3
         outer_error = 1
         diff_list = [999] * n_views
-        criterion = 1e-4
+        criterion = 1e-6
 
         progress_bar = tqdm(total=outer_maxiter, ncols=200)
         
