@@ -49,7 +49,7 @@ layer_sizes3 = [256, 512, 128, outdim_size]
 layer_sizes_list = [layer_sizes1, layer_sizes2, layer_sizes3] 
 
 # the parameters for training the network
-learning_rate = 5*1e-2
+learning_rate = 5
 epoch_num = 2000
 batch_size = 800
 
@@ -68,101 +68,90 @@ apply_linear_gcca = True
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 print("Using", torch.cuda.device_count(), "GPUs")
 
-Exp_label = pd.read_csv('C:/Users/Programer/Documents/GitHub/SGCCA_HSIC/SNGCCA/RealData/Exp664_genes.txt', sep='\t',header = None)
+Exp_label = pd.read_csv('E:/GitHub/SNGCCA/SNGCCA/RealData/Exp664_genes.txt', sep='\t',header = None)
 Exp_list = Exp_label.iloc[:, 0].values.tolist()
-Exp = pd.DataFrame(np.loadtxt("C:/Users/Programer/Documents/GitHub/SGCCA_HSIC/SNGCCA/RealData/Exp664.txt").T,columns = Exp_label)
+Exp = pd.DataFrame(np.loadtxt("E:/GitHub/SNGCCA/SNGCCA/RealData/Exp664.txt").T,columns = Exp_label)
 
-Meth_label = pd.read_csv('C:/Users/Programer/Documents/GitHub/SGCCA_HSIC/SNGCCA/RealData/Meth664_probes.txt', sep='\t',header = None)
+Meth_label = pd.read_csv('E:/GitHub/SNGCCA/SNGCCA/RealData/Meth664_probes.txt', sep='\t',header = None)
 Meth_list = Meth_label.iloc[:, 0].values.tolist()
-Meth = pd.DataFrame(np.loadtxt("C:/Users/Programer/Documents/GitHub/SGCCA_HSIC/SNGCCA/RealData/Meth664.txt").T,columns = Meth_label)
+Meth = pd.DataFrame(np.loadtxt("E:/GitHub/SNGCCA/SNGCCA/RealData/Meth664.txt").T,columns = Meth_label)
 
-miRNA_label = pd.read_csv('C:/Users/Programer/Documents/GitHub/SGCCA_HSIC/SNGCCA/RealData/miRNA664_miRNA.txt', sep='\t',header = None)
+miRNA_label = pd.read_csv('E:/GitHub/SNGCCA/SNGCCA/RealData/miRNA664_miRNA.txt', sep='\t',header = None)
 miRNA_list = miRNA_label.iloc[:, 0].values.tolist()
-miRNA = pd.DataFrame(np.loadtxt("C:/Users/Programer/Documents/GitHub/SGCCA_HSIC/SNGCCA/RealData/miRNA664.txt").T,columns = miRNA_label)
+miRNA = pd.DataFrame(np.loadtxt("E:/GitHub/SNGCCA/SNGCCA/RealData/miRNA664.txt").T,columns = miRNA_label)
 
-y = pd.read_csv('C:/Users/Programer/Documents/GitHub/SGCCA_HSIC/SNGCCA/RealData/PAM50label664.txt',header = None)
+y = pd.read_csv('E:/GitHub/SNGCCA/SNGCCA/RealData/PAM50label664.txt',header = None)
 
-Exp_value = np.loadtxt("C:/Users/Programer/Documents/GitHub/SGCCA_HSIC/SNGCCA/RealData/Exp664.txt")
-Meth_value = np.loadtxt("C:/Users/Programer/Documents/GitHub/SGCCA_HSIC/SNGCCA/RealData/Meth664.txt")
-miRNA_value = np.loadtxt("C:/Users/Programer/Documents/GitHub/SGCCA_HSIC/SNGCCA/RealData/miRNA664.txt")
+Exp_value = np.loadtxt("E:/GitHub/SNGCCA/SNGCCA/RealData/Exp664.txt")
+Meth_value = np.loadtxt("E:/GitHub/SNGCCA/SNGCCA/RealData/Meth664.txt")
+miRNA_value = np.loadtxt("E:/GitHub/SNGCCA/SNGCCA/RealData/miRNA664.txt")
 
-views = [torch.tensor(Exp_value).T,torch.tensor(Meth_value).T,torch.tensor(miRNA_value).T]
+view1 = torch.tensor(Exp_value).T
+view2 = torch.tensor(Meth_value).T
+view3 = torch.tensor(miRNA_value).T
 
+views = [view1,view2,view3]
+# stadardize
+for i, view in enumerate(views):
+    views[i] = (view - torch.mean(view, axis=0)) / torch.std(view, axis=0)
 U_sum = []
 outputs_sum = []
-test = []
-for i in range(3):
-    testm = torch.eye(views[i].size()[1])
-    test.append(testm)
+
+A = np.zeros((view1.shape[-1],1))
+B = np.zeros((view2.shape[-1],1))
+C = np.zeros((view3.shape[-1],1))
 
 print(f'input views shape :')
 for i, view in enumerate(views):
     print(f'view_{i} :  {view.shape}')
     view = view.to("cpu")
 
-for iii in range(1):
+# size of the input for view 1 and view 2
+input_shape_list = [view.shape[-1] for view in views]
 
-    # size of the input for view 1 and view 2
-    input_shape_list = [view.shape[-1] for view in views]
-
-    # Building, training, and producing the new features by DCCA
-    model = DeepGCCA(layer_sizes_list, input_shape_list, outdim_size,
+# Building, training, and producing the new features by DCCA
+model = DeepGCCA(layer_sizes_list, input_shape_list, outdim_size,
                              use_all_singular_values, device=device).double()
-    l_gcca = None
-    if apply_linear_gcca:
+l_gcca = None
+if apply_linear_gcca:
         l_gcca = linear_gcca
-    solver = Solver(model, l_gcca, outdim_size, epoch_num, batch_size,
+solver = Solver(model, l_gcca, outdim_size, epoch_num, batch_size,
                     learning_rate, reg_par, device=device)
+
+solver.fit(views, checkpoint=save_name)
+
+loss0 = solver.test([torch.tensor(view1), torch.tensor(view2), torch.tensor(view3)], apply_linear_gcca)[1]
+for j in range(view1.shape[-1]):
+    view_res1 = view1.numpy().copy()
+    view_res1[:,j] = 0
+    test = [torch.tensor(view_res1), torch.tensor(view2), torch.tensor(view3)]
+    _ , loss, outputs_def = solver.test(test, apply_linear_gcca)
+    A[j] = loss - loss0
     
-    def _get_outputs(x_list):
-        with torch.no_grad():
-            solver.model.eval()
-            data_size = 664
-            batch_idxs = list(BatchSampler(SequentialSampler(
-                range(data_size)), batch_size=solver.batch_size, drop_last=False))
-            losses = []
-            outputs_list = []
-            for batch_idx in batch_idxs:
-                batch_x = x_list
-                outputs = solver.model(batch_x)
-                outputs_list.append([o_j.clone().detach() for o_j in outputs])
-        outputs_final = []
-        for i in range(len(x_list)):
-            view = []
-            for j in range(len(outputs_list)):
-                view.append(outputs_list[j][i].clone().detach())
-            view = torch.cat(view, dim=0)
-            outputs_final.append(view)
-        return losses, outputs_final
+for j in range(view2.shape[-1]):
+    view_res2 = view2.numpy().copy()
+    view_res2[:,j] = 0
+    test = [torch.tensor(view1), torch.tensor(view_res2), torch.tensor(view3)]
+    _ , loss, outputs_def = solver.test(test, apply_linear_gcca)
+    B[j] = loss - loss0
+    
+for j in range(view3.shape[-1]):
+    view_res3 = view3.numpy().copy()
+    view_res3[:,i] = 0
+    test = [torch.tensor(view1), torch.tensor(view2), torch.tensor(view_res3)]
+    _ , loss, outputs_def = solver.test(test, apply_linear_gcca)
+    C[j] = loss - loss0
 
+df_u1_total = pd.DataFrame()
+df_u2_total = pd.DataFrame()
+df_u3_total = pd.DataFrame()
+df_u1 = pd.DataFrame(A, columns=['u1_' + str(0)])
+df_u1_total = pd.concat([df_u1_total, df_u1], axis=1)
+df_u2 = pd.DataFrame(B, columns=['u2_' + str(0)])
+df_u2_total = pd.concat([df_u2_total, df_u2], axis=1)
+df_u3 = pd.DataFrame(C, columns=['u3_' + str(0)]) 
+df_u3_total = pd.concat([df_u3_total, df_u3], axis=1)
 
-    solver.fit(views, checkpoint=save_name)
-
-    _,outputs_list = _get_outputs(test)
-    outputs_def = solver.linear_gcca.test(outputs_list)
-
-    Exp_df = pd.DataFrame({'Name': Exp_list, 'Score': outputs_def[0].reshape(-1).tolist()})
-    Meth_df = pd.DataFrame({'Name': Meth_list, 'Score': outputs_def[1].reshape(-1).tolist()})
-    miRNA_df = pd.DataFrame({'Name': miRNA_list, 'Score': outputs_def[2].reshape(-1).tolist()})
-
-    Exp_df = pd.concat([Exp_df,pd.DataFrame(Exp_value)],axis=1)
-    Meth_df = pd.concat([Meth_df,pd.DataFrame(Meth_value)],axis=1)
-    miRNA_df = pd.concat([miRNA_df,pd.DataFrame(miRNA_value)],axis=1)
-
-    swiss = swiss_score(Exp_df.iloc[:,2:].T, y[0])
-    db = davies_bouldin_score(Exp_df.iloc[:,2:].T, y[0])
-    ss = silhouette_score(Exp_df.iloc[:,2:].T, y[0])
-    ch = calinski_harabasz_score(Exp_df.iloc[:,2:].T, y[0])
-    print(swiss, db, ss, ch)
-
-    Filter_Exp = Exp_df[Exp_df['Score'] > np.mean(Exp_df['Score'])]
-    Filter_Meth = Meth_df[Meth_df['Score'] > np.mean(Meth_df['Score'])]
-    Filter_miRNA = miRNA_df[miRNA_df['Score'] > np.mean(miRNA_df['Score'])]
-
-    print(len(Filter_Exp), len(Filter_Meth), len(Filter_miRNA))
-
-    swiss = swiss_score(Filter_Exp.iloc[:,2:].T, y[0])
-    db = davies_bouldin_score(Filter_Exp.iloc[:,2:].T, y[0])
-    ss = silhouette_score(Filter_Exp.iloc[:,2:].T, y[0])
-    ch = calinski_harabasz_score(Filter_Exp.iloc[:,2:].T, y[0])
-    print(swiss, db, ss, ch)
+df_u1_total.to_csv('U1.csv')
+df_u2_total.to_csv('U2.csv')
+df_u3_total.to_csv('U3.csv')

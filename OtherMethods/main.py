@@ -9,21 +9,6 @@ from models import DeepGCCA
 # from utils import load_data, svm_classify
 import time
 import logging
-try:
-    import cPickle as thepickle
-except ImportError:
-    import _pickle as thepickle
-
-import gzip
-import numpy as np
-import torch.nn as nn
-
-import seaborn as sns
-
-import matplotlib.pyplot as plt
-from matplotlib.backends.backend_pdf import PdfPages
-
-import pandas as pd
 
 torch.set_default_tensor_type(torch.DoubleTensor)
 
@@ -35,14 +20,16 @@ class Solver():
         self.epoch_num = epoch_num
         self.batch_size = batch_size
         self.loss = model.loss
+        
         self.optimizer = torch.optim.Adam(
             self.model.model_list.parameters(), lr=learning_rate, weight_decay=reg_par)
         self.scheduler = torch.optim.lr_scheduler.StepLR(
-            self.optimizer, step_size=200, gamma=0.7)
+            self.optimizer, step_size=200, gamma=0.1)
+        
         self.device = device
-
+        
         self.linear_gcca = linear_gcca()
-
+        self.train_loss = []
         self.outdim_size = outdim_size
 
         formatter = logging.Formatter(
@@ -79,15 +66,16 @@ class Solver():
             self.model.train()
             batch_idxs = list(BatchSampler(RandomSampler(
                 range(data_size)), batch_size=self.batch_size, drop_last=False))
-            for batch_idx in batch_idxs:
-                self.optimizer.zero_grad()
-                batch_x = [x[batch_idx, :] for x in x_list]
-                output = self.model(batch_x)
-                loss = self.loss(output)
-                train_losses.append(loss.item())
-                loss.backward()
-                self.optimizer.step()
-                self.scheduler.step()
+            #for batch_idx in batch_idxs:
+            self.optimizer.zero_grad()
+            batch_x = [x[batch_idxs[0], :] for x in x_list]
+            output = self.model(batch_x)
+            loss = self.loss(output) *100
+            train_losses.append(loss.item())
+            loss.backward()
+            #nn.utils.clip_grad_norm_(self.model.parameters(), max_norm=1.0)
+            self.optimizer.step()
+            self.scheduler.step()
             train_loss = np.mean(train_losses)
 
             info_string = "Epoch {:d}/{:d} - time: {:.2f} - training_loss: {:.4f}"
@@ -109,7 +97,7 @@ class Solver():
             epoch_time = time.time() - epoch_start_time
             self.logger.info(info_string.format(
                 epoch + 1, self.epoch_num, epoch_time, train_loss))
-
+        self.train_loss = train_loss
         # train_linear_gcca
         if self.linear_gcca is not None:
             _, outputs_list = self._get_outputs(x_list)
@@ -231,25 +219,3 @@ if __name__ == '__main__':
     # set_size = [0, train1.size(0), train1.size(
     #     0) + val1.size(0), train1.size(0) + val1.size(0) + test1.size(0)]
     loss, outputs = solver.test(views, apply_linear_gcca)
-
-    import os
-    outDir = './'
-    N = 400
-    classes = ['Class1' for i in range(int(N/2))] + ['Class2' for i in range(int(N/2))] 
-    dfs = []
-    for o in outputs:
-        df = pd.DataFrame(o, columns=['x', 'y'])
-        df['Classes'] = classes
-        dfs.append(df)
-    
-    # Plot to PDF
-    with PdfPages(os.path.join(outDir, 'DGCCA.pdf')) as pdf:
-      for viewIdx, df in enumerate(dfs):
-        fig = sns.lmplot(x="x", y="y", fit_reg=False, markers=['+', 'o'], legend=False, hue="Classes", data=df).fig
-        plt.legend(loc='best')
-        plt.title('View %d' % (viewIdx))
-        pdf.savefig()
-        plt.close(fig)
-
-    # solver.model.load_state_dict(d)
-    # solver.model.parameters()

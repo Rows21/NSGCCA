@@ -17,279 +17,57 @@ library(plotly)
 library(RGCCA)
 ```
 
-```{r evaluation}
-
-FS_MCC = function(U,V,W,len,k){
-  library(caret)
-  Label = c(rep(1,k),rep(0,len-k))
-  tp = 0
-  tn = 0
-  fn = 0
-  fp = 0
-  
-  pred = as.numeric(abs(U)>mean(abs(U)))
-  C = confusionMatrix(as.factor(pred), reference = as.factor(Label))
-  
-  tp = tp + C$table[4]
-  tn = tn + C$table[1]
-  fn = fn + C$table[3]
-  fp = fp + C$table[2]
-  
-  pred = as.numeric(abs(V)>mean(abs(V)))
-  C = confusionMatrix(as.factor(pred), reference = as.factor(Label))
-  
-  tp = tp + C$table[4]
-  tn = tn + C$table[1]
-  fn = fn + C$table[3]
-  fp = fp + C$table[2]
-  
-  pred = as.numeric(abs(W)>mean(abs(W)))
-  C = confusionMatrix(as.factor(pred), reference = as.factor(Label))
-  
-  tp = tp + C$table[4]
-  tn = tn + C$table[1]
-  fn = fn + C$table[3]
-  fp = fp + C$table[2]
-  acc = (tp + tn) / (tp+tn+fp+fn)
-  
-  precision = tp/(tp+fp)
-  recall = tp/(tp+fn)
-  f1 = 2*precision*recall/(precision+recall)
-  mcc = (tp*tn-fp*fn)/sqrt((tp+fp)*(tp+fn)*(tn+fp)*(tn+fn))
-  
-  return(list(Accruacy = acc,F1 = f1,MCC = mcc))
-}
-
-```
-
-### Create datasets
-```{r gendata3}
-create_synthData_new <- function(v=5, N=400, mode=1, P=100) {
-  # Setting random seed
-
-  
-  # Generating E1, E2, and E3
-  E1 <- matrix(rnorm(N * P, mean=0, sd=sqrt(0.2)), nrow=N, ncol=P)
-  E2 <- matrix(rnorm(N * P, mean=0, sd=sqrt(0.2)), nrow=N, ncol=P)
-  E3 <- matrix(rnorm(N * P, mean=0, sd=sqrt(0.2)), nrow=N, ncol=P)
-  
-  if (mode == 1) {
-    # Set the dimension of the multivariate normal distribution
-    dimension <- 3  # Change this to the desired dimension
-    
-    # Generate random data from a multivariate normal distribution with mean=0 and covariance=identity matrix
-    data <- MASS::mvrnorm(N, mu = rep(0, dimension), Sigma = diag(dimension))
-    
-    # Desired correlation matrix
-    desired_corr1 <- 0.7
-    desired_corr2 <- 0.0
-    
-    # Generate the covariance matrix from the desired correlation
-    cov_matrix <- matrix(c(1, desired_corr1, desired_corr1,
-                           desired_corr1, 1, desired_corr2,
-                           desired_corr1, desired_corr2, 1), nrow = dimension, byrow = TRUE)
-    
-    # Compute the Cholesky decomposition of the covariance matrix
-    L <- chol(cov_matrix)
-    
-    # Transform the data to have the desired covariance matrix
-    data <- data %*% t(L)
-    
-    # Verify the covariance matrix and correlation
-    print("Covariance matrix:")
-    print(cov(data))
-    print("Correlation matrix:")
-    print(cor(data))
-    
-    # Define the dimensions of the vectors
-    w1_dim <- P
-    w2_dim <- P
-    w3_dim <- P
-    
-    # Define the number of nonzero elements
-    nonzero_elements <- v
-    
-    # Generate nonzero elements from a uniform distribution
-    nonzero_values <- c(runif(nonzero_elements, min=-1, max=-0.9), runif(nonzero_elements, min=0.9, max=1))
-    nonzero_values <- sample(nonzero_values)
-    
-    # Initialize w1, w2, and w3 as zero vectors
-    w1 <- rep(0, w1_dim)
-    w2 <- rep(0, w2_dim)
-    w3 <- rep(0, w3_dim)
-    
-    # Assign nonzero values to the first 75 elements of w1, w2, and w3
-    w1[1:nonzero_elements] <- nonzero_values[1:nonzero_elements]
-    w2[1:nonzero_elements] <- nonzero_values[1:nonzero_elements]
-    w3[1:nonzero_elements] <- nonzero_values[1:nonzero_elements]
-    
-    # Shuffle the vectors to ensure randomness
-    w1 <- sample(w1)
-    w2 <- sample(w2)
-    w3 <- sample(w3)
-    
-    V1 <- data[,1] %*% t(w1) + E1
-    V2 <- data[,2] %*% t(w2) + E2
-    V3 <- data[,3] %*% t(w3) + E3
-  } else if (mode == 2) {
-    # Create a random set
-    V1 <- E1
-    V2 <- E2
-    V3 <- E3
-    
-    # Generate 10 random seeds
-    random_seeds <- sample.int(2^16 - 1, v, replace=TRUE)
-    
-    for (i in 1:length(random_seeds)) {
-      set.seed(random_seeds[i])
-      samples <- rnorm(N)
-      v1 <- samples * (2 * pi)
-      v2 <- cos(v1)
-      v3 <- v1 * cos(v1)
-      scaled_v1 <- ((v1 - mean(v1)) / sd(v1)) * 2
-      scaled_v2 <- ((v2 - mean(v2)) / sd(v2)) * 2
-      scaled_v3 <- ((v3 - mean(v3)) / sd(v3)) * 2
-      
-      V1[,i] <- scaled_v1 + V1[,i]
-      V2[,i] <- scaled_v2 + V2[,i]
-      V3[,i] <- scaled_v3 + V3[,i]
-    }
-  }
-  
-  views <- list(V1, V2, V3)
-  #print("------------------")
-  return(views)
-}
-
-# Usage example
-result <- create_synthData_new()
-
-```
-
-```{r gendata_loop}
-gendatan = function(i,n,p,q,r,type){
-  
-  X = matrix(rnorm(n*p,mean=0,sd=1),nrow=n,ncol=p)
-  Y = matrix(rnorm(n*q,mean=0,sd=1),nrow=n,ncol=q)
-  Z = matrix(rnorm(n*q,mean=0,sd=1),nrow=n,ncol=r)
-  
-  if(i == 2){
-    if(type ==1){
-    Y[,1] = X[,1] + X[,2] - Y[,2] + matrix(rnorm(n,mean=0,sd=0.05),nrow=n,ncol=1)
-    Z[,1] = 2*(X[,1] + X[,2]) - Z[,2] + matrix(rnorm(n,mean=0,sd=0.05),nrow=n,ncol=1)
-  }else if(type ==2 ){
-    Y[,1] = 1 * sin(1 *matrix(X[,1] + X[,2],nrow=nrow(X),ncol=1)) - Y[,2] + matrix(rnorm(n,mean=0,sd=0.05),nrow=n,ncol=1)
-    Z[,1] = 1 * cos(1 *matrix(Y[,1] + Y[,2],nrow=nrow(Y),ncol=1))^2 - Z[,2] + matrix(rnorm(n,mean=0,sd=0.05),nrow=n,ncol=1)
-  } else if(type ==3){
-    Y[,1] = (X[,1] + X[,2])^3 - Y[,2] + matrix(rnorm(n,mean=0,sd=0.05),nrow=n,ncol=1)
-    Z[,1] = (X[,1] + X[,2])^2 - Z[,2] + matrix(rnorm(n,mean=0,sd=0.05),nrow=n,ncol=1)
-  } else if(type ==4){
-    Y[,1] = cos(X[,1]+X[,2]) -Y[,2]
-    Z[,1] = sin(X[,1]+X[,2]) -Z[,2]
-  }else if(type ==5){
-    
-    Z[,1] = sqrt(4-(X[,1]+X[,2])^2 - (Y[,1]+Y[,2])^2) -Z[,2]
-  }
-  }else{
-    if(type ==1){
-    Y[,1] = rowSums(X[,1:i]) - rowSums(Y[,2:i]) + matrix(rnorm(n,mean=0,sd=0.05),nrow=n,ncol=1)
-    Z[,1] = 2*rowSums(X[,1:i]) - rowSums(Z[,2:i]) + matrix(rnorm(n,mean=0,sd=0.05),nrow=n,ncol=1)
-  }else if(type ==2 ){
-    Y[,1] = 1 * cos(1 *matrix(rowSums(X[,1:i]),nrow=nrow(X),ncol=1))^2 - rowSums(Y[,2:i]) + matrix(rnorm(n,mean=0,sd=0.05),nrow=n,ncol=1)
-    Z[,1] = 1 * sin(1 *matrix(rowSums(X[,1:i]),nrow=nrow(Y),ncol=1)) - rowSums(Z[,2:i]) + matrix(rnorm(n,mean=0,sd=0.05),nrow=n,ncol=1)
-  } else if(type ==3){
-    Y[,1] = 20 / (rowSums(X[,1:i])) - rowSums(Y[,2:i]) + matrix(rnorm(n,mean=0,sd=0.05),nrow=n,ncol=1)
-    Z[,1] = 20 / (rowSums(X[,1:i])) - rowSums(Z[,2:i]) + matrix(rnorm(n,mean=0,sd=0.05),nrow=n,ncol=1)
-  } else if(type ==4){
-    Y[,1] = cos(rowSums(X[,1:i])) - rowSums(Y[,2:i])
-    Z[,1] = sin(rowSums(X[,1:i])) - rowSums(Y[,2:i])
-  }else if(type ==5){
-    
-    Z[,1] = sqrt(30-(X[,1]+X[,2])^2 - (Y[,1]+Y[,2])^2) -Z[,2]
-  }
-  }
-  
-  
-  return(list(X=X,Y=Y,Z=Z)) 
-}
-
-Data1 = gendatan(4,300,20,20,20,1)
-
-Data1$X
-
-```
-
 ```{r}
-X = read.table("C:/Users/Programer/Documents/GitHub/SGCCA_HSIC/SNGCCA/RealData/Exp664.txt", header = F, sep = " ")
-Y = read.table("C:/Users/Programer/Documents/GitHub/SGCCA_HSIC/SNGCCA/RealData/Meth664.txt", header = F, sep = " ")
-Z =  read.table("C:/Users/Programer/Documents/GitHub/SGCCA_HSIC/SNGCCA/RealData/miRNA664.txt", header = F, sep = " ")
+X = read.table("E:/GitHub/SNGCCA/SNGCCA/RealData/Exp664.txt", header = F, sep = " ")
+Y = read.table("E:/GitHub/SNGCCA/SNGCCA/RealData/Meth664.txt", header = F, sep = " ")
+Z = read.table("E:/GitHub/SNGCCA/SNGCCA/RealData/miRNA664.txt", header = F, sep = " ")
 
+X <- scale(X)
+Y <- scale(Y)
+Z <- scale(Z)
 Data_real = list(X = t(X), Y = t(Y), Z = t(Z))
-result = rgcca(Data_real, connection = 1 - diag(length(Data_real)), tau = rep(1, length(Data_real)), ncomp = rep(1,
-length(Data_real)), scheme = "centroid", init = "svd",
+cv_s <- rgcca_cv(Data1, response = 3, ncomp = 1,
+                   prediction_model = "glmnet", lambda = .001,
+                   par_type = "sparsity",
+                   par_value = c(.7, .2, 1),
+                   metric = "RMSE",
+                   n_cores = 2,
+ )
+
+result = rgcca(Data_real, method = "sgcca", tau = c(1,1,1), sparsity = cv_s$best_params, ncomp = rep(1,
+length(Data_real)), scheme = "horst", init = "svd",
 bias = TRUE, tol = .Machine$double.eps, verbose = FALSE)
-?rgcca_cv
+
 u=result$a[[1]]
 v=result$a[[2]]
 w=result$a[[3]]
-
+getwd()
 write.csv(u,'SGCCA_u.csv')
 write.csv(v,'SGCCA_v.csv')
 write.csv(w,'SGCCA_w.csv')
-count = 0
-for(i in 1:length(u)){
-  # print(u[i])
-  
-  if (u[i] > 1/2642){
-    count =count + 1
-    #print(i)
-  }
-}
-print(count)
-count = 0
-for(i in 1:length(v)){
-  # print(u[i])
-  if (v[i] > 1/ length(v)){
-    #print(i)
-    count =count + 1
-  }
-}
-print(count)
-count = 0
-for(i in 1:length(w)){
-  # print(u[i])
-  if (w[i] > 1/length(w)){
-    #print(i)
-    count =count + 1
-  }
-}
 
-```
-
-```{r cluster}
-library(cluster)
-library(fpc)
-
-#  Silhouette Score
-silhouette_score <- silhouette(cluster_result$cluster, dist(cluster_result$distance_matrix))
-
-#  DB Score
-db_score <- cluster.stats(cluster_result$cluster, cluster_result$distance_matrix)$DB
-
-#  CH Score
-ch_score <- cluster.stats(cluster_result$cluster, cluster_result$distance_matrix)$ch
-
-
-print(silhouette_score)
-print(db_score)
-print(ch_score)
+cv_tau <- rgcca_cv(Data_real, response = 3, method = "rgcca",
+                   par_type = "tau",
+                   par_length = 5,
+                   prediction_model = "glmnet", #caret::modelLookup()
+                   metric = "RMSE",
+                   k=3, n_run = 3,
+                   verbose = TRUE)
+result = rgcca(Data_real, method = "rgcca", tau = cv_tau$call$tau, scheme = 'horst')
+u=result$a[[1]]
+v=result$a[[2]]
+w=result$a[[3]]
+getwd()
+write.csv(u,'RGCCA_u.csv')
+write.csv(v,'RGCCA_v.csv')
+write.csv(w,'RGCCA_w.csv')
 
 ```
 
 ### Simulation - RGCCA & SGCCA - Linear & Nonlinear
 ```{r}
 
-simu <- function(n,p,v,r){
+simu_l <- function(n,p,v,r){
 
 cor_matrix <- matrix(c(1, 0.7, 0.7,
                         0.7, 1, 0,
@@ -304,6 +82,8 @@ SGCCA_u1 <- array(NA, dim = c(r, p))
 SGCCA_u2 <- array(NA, dim = c(r, p))
 SGCCA_u3 <- array(NA, dim = c(r, p))
 
+t_rgcca <- rep(0,r)
+t_sgcca <- rep(0,r)
 for( i in 1:100){
   if(i %% 10 == 0){print(i)}
   root <- paste0('E:/GitHub/SNGCCA/SNGCCA/Data/Linear/',n,'_',p,'_',v)
@@ -311,41 +91,50 @@ for( i in 1:100){
   Y = read.csv(paste0(root,'/data2_',i-1,'.csv'),header = F)
   Z = read.csv(paste0(root,'/data3_',i-1,'.csv'),header = F)
   Data1 <- list(X,Y,Z)
-  cv_tau <- rgcca_cv(Data1, response = 3, method = "rgcca",
+  #if(i == 1){
+    cv_tau <- rgcca_cv(Data1, response = 3, method = "rgcca",
                    par_type = "tau",
                    par_length = 5,
                    prediction_model = "glmnet", #caret::modelLookup()
                    metric = "RMSE",
                    k=3, n_run = 3,
                    verbose = TRUE)
-  
-  res1 = rgcca(Data1, method = "rgcca", tau = cv_tau$call$tau)
-  RGCCA_u1[i,] = res1$a[[1]]
-  RGCCA_u2[i,] = res1$a[[2]]
-  RGCCA_u3[i,] = res1$a[[3]]
-
-  cv_s <- rgcca_cv(Data1, response = 3, ncomp = 1,
+    cv_s <- rgcca_cv(Data1, response = 3, ncomp = 1,
                    prediction_model = "glmnet", lambda = .001,
                    par_type = "sparsity",
                    par_value = c(.7, .2, 1),
                    metric = "RMSE",
                    n_cores = 2,
  )
-
+  #}
+  ts <- Sys.time()
+  res1 = rgcca(Data1, method = "rgcca", tau = cv_tau$call$tau, scheme = 'horst')
+  te <- Sys.time()
+  RGCCA_u1[i,] = res1$a[[1]]
+  RGCCA_u2[i,] = res1$a[[2]]
+  RGCCA_u3[i,] = res1$a[[3]]
+  t_rgcca[i] <- ts - te
+  
+  ts <- Sys.time()
   res2 = rgcca(Data1, connection = 1 - cor_matrix, tau = c(1,1,1), sparsity = cv_s$best_params, method = "sgcca")
+  te <- Sys.time()
+  t_sgcca[i] <- te-ts
   SGCCA_u1[i,] = res2$a[[1]]
   SGCCA_u2[i,] = res2$a[[2]]
   SGCCA_u3[i,] = res2$a[[3]]
   
 }
-
+write.csv(t_rgcca,paste0('E:/GitHub/SNGCCA/SNGCCA/Simulation/Linear/',n,'_',p,'_',v,"/rgcca_t.csv"), row.names = FALSE)
+write.csv(t_sgcca,paste0('E:/GitHub/SNGCCA/SNGCCA/Simulation/Linear/',n,'_',p,'_',v,"/sgcca_t.csv"), row.names = FALSE)
 write.csv(RGCCA_u1,paste0('E:/GitHub/SNGCCA/SNGCCA/Simulation/Linear/',n,'_',p,'_',v,"/rgcca_u1.csv"), row.names = FALSE)
 write.csv(RGCCA_u2,paste0('E:/GitHub/SNGCCA/SNGCCA/Simulation/Linear/',n,'_',p,'_',v,"/rgcca_u2.csv"), row.names = FALSE)
 write.csv(RGCCA_u3,paste0('E:/GitHub/SNGCCA/SNGCCA/Simulation/Linear/',n,'_',p,'_',v,"/rgcca_u3.csv"), row.names = FALSE)
 write.csv(SGCCA_u1,paste0('E:/GitHub/SNGCCA/SNGCCA/Simulation/Linear/',n,'_',p,'_',v,"/sgcca_u1.csv"), row.names = FALSE)
 write.csv(SGCCA_u2,paste0('E:/GitHub/SNGCCA/SNGCCA/Simulation/Linear/',n,'_',p,'_',v,"/sgcca_u2.csv"), row.names = FALSE)
 write.csv(SGCCA_u3,paste0('E:/GitHub/SNGCCA/SNGCCA/Simulation/Linear/',n,'_',p,'_',v,"/sgcca_u3.csv"), row.names = FALSE)
+}
 
+simu_nl <- function(n,p,v,r){
 #========================================================================
 RGCCA_u1 <- array(NA, dim = c(r, p))
 RGCCA_u2 <- array(NA, dim = c(r, p))
@@ -353,6 +142,8 @@ RGCCA_u3 <- array(NA, dim = c(r, p))
 SGCCA_u1 <- array(NA, dim = c(r, p))
 SGCCA_u2 <- array(NA, dim = c(r, p))
 SGCCA_u3 <- array(NA, dim = c(r, p))
+t_rgcca <- rep(0,r)
+t_sgcca <- rep(0,r)
 
 for( i in 1:100){
   if(i %% 10 == 0){print(i)}
@@ -361,34 +152,42 @@ for( i in 1:100){
   Y = read.csv(paste0(root,'/data2_',i-1,'.csv'),header = F)
   Z = read.csv(paste0(root,'/data3_',i-1,'.csv'),header = F)
   Data1 <- list(X,Y,Z)
-  cv_tau <- rgcca_cv(Data1, response = 3, method = "rgcca",
+  #if(i == 1){
+    cv_tau <- rgcca_cv(Data1, response = 3, method = "rgcca",
                    par_type = "tau",
                    par_length = 5,
                    prediction_model = "glmnet", #caret::modelLookup()
                    metric = "RMSE",
                    k=3, n_run = 3,
                    verbose = TRUE)
-  
-  res1 = rgcca(Data1, method = "rgcca", tau = cv_tau$call$tau)
-  RGCCA_u1[i,] = res1$a[[1]]
-  RGCCA_u2[i,] = res1$a[[2]]
-  RGCCA_u3[i,] = res1$a[[3]]
-
-  cv_s <- rgcca_cv(Data1, response = 3, ncomp = 1,
+    cv_s <- rgcca_cv(Data1, response = 3, ncomp = 1,
                    prediction_model = "glmnet", lambda = .001,
                    par_type = "sparsity",
                    par_value = c(.7, .2, 1),
                    metric = "RMSE",
                    n_cores = 2,
  )
+  #}
+  ts <- Sys.time()
+  res1 = rgcca(Data1, method = "rgcca", tau = cv_tau$call$tau, scheme = 'horst')
+  te <- Sys.time()
+  t_rgcca[i] <- ts - te
+  RGCCA_u1[i,] = res1$a[[1]]
+  RGCCA_u2[i,] = res1$a[[2]]
+  RGCCA_u3[i,] = res1$a[[3]]
 
-  res2 = rgcca(Data1, connection = 1 - cor_matrix, tau = c(1,1,1), sparsity = cv_s$best_params, method = "sgcca")
+  
+  ts <- Sys.time()
+  res2 = rgcca(Data1, tau = c(1,1,1), sparsity = cv_s$best_params, method = "sgcca")
+  te <- Sys.time()
+  t_sgcca[i] <- ts - te
   SGCCA_u1[i,] = res2$a[[1]]
   SGCCA_u2[i,] = res2$a[[2]]
   SGCCA_u3[i,] = res2$a[[3]]
   
 }
-
+write.csv(t_rgcca,paste0('E:/GitHub/SNGCCA/SNGCCA/Simulation/Nonlinear/',n,'_',p,'_',v,"/rgcca_t.csv"), row.names = FALSE)
+write.csv(t_sgcca,paste0('E:/GitHub/SNGCCA/SNGCCA/Simulation/Nonlinear/',n,'_',p,'_',v,"/sgcca_t.csv"), row.names = FALSE)
 write.csv(RGCCA_u1,paste0('E:/GitHub/SNGCCA/SNGCCA/Simulation/Nonlinear/',n,'_',p,'_',v,"/rgcca_u1.csv"), row.names = FALSE)
 write.csv(RGCCA_u2,paste0('E:/GitHub/SNGCCA/SNGCCA/Simulation/Nonlinear/',n,'_',p,'_',v,"/rgcca_u2.csv"), row.names = FALSE)
 write.csv(RGCCA_u3,paste0('E:/GitHub/SNGCCA/SNGCCA/Simulation/Nonlinear/',n,'_',p,'_',v,"/rgcca_u3.csv"), row.names = FALSE)
@@ -397,15 +196,24 @@ write.csv(SGCCA_u2,paste0('E:/GitHub/SNGCCA/SNGCCA/Simulation/Nonlinear/',n,'_',
 write.csv(SGCCA_u3,paste0('E:/GitHub/SNGCCA/SNGCCA/Simulation/Nonlinear/',n,'_',p,'_',v,"/sgcca_u3.csv"), row.names = FALSE)
 }
 
-simu(100,30,5,100)
-simu(100,50,5,100)
-simu(100,80,5,100)
-simu(100,100,5,100)
+simu_l(100,30,5,100)
+simu_l(100,50,5,100)
+simu_l(100,150,5,100)
+simu_l(100,100,5,100)
+simu_l(100,200,5,100)
+simu_l(200,100,5,100)
+simu_l(400,100,5,100)
+simu_l(100,100,10,100)
+simu_l(100,100,20,100)
 
-simu(100,200,5,100)
-simu(200,100,5,100)
-simu(400,100,5,100)
-simu(100,100,10,100)
-simu(100,100,20,100)
+simu_nl(100,30,5,100)
+simu_nl(100,50,5,100)
+simu_nl(100,150,5,100)
+simu_nl(100,100,5,100)
+simu_nl(100,200,5,100)
+simu_nl(200,100,5,100)
+simu_nl(400,100,5,100)
+simu_nl(100,100,10,100)
+simu_nl(100,100,20,100)
 
 ```

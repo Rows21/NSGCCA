@@ -7,56 +7,113 @@ output: html_document
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+library(dplyr)
 library(ggplot2)
 #install.packages('openxlsx')
 library(openxlsx)
 library(gridExtra)
 #devtools::install_github('Mikata-Project/ggthemr')
 library(ggthemr)
+library(cowplot)
+library(patchwork)
 ```
 
+```{r dataprep}
+root <- 'E:/GitHub/SNGCCA/SNGCCA/Simulation/'
+k <- read.csv(paste0(root,'KSSHIBA.csv'))
+dgcca <- read.csv(paste0(root,'DGCCA.csv'))
+sgcca <- read.csv(paste0(root,'SGCCA.csv'))
+rgcca <- read.csv(paste0(root,'RGCCA.csv'))
+sngcca <- read.csv(paste0(root,'SNGCCA.csv'))
+k_t <- k %>% 
+  filter(grepl("Time", type))
+dgcca_t <- dgcca %>% 
+  filter(grepl("Time", type))
+sgcca_t <- sgcca %>% 
+  filter(grepl("Time", type))
+rgcca_t <- rgcca %>% 
+  filter(grepl("Time", type))
+sngcca_t <- sngcca %>% 
+  filter(grepl("Time", type))
+
+k <- k %>% 
+  filter(!grepl("Time", type))
+dgcca <- dgcca %>% 
+  filter(!grepl("Time", type))
+sgcca <- sgcca %>% 
+  filter(!grepl("Time", type))
+rgcca <- rgcca %>% 
+  filter(!grepl("Time", type))
+sngcca <- sngcca %>% 
+  filter(!grepl("Time", type))
+
+data1 <- rbind(dgcca[1:48,],rgcca[1:48,],sgcca[1:48,],sngcca[1:48,],k[1:48,])
+data2 <- rbind(dgcca[49:84,],rgcca[49:84,],sgcca[49:84,],sngcca[49:84,],k[49:84,])
+data3 <- rbind(dgcca[85:120,],rgcca[85:120,],sgcca[85:120,],sngcca[85:120,],k[85:120,])
+
+t1 <- rbind(dgcca_t[1:8,],rgcca_t[1:8,],sgcca_t[1:8,],sngcca_t[1:8,],k_t[1:8,])
+t1$type[t1$type == "Time"] = "Time(×10s)"
+t1$Values <- t1$Values / 10
+t1$std <- t1$std / 10
+data1 <- rbind(data1,t1)
+
+t2 <- rbind(dgcca_t[9:14,],rgcca_t[9:14,],sgcca_t[9:14,],sngcca_t[9:14,],k_t[9:14,])
+t2$type[t2$type == "Time"] = "Time(×10s)"
+t2$Values <- t2$Values / 10
+t2$std <- t2$std / 10
+data2 <- rbind(data2,t2)
+
+t3 <- rbind(dgcca_t[15:20,],rgcca_t[15:20,],sgcca_t[15:20,],sngcca_t[15:20,],k_t[15:20,])
+t3$type[t3$type == "Time"] = "Time(×10s)"
+t3$Values <- t3$Values / 10
+t3$std <- t3$std / 10
+data3 <- rbind(data3,t3)
+no_legend_theme <- theme(legend.position = "none",
+                         strip.text.x = element_blank(),
+                         strip.text.y = element_text(size=16),)
+```
 
 ```{r Fig1a}
-data = read.csv('simu1_p.csv')
+data = data1
+
+sp = ggplot(data = data, aes(x=p,y=Values,color=Methods, group=Methods)) + geom_line(size=0.6,position = position_dodge(0.05)) + geom_point(size=1,position = position_dodge(0.05))+
+  geom_errorbar(aes(ymin = Values - std, ymax = Values + std), width=0.1, position = position_dodge(0.05))
+
+sp + facet_grid(Scenario ~ type) +xlab("Variable Dimension")+ylab("Value")+
+  scale_color_manual(values = c("#1c92d2","#f7b733", "#11998e","#6b6b83", "#f12711"))+
+  theme(strip.text.x = element_text(size=12),
+        strip.text.y = element_text(size=12),
+        legend.position = 'bottom') + scale_x_log10(breaks = c(30,50,100,200))
+
+ggthemr('fresh')
+ggsave('Fig2a.eps')
+ggsave('Fig2a.png')
+```
+
+```{r Fig1b}
+data = data2
 
 sp = ggplot(data = data, aes(x=n,y=Values,color=Methods, group=Methods)) + geom_line(size=0.6,position = position_dodge(0.05)) + geom_point(size=1,position = position_dodge(0.05))+
   geom_errorbar(aes(ymin = Values - std, ymax = Values + std), width=0.1, position = position_dodge(0.05))
 
-sp + facet_grid(Scenario ~ type) +xlab("Variable Number")+ylab("Scores")+
+sp + facet_grid(Scenario ~ type) +xlab("Sample Size")+ylab("Value")+
   scale_color_manual(values = c("#1c92d2","#f7b733", "#11998e","#6b6b83", "#f12711"))+
   theme(strip.text.x = element_text(size=12),
         strip.text.y = element_text(size=12),
-        legend.position = 'bottom') + scale_x_log10()
-
-ggthemr('fresh')
-ggsave('Fig2a.eps')
-
-```
-
-```{r Fig1b}
-data = read.csv('simu1_s.csv')
-
-sp = ggplot(data = data, aes(x=n,y=Values,color=Methods, group=Methods)) + geom_line(size=0.6,position = position_dodge(0.05)) + geom_point(size=1,position = position_dodge(0.05))+
-  geom_errorbar(aes(ymin = Values - Confidence, ymax = Values + Confidence), width=0.1, position = position_dodge(0.05))
-
-sp + facet_grid(Scenario ~ type) +xlab("Sample Size")+ylab("Scores")+
-  scale_color_manual(values = c("#1c92d2","#f7b733", "#11998e","#6b6b83", "#f12711"))+
-  theme(strip.text.x = element_text(size=12),
-        strip.text.y = element_text(size=12),
-        legend.position = 'bottom') #+ scale_x_log10()
+        legend.position = 'bottom') + scale_x_log10(breaks = c(100,200,400))
 
 ggthemr('fresh')
 ggsave('Fig2b.eps')
-
+ggsave('Fig2b.png')
 ```
 
 ```{r Fig1c}
-data = read.csv('simu1_v.csv')
+data = data3
 
-sp = ggplot(data = data, aes(x=n,y=Values,color=Methods, group=Methods)) + geom_line(size=0.6,position = position_dodge(0.05)) + geom_point(size=1,position = position_dodge(0.05))+
-  geom_errorbar(aes(ymin = Values - Confidence, ymax = Values + Confidence), width=0.1, position = position_dodge(0.05))
+sp = ggplot(data = data, aes(x=s,y=Values,color=Methods, group=Methods)) + geom_line(size=0.6,position = position_dodge(0.05)) + geom_point(size=1,position = position_dodge(0.05))+
+  geom_errorbar(aes(ymin = Values - std, ymax = Values + std), width=0.1, position = position_dodge(0.05))
 
-sp + facet_grid(Scenario ~ type) +xlab("Sparsity")+ylab("Scores")+
+sp + facet_grid(Scenario ~ type) +xlab("Sparsity Level")+ylab("Value")+
   scale_color_manual(values = c("#1c92d2","#f7b733", "#11998e","#6b6b83", "#f12711"))+
   theme(strip.text.x = element_text(size=12),
         strip.text.y = element_text(size=12),
@@ -64,21 +121,6 @@ sp + facet_grid(Scenario ~ type) +xlab("Sparsity")+ylab("Scores")+
 
 ggthemr('fresh')
 ggsave('Fig2c.eps')
-
+ggsave('Fig2c.png')
 ```
 
-```{r FR}
-data = read.csv('simu_Runtime.csv')
-sp = ggplot(data, aes(x = Runtime, y = Recall, color = Method,shape=Settings)) +
-  geom_point(size=4)
-
-ggthemr('fresh')
-sp +scale_color_manual(values = c("#1c92d2","#f7b733", "#11998e","#6b6b83", "#f12711"))+
-  theme(strip.text.x = element_text(size=12),
-        strip.text.y = element_text(size=12),
-        #legend.position = 'bottom'
-        ) + scale_x_log10()
-
-ggsave('FigFR.png')
-
-```

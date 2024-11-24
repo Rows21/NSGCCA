@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 
-from loss_objectives import new_loss
+from loss_objectives import GCCA_loss, new_loss
 
 class MlpNet(nn.Module):
     def __init__(self, layer_sizes, input_size):
@@ -10,18 +10,28 @@ class MlpNet(nn.Module):
         layer_sizes = [input_size] + layer_sizes
         for l_id in range(len(layer_sizes) - 1):
             if l_id == len(layer_sizes) - 2:
-                layers.append(nn.Sequential(
-                    nn.Linear(layer_sizes[l_id], layer_sizes[l_id + 1]),
+                layer1 = nn.Linear(layer_sizes[l_id], layer_sizes[l_id + 1])
+                nn.init.kaiming_uniform_(layer1.weight, nonlinearity='relu')
+                nn.init.zeros_(layer1.bias)
+                layer = nn.Sequential(
+                    layer1,
                     #nn.Sigmoid(), 
                     nn.BatchNorm1d(num_features=layer_sizes[l_id + 1], affine=False),
-                    
-                ))
+                )
+                #nn.init.xavier_uniform_(layer.linear.weight)
+                #nn.init.zeros_(layer.linear.bias)
+                layers.append(layer)
             else:
-                layers.append(nn.Sequential(
-                    nn.Linear(layer_sizes[l_id], layer_sizes[l_id + 1]),
+                layer1 = nn.Linear(layer_sizes[l_id], layer_sizes[l_id + 1])
+                nn.init.xavier_uniform_(layer1.weight)
+                nn.init.zeros_(layer1.bias)
+                layer = nn.Sequential(
+                    layer1,
                     #nn.Sigmoid(),
                     nn.BatchNorm1d(num_features=layer_sizes[l_id + 1], affine=False),
-                ))
+                )
+                layers.append(layer)
+        
         self.layers = nn.ModuleList(layers)
 
     def forward(self, x):
@@ -36,7 +46,7 @@ class DeepGCCA(nn.Module):
         for i in range(len(layer_sizes_list)):
             self.model_list.append(MlpNet(layer_sizes_list[i], input_size_list[i]).double())
         self.model_list = nn.ModuleList(self.model_list)
-        self.loss = new_loss
+        self.loss = new_loss #GCCA_loss
 
 
     def forward(self, x_list):

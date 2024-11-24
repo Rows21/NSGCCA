@@ -3,7 +3,7 @@ import torch
 def GCCA_loss(H_list):
     
     r = 1e-4
-    eps = 1e-8
+    eps = 1e-4
 
     top_k = 10
 
@@ -24,7 +24,10 @@ def GCCA_loss(H_list):
 
         assert torch.isnan(A).sum().item() == 0
 
+        max_singular_value = 1e2
         S_thin = S[:top_k]
+        S_thin = torch.clamp(S_thin, max=max_singular_value)
+        #
 
         S2_inv = 1. / (torch.mul( S_thin, S_thin ) + eps)
 

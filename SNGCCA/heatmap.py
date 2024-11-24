@@ -102,28 +102,28 @@ def cor_map(method,Labelpath,Datapath,ypath,Respath,savename):
     plt.show()
 
 
-num = 'res6/'
-datapath = 'D:/GitHub/SNGCCA/SNGCCA/RealData/'
+num = 'res1/'
+datapath = 'E:/GitHub/SNGCCA/SNGCCA/RealData/'
 respath = datapath + num
 ypath = datapath + 'PAM50label664.txt'
 
 Labelpath = datapath + 'Exp664_genes.txt'
 Datapath = datapath + "Exp664.txt"
 Respath = respath + "Exp_score.csv"
-savename = respath + "Exp_plot.png"
+savename = respath + "Exp.png"
 method = 'ward'
 cor_map(method,Labelpath,Datapath,ypath,Respath,savename)
 
 Labelpath = datapath + 'miRNA664_miRNA.txt'
 Datapath = datapath + "miRNA664.txt"
 Respath = respath + "miRNA_score.csv"
-savename = respath + "miRNA_plot.png"
-method = 'ward'
+savename = respath + "miRNA.png"
+method = 'average'
 cor_map(method,Labelpath,Datapath,ypath,Respath,savename)
 
 Labelpath = datapath + 'Meth664_probes.txt'
 Datapath = datapath + "Meth664.txt"
 Respath = respath + "Meth_score.csv"
-savename = respath + "Meth_plot.png"
+savename = respath + "Meth.png"
 method = 'ward'
 cor_map(method,Labelpath,Datapath,ypath,Respath,savename)

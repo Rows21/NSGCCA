@@ -6,8 +6,6 @@ date: "2024-05-01"
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
-
-library(Rtsne)
 library(ggplot2)
 ```
 
@@ -16,10 +14,10 @@ library(ggplot2)
 ```{r venn}
 library(VennDiagram)
 library(ggvenn)
-sgcca <- as.list(read.csv('D:/GitHub/SNGCCA/SNGCCA/RealData/ressg/Exp_score.csv')[1])$Name
-sngcca <- as.list(read.csv('D:/GitHub/SNGCCA/SNGCCA/RealData/res5/Exp_score.csv')[1])$Name
-ksshiba <- as.list(read.csv('D:/GitHub/SNGCCA/SNGCCA/RealData/resk/Exp_score.csv')[1])$Name
-dgcca <- as.list(read.csv('D:/GitHub/SNGCCA/SNGCCA/RealData/resdg/Exp_dgcca.csv')[1])$Name
+sgcca <- as.list(read.csv('E:/GitHub/SNGCCA/SNGCCA/RealData/ressg/Exp_score.csv')[1])$Name
+sngcca <- as.list(read.csv('E:/GitHub/SNGCCA/SNGCCA/RealData/res8/Exp_score.csv')[1])$Name
+ksshiba <- as.list(read.csv('E:/GitHub/SNGCCA/SNGCCA/RealData/resk/Exp_score.csv')[1])$Name
+dgcca <- as.list(read.csv('E:/GitHub/SNGCCA/SNGCCA/RealData/resdg/Exp_score.csv')[1])$Name
 
 x <- list(
   DGCCA = dgcca,
@@ -49,10 +47,10 @@ ggvenn(
   #)
 ggsave('FigVenna.eps')
 ggsave('FigVenna.png')
-sgcca <- as.list(read.csv('D:/GitHub/SNGCCA/SNGCCA/RealData/ressg/Meth_score.csv')[1])$Name
-sngcca <- as.list(read.csv('D:/GitHub/SNGCCA/SNGCCA/RealData/res5/Meth_score.csv')[1])$Name
-ksshiba <- as.list(read.csv('D:/GitHub/SNGCCA/SNGCCA/RealData/resk/Meth_score.csv')[1])$Name
-dgcca <- as.list(read.csv('D:/GitHub/SNGCCA/SNGCCA/RealData/resdg/Meth_dgcca.csv')[1])$Name
+sgcca <- as.list(read.csv('E:/GitHub/SNGCCA/SNGCCA/RealData/ressg/Meth_score.csv')[1])$Name
+sngcca <- as.list(read.csv('E:/GitHub/SNGCCA/SNGCCA/RealData/res8/Meth_score.csv')[1])$Name
+ksshiba <- as.list(read.csv('E:/GitHub/SNGCCA/SNGCCA/RealData/resk/Meth_score.csv')[1])$Name
+dgcca <- as.list(read.csv('E:/GitHub/SNGCCA/SNGCCA/RealData/resdg/Meth_score.csv')[1])$Name
 
 x <- list(
   DGCCA = dgcca,
@@ -69,10 +67,10 @@ ggvenn(
   )
 ggsave('FigVennb.eps')
 ggsave('FigVennb.png')
-sgcca <- as.list(read.csv('D:/GitHub/SNGCCA/SNGCCA/RealData/ressg/miRNA_score.csv')[1])$Name
-sngcca <- as.list(read.csv('D:/GitHub/SNGCCA/SNGCCA/RealData/res5/miRNA_score.csv')[1])$Name
-ksshiba <- as.list(read.csv('D:/GitHub/SNGCCA/SNGCCA/RealData/resk/miRNA_score.csv')[1])$Name
-dgcca <- as.list(read.csv('D:/GitHub/SNGCCA/SNGCCA/RealData/resdg/miRNA_dgcca.csv')[1])$Name
+sgcca <- as.list(read.csv('E:/GitHub/SNGCCA/SNGCCA/RealData/ressg/miRNA_score.csv')[1])$Name
+sngcca <- as.list(read.csv('E:/GitHub/SNGCCA/SNGCCA/RealData/res8/miRNA_score.csv')[1])$Name
+ksshiba <- as.list(read.csv('E:/GitHub/SNGCCA/SNGCCA/RealData/resk/miRNA_score.csv')[1])$Name
+dgcca <- as.list(read.csv('E:/GitHub/SNGCCA/SNGCCA/RealData/resdg/miRNA_score.csv')[1])$Name
 
 x <- list(
   DGCCA = dgcca,
@@ -92,11 +90,11 @@ ggsave('FigVennc.eps')
 ggsave('FigVennc.png')
 ```
 ```{r tsne}
-y <- as.list(read.table("D:/GitHub/SNGCCA/SNGCCA/RealData/PAM50label664.txt"))$V1
-exp <- t(read.table("D:/GitHub/SNGCCA/SNGCCA/RealData/Exp664.txt"))
-expnames <- as.list(read.table("D:/GitHub/SNGCCA/SNGCCA/RealData/Exp664_genes.txt"))
+y <- as.list(read.table("E:/GitHub/SNGCCA/SNGCCA/RealData/PAM50label664.txt"))$V1
+exp <- t(read.table("E:/GitHub/SNGCCA/SNGCCA/RealData/Exp664.txt"))
+expnames <- as.list(read.table("E:/GitHub/SNGCCA/SNGCCA/RealData/Exp664_genes.txt"))
 colnames(exp) <- expnames$V1
-sngcca <- as.list(read.csv('D:/GitHub/SNGCCA/SNGCCA/RealData/rescv/Exp_score.csv'))$Name
+sngcca <- as.list(read.csv('E:/GitHub/SNGCCA/SNGCCA/RealData/rescv/Exp_score.csv'))$Name
 selected <- exp[,colnames(exp) %in% sngcca]
 
 tsne <- Rtsne(as.matrix(selected), check_duplicates = FALSE, pca = TRUE,
@@ -117,10 +115,10 @@ ggplot(jiangwei, aes(x=V1, y=V2, color=Class)) +
   theme(plot.title = element_text(hjust = 0.5))
 
 #============================================================================================
-meth <- t(read.table("D:/GitHub/SNGCCA/SNGCCA/RealData/Meth664.txt"))
-RNAnames <- as.list(read.table("D:/GitHub/SNGCCA/SNGCCA/RealData/Meth664_probes.txt"))
+meth <- t(read.table("E:/GitHub/SNGCCA/SNGCCA/RealData/Meth664.txt"))
+RNAnames <- as.list(read.table("E:/GitHub/SNGCCA/SNGCCA/RealData/Meth664_probes.txt"))
 colnames(meth) <- RNAnames$V1
-sngcca <- as.list(read.csv('D:/GitHub/SNGCCA/SNGCCA/RealData/ressg/Meth_score.csv'))$Name
+sngcca <- as.list(read.csv('E:/GitHub/SNGCCA/SNGCCA/RealData/ressg/Meth_score.csv'))$Name
 selected <- meth[,colnames(meth) %in% sngcca]
 
 tsne <- Rtsne(as.matrix(selected), check_duplicates = FALSE, pca = TRUE,
@@ -141,10 +139,10 @@ ggplot(jiangwei, aes(x=V1, y=V2, color=Class)) +
   theme(plot.title = element_text(hjust = 0.5))
 
 #============================================================================================
-miRNA <- t(read.table("D:/GitHub/SNGCCA/SNGCCA/RealData/miRNA664.txt"))
-RNAnames <- as.list(read.table("D:/GitHub/SNGCCA/SNGCCA/RealData/miRNA664_miRNA.txt"))
+miRNA <- t(read.table("E:/GitHub/SNGCCA/SNGCCA/RealData/miRNA664.txt"))
+RNAnames <- as.list(read.table("E:/GitHub/SNGCCA/SNGCCA/RealData/miRNA664_miRNA.txt"))
 colnames(miRNA) <- RNAnames$V1
-sngcca <- as.list(read.csv('D:/GitHub/SNGCCA/SNGCCA/RealData/rescv/miRNA_score.csv'))$Name
+sngcca <- as.list(read.csv('E:/GitHub/SNGCCA/SNGCCA/RealData/rescv/miRNA_score.csv'))$Name
 selected <- miRNA[,colnames(miRNA) %in% sngcca]
 
 tsne <- Rtsne(as.matrix(selected), check_duplicates = FALSE, pca = TRUE,

@@ -4,30 +4,12 @@ import torch.nn as nn
 import numpy as np
 from linear_gcca import linear_gcca
 from synth_data import create_synthData_new
-from torch.utils.data import BatchSampler, SequentialSampler, RandomSampler
 from models import DeepGCCA
 # from utils import load_data, svm_classify
 import time
-import logging
-try:
-    import cPickle as thepickle
-except ImportError:
-    import _pickle as thepickle
-
-import gzip
-import numpy as np
-import torch.nn as nn
-
-import seaborn as sns
-
-import matplotlib.pyplot as plt
-from matplotlib.backends.backend_pdf import PdfPages
-
-import pandas as pd
 
 torch.set_default_tensor_type(torch.DoubleTensor)
 from main import Solver
-from loss_objectives import new_loss
 
 ############
 # Parameters Section
@@ -48,13 +30,13 @@ layer_sizes3 = [256, 512, 128, outdim_size]
 layer_sizes_list = [layer_sizes1, layer_sizes2, layer_sizes3] 
 
 # the parameters for training the network
-learning_rate = 5*1e-2
+learning_rate = 10
 epoch_num = 200
-batch_size = 400
+batch_size = 100
 
 # the regularization parameter of the network
 # seems necessary to avoid the gradient exploding especially when non-saturating activations are used
-reg_par = 1e-5
+reg_par = 1e-4
 
 # specifies if all the singular values should get used to calculate the correlation or just the top outdim_size ones
 # if one option does not work for a network or dataset, try the other one
@@ -64,21 +46,31 @@ apply_linear_gcca = True
 # end of parameters section
 
 # 1
+mode = 1
 N = 100
+num = 5
+tol = 150
+root = 'E:/Github/SNGCCA/SNGCCA/'
+if mode == 1:
+        folder = 'Linear/'
+else:
+        folder = 'Nonlinear/'
+data_path = root + 'Data/' + folder + '/' + str(N) + '_' + str(tol) + '_' + str(num) + '/'
 U_sum = []
-u1 = np.empty((100, 200))
-u2 = np.empty((100, 200))
-u3 = np.empty((100, 200))
+u1 = np.zeros((N, tol))
+u2 = np.zeros((N, tol))
+u3 = np.zeros((N, tol))
+t = []
 outputs_sum = []
-test = []
-for i in range(3):
-    testm = torch.eye(100)
-    test.append(testm)
 
 import pandas as pd
-start_time = time.time()
-for r in range(10):
-    views = create_synthData_new(v=5,N=N,mode=2,F=100)
+
+for r in range(100):
+    #views = create_synthData_new(v=5,N=N,mode=1,F=30)
+    view1 = np.genfromtxt(data_path + 'data' + str(1) + '_' + str(r) + '.csv', delimiter=',')
+    view2 = np.genfromtxt(data_path + 'data' + str(2) + '_' + str(r) + '.csv', delimiter=',')
+    view3 = np.genfromtxt(data_path + 'data' + str(3) + '_' + str(r) + '.csv', delimiter=',')
+    views = [torch.tensor(view1), torch.tensor(view2), torch.tensor(view3)]
     print(f'input views shape :')
     for i, view in enumerate(views):
         print(f'view_{i} :  {view.shape}')
@@ -100,29 +92,39 @@ for r in range(10):
     # test1, test2 = data1[2][0], data2[2][0]
 
     solver.fit(views, checkpoint=save_name)
-    end_time = time.time()
+    
     # TODO: Save l_gcca model if needed
-    _ , _, outputs_def = solver.test(test, apply_linear_gcca)
-
-    A = outputs_def[0]
-    B = outputs_def[1]
-    C = outputs_def[2]
-    U = [A,B,C]
-
-    A = outputs_def[0]
-    B = outputs_def[1]
-    C = outputs_def[2]
-
-    os = [A,B,C]
-    u1[r] = A.numpy().flatten()
-    u2[r] = B.numpy().flatten()
-    u3[r] = C.numpy().flatten()
-    outputs_sum.append(os)
+    A = np.zeros((int(tol),1))
+    B = np.zeros((int(tol),1))
+    C = np.zeros((int(tol),1))
+    loss0 = solver.test([torch.tensor(view1), torch.tensor(view2), torch.tensor(view3)], apply_linear_gcca)[1]
+    for j in range(int(tol)):
+        view_res1 = view1.copy()
+        view_res2 = view2.copy()
+        view_res3 = view3.copy()
+        view_res1[:,j] = 0
+        test = [torch.tensor(view_res1), torch.tensor(view2), torch.tensor(view3)]
+        _ , loss, outputs_def = solver.test(test, apply_linear_gcca)
+        A[j] = loss - loss0
+        view_res2[:,j] = 0
+        test = [torch.tensor(view1), torch.tensor(view_res2), torch.tensor(view3)]
+        _ , loss, outputs_def = solver.test(test, apply_linear_gcca)
+        B[j] = loss - loss0
+        view_res3[:,i] = 0
+        test = [torch.tensor(view1), torch.tensor(view2), torch.tensor(view_res3)]
+        _ , loss, outputs_def = solver.test(test, apply_linear_gcca)
+        C[j] = loss - loss0
+    u1[r] = A.reshape(-1)
+    u2[r] = B.reshape(-1)
+    u3[r] = C.reshape(-1)
+    end_time = time.time()
+    t.append(end_time - start_time)
     
 
-time_diff = end_time - start_time
-np.savetxt('dgcca_u1.csv', u1, delimiter=',')
-np.savetxt('dgcca_u2.csv', u2, delimiter=',')
-np.savetxt('dgcca_u3.csv', u3, delimiter=',')
+
+np.savetxt(data_path.replace("Data","Simulation")+'dgcca_u1.csv', u1, delimiter=',')
+np.savetxt(data_path.replace("Data","Simulation")+'dgcca_u2.csv', u2, delimiter=',')
+np.savetxt(data_path.replace("Data","Simulation")+'dgcca_u3.csv', u3, delimiter=',')
+np.savetxt(data_path.replace("Data","Simulation")+'dgcca_t.csv', t, delimiter=',')
 #variables = pd.DataFrame(U_sum)
 #results = pd.DataFrame(results_sum)
