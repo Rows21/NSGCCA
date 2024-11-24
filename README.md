@@ -1,6 +1,6 @@
 ### [Sparse Nonlinear Generalized Canonical Correlation Analysis with Applications in Multiview Genomic Datasets]()
 
-Official Pytorch implementation of SNGCCA, from the following paper:
+Official Python implementation of SNGCCA, from the following paper:
 
 [Sparse Nonlinear Generalized Canonical Correlation Analysis with Applications in Multiview Genomic Datasets]().  \
 Rong Wu, Ziqi Chen and Hai Shu. \
