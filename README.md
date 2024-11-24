@@ -52,13 +52,7 @@ git clone git@github.com:Rows21/SNGCCA
 </div>
 <div class="images" >
 	<div class="mid">
-		<img src="/screenshots/heatmap/Exp.JPG" />
-	</div>
-	<div class="mid">
-		<img src="/screenshots/heatmap/Meth.JPG" />
-	</div>
-	<div class="mid">
-		<img src="/screenshots/heatmap/miRNA.JPG" />
+		<img src="/screenshots/FigHeat.jpg" />
 	</div>
 </div>
 <div style="clear:both;"></div>
