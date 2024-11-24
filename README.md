@@ -24,6 +24,13 @@ git clone git@github.com:Rows21/SNGCCA
  (Feel free to post suggestions in issues of recommending latest proposed CCA network for comparison. Currently, the network folder is to put the current SOTA models. We can further add the recommended network in it for training.)
  
  <!-- ✅ ⬜️  -->
+
+ ## Citation
+If you find this repository helpful, please consider citing:
+```
+
+```
+
  ## Results 
  ### Simulation Studies
 
@@ -81,9 +88,3 @@ This repository is built using the [timm](https://github.com/rwightman/pytorch-i
 
 ## License
 This project is released under the MIT license. Please see the [LICENSE](LICENSE) file for more information.
-
-## Citation
-If you find this repository helpful, please consider citing:
-```
-
-```
