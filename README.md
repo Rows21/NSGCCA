@@ -1,4 +1,4 @@
-### [Sparse Nonlinear Generalized Canonical Correlation Analysis with Applications in Multiview Genomic Datasets]()
+### [Sparse Nonlinear Generalized Canonical Correlation Analysis]()
 
 Official Python implementation of SNGCCA, from the following paper:
 
