@@ -168,15 +168,7 @@ Exp.select.centered=t(scale(t(Exp.select), center = T, scale =F))
 Meth.select.centered=t(scale(t(Meth.select), center = T, scale =F))
 miRNA.select.centered=t(scale(t(miRNA.imputed), center = T, scale =F))
 
-Exp.lambda=svd(t(Exp.select.centered)%*%Exp.select.centered/dim(Exp.select.centered)[2])$d
-Meth.lambda=svd(t(Meth.select.centered)%*%Meth.select.centered/dim(Meth.select.centered)[2])$d
-miRNA.lambda=svd(t(miRNA.select.centered)%*%miRNA.select.centered/dim(miRNA.select.centered)[2])$d
-
-#5*5
-plot(Exp.lambda[1:100],ylab='Eigenvalue')#4
-plot(Meth.lambda[1:100],ylab='Eigenvalue')#3
-plot(miRNA.lambda[1:100],ylab='Eigenvalue')#3
-
+               
 write.table(Exp.select.centered,file='Exp664.txt',row.names = FALSE,col.names = FALSE)
 write.table(Meth.select.centered,file='Meth664.txt',row.names = FALSE,col.names = FALSE)
 write.table(miRNA.select.centered,file='miRNA664.txt',row.names = FALSE,col.names = FALSE)
