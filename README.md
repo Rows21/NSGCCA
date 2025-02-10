@@ -58,25 +58,13 @@ If you find this repository helpful, please consider citing:
 </div>
 <div class="images" >
 	<div class="mid">
-		<img src="/screenshots/FigHeat.jpg" />
-	</div>
-</div>
-<div style="clear:both;"></div>
-<div style="margin-bottom:30px;">
-</div>
-
-<div class="main">
-<div class="tag">
-</div>
-<div class="images" >
-	<div class="mid">
-		<img src="/screenshots/venndiagram/FigVenna.png" />
+		<img src="/screenshots/FigVenn_1.png" />
 	</div>
 	<div class="mid">
-		<img src="/screenshots/venndiagram/FigVennb.png" />
+		<img src="/screenshots/FigVenn_2.png" />
 	</div>
 	<div class="mid">
-		<img src="/screenshots/venndiagram/FigVennc.png" />
+		<img src="/screenshots/FigVenn_3.png" />
 	</div>
 </div>
 <div style="clear:both;"></div>
