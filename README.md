@@ -9,7 +9,11 @@ New York University \
 
 ---
 
-We propose **SNGCCA**.
+We propose three nonlinear, sparse, generalized CCA methods, **HSIC-SGCCA**, **SA-KGCCA**, and **TS-KGCCA**, for variable selection in multi-view high-dimensional data. 
+These methods extend existing SCCA-HSIC, SA-KCCA, and TS-KCCA from two-view to multi-view settings. While SA-KGCCA and TS-KGCCA yield multi-convex optimization problems solved via block coordinate descent, HSIC-SGCCA introduces a necessary unit-variance constraint previously ignored in SCCA-HSIC, resulting in a nonconvex, non-multiconvex problem.
+We efficiently address this challenge by integrating the block prox-linear method with the  linearized
+alternating direction method of multipliers. 
+Simulations and TCGA-BRCA data analysis demonstrate that HSIC-SGCCA outperforms competing methods in variable selection.
 
  ## Installation
 Clone this repository and install other required packages:
