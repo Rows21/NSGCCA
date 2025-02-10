@@ -1,9 +1,9 @@
-### [Sparse Nonlinear Generalized Canonical Correlation Analysis]()
+### [Nonlinear Sparse Generalized Canonical Correlation Analysis]()
 
-Official Python implementation of SNGCCA, from the following paper:
+Official Python implementation of NSGCCA, from the following paper:
 
-[Sparse Nonlinear Generalized Canonical Correlation Analysis with Applications in Multiview Genomic Datasets]().  \
-Rong Wu, Ziqi Chen and Hai Shu. \
+[Nonlinear Sparse Generalized Canonical Correlation Analysis for Multi-view High-dimensional Data]().  \
+Rong Wu, Ziqi Chen, Gen Li and Hai Shu. \
 New York University \
 [[`arXiv`]()]
 
@@ -19,7 +19,7 @@ git clone git@github.com:Rows21/SNGCCA
 
  ## Datasets
   - [x] Synthetic Datasets [synth_data.py](/SNGCCA/synth_data.py)
-  - [x] TCGA Breast Cancer Database [RealData](/SNGCCA/RealData/) from (https://tcga-data.nci.nih.gov/docs/publications)
+  - [x] TCGA Breast Cancer Database from (https://tcga-data.nci.nih.gov/docs/publications)
  
  (Feel free to post suggestions in issues of recommending latest proposed CCA network for comparison. Currently, the network folder is to put the current SOTA models. We can further add the recommended network in it for training.)
  
