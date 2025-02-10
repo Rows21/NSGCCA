@@ -1,0 +1,80 @@
+---
+title: "venn_diagram"
+output: html_document
+date: "2024-05-01"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(ggplot2)
+```
+
+## Venn Diagram
+```{r venn}
+
+# Load the necessary library
+library(venn)
+
+# Define the datasets and their corresponding paths
+datasets <- c("Exp_score", "Meth_score", "miRNA_score")
+base_path <- "E:/res/SNGCCA/SNGCCA/RealData/"
+
+# Define a function to read and process data for each dataset
+create_venn_diagram <- function(dataset_name, base_path, i) {
+  # Read each dataset from the specified paths
+  sgcca <- as.list(read.csv(paste0(base_path, "ressgccaadmm/", dataset_name, ".csv"))[1])$Name
+  sngcca <- as.list(read.csv(paste0(base_path, "res8/", dataset_name, ".csv"))[1])$Name
+  pdd <- as.list(read.csv(paste0(base_path, "respdd/", dataset_name, ".csv"))[1])$Name
+  dgcca <- as.list(read.csv(paste0(base_path, "resdg/", dataset_name, ".csv"))[1])$Name
+  sakgcca <- as.list(read.csv(paste0(base_path, "ressak/", dataset_name, ".csv"))[1])$Name
+  tskgcca <- as.list(read.csv(paste0(base_path, "restsk/", dataset_name, ".csv"))[1])$Name
+  
+  # Create a list of the dataset to pass to the venn function
+  dataset_list <- list(
+    "MAXCOR-SGCCA" = sgcca,
+    "HSIC-SGCCA" = sngcca,
+    "SA-KGCCA" = sakgcca,
+    "TS-KGCCA" = tskgcca,
+    "DGCCA" = dgcca,
+    "SUMCOR-SGCCA" = pdd
+  )
+  
+  # Custom colors for each dataset
+  custom_colors <- c("#FFDA22", "#E41A1C", "#984EA3", "#4DAF4A", "#377EB8", "#FF7F00")
+
+  # Define the output file path and name
+  output_filename <- paste0("FigVenn_", i, ".png")
+  
+  # Save the Venn diagram as a PNG file
+  png(output_filename, width = 1000, height = 800)
+
+  # Create the Venn diagram
+  venn(
+    dataset_list, 
+    lty = 1,
+    lwd = 2,
+    col = custom_colors,
+    zcolor = custom_colors,         
+    opacity = 0.3,             
+    ilabels = "counts",     
+    snames = names(dataset_list), 
+    borders = FALSE,
+    plotsize = 1000, 
+    box = FALSE, 
+    sncs = 2,
+    ilcs = 2
+  )
+  
+  # Close the PNG device
+  dev.off()
+}
+
+i = 1
+# Loop through the datasets and create Venn diagrams
+for (dataset in datasets) {
+  create_venn_diagram(dataset, base_path, i)
+  i = i+1
+  }
+
+```
+

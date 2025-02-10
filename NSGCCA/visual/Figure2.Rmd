@@ -1,0 +1,201 @@
+---
+title: "Plot"
+author: "RongWu"
+date: "2023-11-26"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(dplyr)
+library(ggplot2)
+#install.packages('openxlsx')
+library(openxlsx)
+library(gridExtra)
+#install.packages('devtools')
+#devtools::install_github('Mikata-Project/ggthemr')
+library(ggthemr)
+#library(cowplot)
+#library(patchwork)
+```
+
+```{r dataprep}
+# Set root directory
+root <- 'E:/res/SNGCCA/SNGCCA/Simulation/'
+
+# List of file names
+file_names <- c("SAKGCCA.csv", "DGCCA.csv", "SGCCA.csv", "TSKGCCA.csv", "SNGCCA.csv", "PDD.csv")
+
+# Read all files into a list
+data_list <- lapply(file_names, function(f) {
+  path <- paste0(root, f)
+  if (file.exists(path)) {
+    read.csv(path)
+  } else {
+    stop(paste("File not found:", path))
+  }
+})
+
+# Assign names to list elements
+names(data_list) <- c("k", "dgcca", "sgcca", "rgcca", "sngcca", "pdd")
+
+# Function to split data into "Time" and non-"Time" subsets
+split_time_data <- function(data) {
+  list(
+    time = data %>% filter(grepl("Time", type)),
+    non_time = data %>% filter(!grepl("Time", type))
+  )
+}
+
+# Split each dataset into time and non-time
+split_data <- lapply(data_list, split_time_data)
+
+# Combine non-"Time" subsets into three chunks
+combine_chunks <- function(data_list, rows) {
+  do.call(rbind, lapply(data_list, function(d) d$non_time[rows, ]))
+}
+
+data1 <- combine_chunks(split_data, 1:48)
+data2 <- combine_chunks(split_data, 49:84)
+data3 <- combine_chunks(split_data, 85:120)
+
+data1$type[data1$type == 'F1-Score'] <- 'F1 Score'
+data2$type[data2$type == 'F1-Score'] <- 'F1 Score'
+data3$type[data3$type == 'F1-Score'] <- 'F1 Score'
+
+# Process and scale "Time" data
+process_time_data <- function(data_list, rows, label, divisor) {
+  time_data <- do.call(rbind, lapply(data_list, function(d) d$time[rows, ]))
+  time_data$type <- label
+  time_data$Values <- time_data$Values / divisor
+  time_data$std <- time_data$std / divisor
+  return(time_data)
+}
+
+# Process time data for each chunk
+t1 <- process_time_data(split_data, 1:8, "Time(×15s)", 15) %>% filter(Methods != "SAKGCCA")
+t2 <- process_time_data(split_data, 9:14, "Time(×60s)", 60) %>% filter(Methods != "SAKGCCA")
+t3 <- process_time_data(split_data, 15:20, "Time(×15s)", 15) %>% filter(Methods != "SAKGCCA")
+
+# Combine non-"Time" and processed "Time" data
+data1 <- rbind(data1, t1)
+data2 <- rbind(data2, t2)
+data3 <- rbind(data3, t3)
+
+# Define ggplot2 no-legend theme
+no_legend_theme <- theme(
+  legend.position = "none",
+  strip.text.x = element_blank(),
+  strip.text.y = element_text(size = 16)
+)
+
+
+```
+
+```{r Fig1a}
+
+data1$Methods[data1$Methods == "PDD"] <- "SUMCOR-SGCCA"
+data1$Methods[data1$Methods == "SGCCA"] <- "MAXCOR-SGCCA"
+data1$Methods[data1$Methods == "SAKGCCA"] <- "SA-KGCCA"
+data1$Methods[data1$Methods == "TSKGCCA"] <- "TS-KGCCA"
+data1$Methods[data1$Methods == "SNGCCA"] <- "HSIC-SGCCA"
+
+data = data1
+data$Methods <- factor(data$Methods, levels = c("HSIC-SGCCA", "DGCCA", "SA-KGCCA", "SUMCOR-SGCCA", "TS-KGCCA", "MAXCOR-SGCCA"))
+sp = ggplot(data = data, aes(x=p,y=Values,color=Methods, group=Methods)) + 
+  geom_line(size=0.6,position = position_dodge(0.05)) + 
+  geom_point(size=1,position = position_dodge(0.05))+
+  geom_errorbar(aes(ymin = Values - std, ymax = Values + std), width=0.09, position = position_dodge(0.05))
+
+sp + facet_grid(Scenario ~ type) +xlab("Variable Dimension (p)")+ylab("Value")+
+  scale_color_manual(values = c("#E41A1C", "#377EB8", "#984EA3", "#FF7F00", "#4DAF4A", "#FFDA22"))+ 
+  scale_y_continuous(
+    limits = c(-0.25, 1.01),         
+    breaks = seq(-0.25, 1,0.25)  
+  ) +
+  theme(legend.title = element_blank(),
+        strip.text.x = element_text(size=12),
+        strip.text.y = element_text(size=12),
+        legend.text = element_text(size = 10),   
+        legend.key.width = unit(0.3, "cm"),
+        legend.position = 'bottom',
+        legend.direction = "horizontal",
+        legend.box = "horizontal",
+        legend.key.size = unit(0.2, "cm")) + scale_x_log10(breaks = c(30,50,100,200))
+
+ggthemr('fresh')
+ggsave('Fig2a.eps')
+ggsave('Fig2a.png')
+```
+
+```{r Fig1b}
+
+data2$Methods[data2$Methods == "PDD"] <- "SUMCOR-SGCCA"
+data2$Methods[data2$Methods == "SGCCA"] <- "MAXCOR-SGCCA"
+data2$Methods[data2$Methods == "SAKGCCA"] <- "SA-KGCCA"
+data2$Methods[data2$Methods == "TSKGCCA"] <- "TS-KGCCA"
+data2$Methods[data2$Methods == "SNGCCA"] <- "HSIC-SGCCA"
+
+data = data2
+data$Methods <- factor(data$Methods, levels = c("HSIC-SGCCA", "DGCCA", "SA-KGCCA", "SUMCOR-SGCCA", "TS-KGCCA", "MAXCOR-SGCCA"))
+sp = ggplot(data = data, aes(x=n,y=Values,color=Methods, group=Methods)) + 
+  geom_line(size=0.6,position = position_dodge(0.05)) + 
+  geom_point(size=1,position = position_dodge(0.05))+
+  geom_errorbar(aes(ymin = Values - std, ymax = Values + std), width=0.09, position = position_dodge(0.05))
+
+sp + facet_grid(Scenario ~ type) +xlab("Sample Size (n)")+ylab("Value")+
+  scale_color_manual(values = c("#E41A1C", "#377EB8", "#984EA3", "#FF7F00", "#4DAF4A", "#FFDA22"))+
+  #scale_y_continuous(
+  #  limits = c(-0.25, 1),         
+  #  breaks = seq(-0.25, 1,0.25)  
+  #) +
+  theme(legend.title = element_blank(),
+        strip.text.x = element_text(size=12),
+        strip.text.y = element_text(size=12),
+        legend.text = element_text(size = 10),   
+        legend.key.width = unit(0.3, "cm"),
+        legend.position = 'bottom',
+        legend.direction = "horizontal",
+        legend.box = "horizontal",
+        legend.key.size = unit(0.2, "cm")) + scale_x_log10(breaks = c(100,200,400))
+
+ggthemr('fresh')
+ggsave('Fig2b.eps')
+ggsave('Fig2b.png')
+```
+
+```{r Fig1c}
+
+data3$Methods[data3$Methods == "PDD"] <- "SUMCOR-SGCCA"
+data3$Methods[data3$Methods == "SGCCA"] <- "MAXCOR-SGCCA"
+data3$Methods[data3$Methods == "SAKGCCA"] <- "SA-KGCCA"
+data3$Methods[data3$Methods == "TSKGCCA"] <- "TS-KGCCA"
+data3$Methods[data3$Methods == "SNGCCA"] <- "HSIC-SGCCA"
+data = data3
+data$Methods <- factor(data$Methods, levels = c("HSIC-SGCCA", "DGCCA", "SA-KGCCA", "SUMCOR-SGCCA", "TS-KGCCA", "MAXCOR-SGCCA"))
+sp = ggplot(data = data, aes(x=s,y=Values,color=Methods, group=Methods)) + 
+  geom_line(size=0.6,position = position_dodge(0.05)) + 
+  geom_point(size=1,position = position_dodge(0.05))+
+  geom_errorbar(aes(ymin = Values - std, ymax = Values + std), width=0.09, position = position_dodge(0.05))
+
+sp + facet_grid(Scenario ~ type) +xlab("Sparsity Level (q)")+ylab("Value")+
+  scale_color_manual(values = c("#E41A1C", "#377EB8", "#984EA3", "#FF7F00", "#4DAF4A", "#FFDA22"))+ 
+  #scale_y_continuous(
+  #  limits = c(-0.25, 1),         
+  #  breaks = seq(-0.25, 1,0.25)  
+  #) +
+  theme(legend.title = element_blank(),
+        strip.text.x = element_text(size=12),
+        strip.text.y = element_text(size=12),
+        legend.text = element_text(size = 10),   
+        legend.key.width = unit(0.3, "cm"),
+        legend.position = 'bottom',
+        legend.direction = "horizontal",
+        legend.box = "horizontal",
+        legend.key.size = unit(0.2, "cm")) + scale_x_log10()
+
+ggthemr('fresh')
+ggsave('Fig2c.eps')
+ggsave('Fig2c.png')
+```
+
