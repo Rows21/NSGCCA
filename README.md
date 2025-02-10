@@ -14,7 +14,7 @@ We propose **SNGCCA**.
  ## Installation
 Clone this repository and install other required packages:
 ```
-git clone git@github.com:Rows21/SNGCCA
+git clone git@github.com:Rows21/NSGCCA
 ```
 
  ## Datasets
@@ -39,13 +39,13 @@ If you find this repository helpful, please consider citing:
 </div>
 <div class="images" >
 	<div class="mid">
-		<img src="SNGCCA/Results/Figure2/Fig2a.png" />
+		<img src="/screenshots/Fig2a.png" />
 	</div>
 	<div class="mid">
-		<img src="SNGCCA/Results/Figure2/Fig2b.png" />
+		<img src="/screenshots/Fig2b.png" />
 	</div>
 	<div class="mid">
-		<img src="SNGCCA/Results/Figure2/Fig2c.png" />
+		<img src="/screenshots/Fig2c.png" />
 	</div>
 </div>
 <div style="clear:both;"></div>
