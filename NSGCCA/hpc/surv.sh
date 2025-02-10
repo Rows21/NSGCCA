@@ -1,7 +1,7 @@
 #!/bin/bash
 #
-#SBATCH --job-name=dgcca
-#SBATCH --nodes=1
+#SBATCH --job-name=sgcca_hsic  # Job name       
+#SBATCH --nodes=1              # array-job=1-100
 #SBATCH --cpus-per-task=1
 #SBATCH --mem=40GB
 #SBATCH --time=10:00:00

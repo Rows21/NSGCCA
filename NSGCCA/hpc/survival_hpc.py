@@ -9,8 +9,8 @@ from sksurv.metrics import concordance_index_ipcw
 from sklearn.model_selection import train_test_split
 import sys
 
-#datapath = '/scratch/rw2867/projects/SNGCCA/SNGCCA/RealData/'
-datapath = 'E:/res/SNGCCA/SNGCCA/RealData/'
+datapath = '/scratch/rw2867/projects/SNGCCA/SNGCCA/RealData/'
+#datapath = 'E:/res/SNGCCA/SNGCCA/RealData/'
 #methods = ['ressgccaadmm/','ressng/','restsk/','respdd/','ressak/','resdg/']'resdg/','ressak/','restsk/', 'respdd/', 
 methods = ['ressng/', 'ressgccaadmm/','resdg/','ressak/','restsk/', 'respdd/', None]
 
