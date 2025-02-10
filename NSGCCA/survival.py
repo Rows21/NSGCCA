@@ -3,7 +3,7 @@ import numpy as np
 import xgboost as xgb
 from itertools import product
 
-from utils import surv_grid, survival_preprocess, res_cov
+from NSGCCA.networks.utils import surv_grid, survival_preprocess, res_cov
 from sklearn.model_selection import train_test_split
 from sksurv.metrics import concordance_index_censored
 from sklearn.metrics import mean_absolute_error, mean_squared_error

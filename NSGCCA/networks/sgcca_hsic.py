@@ -9,9 +9,9 @@ if device == 'cuda':
 #import cupy as cp
 from tqdm import tqdm
 
-from utils import *
+from networks.utils import *
 
-class SNGCCA():
+class SGCCA_HSIC():
     def __init__(self, device='cpu'):
         self.device = device
     
@@ -183,8 +183,8 @@ class SNGCCA():
                 self.K_list[i] = rbf_kx(view, Pi)
                 
                 diff_list[i] = np.max(abs(Pi - Pi_pre))
-                print(inner_iter)
-                print(inner_error)
+                #print(inner_iter)
+                #print(inner_error)
             error_iter = np.max(np.stack(diff_list))
             F_trial = -np.sum([constraint[i] * np.linalg.norm(self.Pi_list[i], ord=1) for i in range(len(self.Pi_list))])
             for items in itertools.combinations(range(len(self.K_list)), 2):
@@ -192,7 +192,7 @@ class SNGCCA():
 
             loss = '{:.4g}'.format(sum([abs(i) for i in diff_list]))
             if logging == 1:
-                print('outer_iter=', outer_iter, 'loss=', sum(diff_list), "diff_tol=",self.L_list, "diff_list=", diff_list, 'obj=', F_trial)
+                print('outer_iter=', outer_iter, 'loss=', loss, "diff_list=", diff_list, 'obj=', F_trial)
             elif logging == 0:
                 progress_bar.set_description(f"outer_iter=: {outer_iter},obj: {'{:.4g}'.format(F_trial)}, Loss: {loss}, diff_list: {np.around(diff_list, decimals=8)}")
 
