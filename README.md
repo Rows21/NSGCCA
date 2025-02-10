@@ -25,7 +25,7 @@ git clone git@github.com:Rows21/NSGCCA
   - [x] Synthetic Datasets [synth_data.py](/NSGCCA/synth_data.py)
   - [x] TCGA Breast Cancer Database from (https://tcga-data.nci.nih.gov/docs/publications)
  
- (Feel free to post suggestions in issues of recommending latest proposed CCA network for comparison. Currently, the network folder is to put the current SOTA models. We can further add the recommended network in it for training.)
+ (Feel free to post suggestions in issues of recommending latest proposed CCA network for comparison. Currently, the baselines folder is to put comparable models.)
  
  <!-- ✅ ⬜️  -->
 
