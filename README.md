@@ -37,10 +37,10 @@ If you find this repository helpful, please consider citing:
 
  ## Results 
  ### Simulation Studies
- The simulation performance for Synthetic Datasets. [Figure 2](/Results)
+ [Figure 2](/Results): The simulation performance for Synthetic Datasets. 
  ### Real-World Studies -- TCGA breast cancer database
- TCGA-BRCA preprocessing through R script [Data_download_preprocess](/Realdata/Data_download_preprocess.R). <br>
- The clustering results for TCGA-BRCA. [Venn Diagram](/Results)
+ [Data_download_preprocess](/Realdata/Data_download_preprocess.R): TCGA-BRCA preprocessing through R script. <br>
+ [Venn Diagram](/Results): The clustering results for TCGA-BRCA. 
 
 ## Acknowledgement
 This repository is built using the [timm](https://github.com/rwightman/pytorch-image-models) library.
