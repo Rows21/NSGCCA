@@ -37,10 +37,9 @@ If you find this repository helpful, please consider citing:
 
  ## Results 
  ### Simulation Studies
-
-
-### Real-World Studies -- TCGA breast cancer database
-The clustering results for TCGA-BRCA. [Venn Diagram](/NSGCCA/visual/venn_diagram.html)
+ The simulation performance for Synthetic Datasets. [Figure 2](/Results)
+ ### Real-World Studies -- TCGA breast cancer database
+ The clustering results for TCGA-BRCA. [Venn Diagram](/Results)
 
 ## Acknowledgement
 This repository is built using the [timm](https://github.com/rwightman/pytorch-image-models) library.
