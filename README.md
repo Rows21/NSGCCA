@@ -23,8 +23,8 @@ git clone git@github.com:Rows21/NSGCCA
 
  ## Datasets
   - [x] Synthetic Datasets [synth_data.py](/NSGCCA/synth_data.py) <br>
-		The .py file is used to generate synthetic dataset,
-		We also provided the simulation dataset used in this paper in [Simulation.zip](/Simulation/Simulation.zip), 
+		The .py file is used to generate synthetic dataset <br>
+		We also provided the simulation dataset used in this paper in [Simulation.zip](/Simulation/Simulation.zip)
   - [x] TCGA Breast Cancer Database in [Realdata](/Realdata/Data_download_preprocess.R) from (https://tcga-data.nci.nih.gov/docs/publications)
  
  (Feel free to post suggestions in issues of recommending latest proposed CCA network for comparison. Currently, the baselines folder is to put comparable models.)
