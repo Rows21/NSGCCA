@@ -38,42 +38,9 @@ If you find this repository helpful, please consider citing:
  ## Results 
  ### Simulation Studies
 
-<div class="main">
-<div class="tag">
-</div>
-<div class="images" >
-	<div class="mid">
-		<img src="/screenshots/Fig2a.png" />
-	</div>
-	<div class="mid">
-		<img src="/screenshots/Fig2b.png" />
-	</div>
-	<div class="mid">
-		<img src="/screenshots/Fig2c.png" />
-	</div>
-</div>
-<div style="clear:both;"></div>
-<div style="margin-bottom:30px;">
-</div>
 
 ### Real-World Studies -- TCGA breast cancer database
-<div class="main">
-<div class="tag">
-</div>
-<div class="images" >
-	<div class="mid">
-		<img src="/screenshots/FigVenn_1.png" />
-	</div>
-	<div class="mid">
-		<img src="/screenshots/FigVenn_2.png" />
-	</div>
-	<div class="mid">
-		<img src="/screenshots/FigVenn_3.png" />
-	</div>
-</div>
-<div style="clear:both;"></div>
-<div style="margin-bottom:30px;">
-</div>
+
 
 ## Acknowledgement
 This repository is built using the [timm](https://github.com/rwightman/pytorch-image-models) library.
