@@ -115,7 +115,9 @@ DNA450.dataPrep <- GDCprepare(query = DNA450.query)
 save(DNA450.dataPrep, file = "DNA450.dataPrep.rda")
 
 DNA450.beta <- assay(DNA450.dataPrep)
-
+DNA450.probe <- str_sub(rownames(DNA450.beta),1,2)
+unique(DNA450.probe)
+sum(DNA450.probe=="cg") # 482421
 
 ####* Illumina methylation 27k #### 
 DNA27.query <- GDCquery(
@@ -132,6 +134,8 @@ DNA27.dataPrep <- GDCprepare(query = DNA27.query)
 save(DNA27.dataPrep, file = "DNA27.dataPrep.rda")
 
 DNA27.beta <- assay(DNA27.dataPrep)
+DNA27.probe <- str_sub(rownames(DNA27.beta),1,2)
+unique(DNA27.probe)
 
 ####* combine 450k and 27k ####
 sum(is.na(DNA450.beta)) # 59408530
