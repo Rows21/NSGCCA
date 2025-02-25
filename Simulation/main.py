@@ -113,7 +113,6 @@ class Solver():
                 non_fold_index = [num for num in shuffled_index if num not in fold_index[fold]]
                 train_data.append(view[non_fold_index, :])
                 
-                
             Pi_list, u_list = self.SNGCCA.fit_admm(train_data, constraint=a, criterion = 1e-4, logging=2, mode=mode)
             K_list = [rbf_kx(test_data[i], Pi_list[i]) for i in range(len(test_data))]
             obj_k = []

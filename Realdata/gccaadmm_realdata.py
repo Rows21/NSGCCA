@@ -1,5 +1,6 @@
 from gcca_admm_new import gcca_admm
 from utils import _get_tcga
+from gcca_admm import cv
 import numpy as np
 import pandas as pd
 import os
@@ -15,6 +16,10 @@ if __name__ == '__main__':
     for i, view in enumerate(views):
         print(f'view_{i} :  {view.shape}')
     
+    # standardization
+    for i, view in enumerate(views):
+        views[i] = view - np.mean(view, axis=0)
+    
     # Start Training
     u_list = []  
     obj_temp = []
@@ -23,8 +28,10 @@ if __name__ == '__main__':
     df_u1_total = pd.DataFrame()
     df_u2_total = pd.DataFrame()
     df_u3_total = pd.DataFrame()
-
-    model = gcca_admm(views,1)
+    #constraint,_ = cv(views, k=5)
+    constraint = 0.01
+    print(f'constraint : {constraint}')
+    model = gcca_admm(views,1,mu_x=[constraint,constraint,constraint])
     model.admm()
     df_u1 = pd.DataFrame(np.real(model.list_U[0]), columns=['u1'])
     df_u1_total = pd.concat([df_u1_total, df_u1], axis=1)

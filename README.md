@@ -20,7 +20,7 @@ Clone this repository and install other required packages:
 ```
 git clone git@github.com:Rows21/NSGCCA
 ```
-
+ 
  ## Datasets
   - [x] Synthetic Datasets [synth_data.py](/NSGCCA/synth_data.py)
   - [x] TCGA Breast Cancer Database in [Realdata](/Realdata/Data_download_preprocess.R) from (https://tcga-data.nci.nih.gov/docs/publications)

@@ -205,9 +205,9 @@ class gcca_admm(metric):
         with open('features.pkl', 'wb') as file:
             pickle.dump(features, file)
     def admm(self):
-        print()
-        print("solve:admm")
-        muta =0.01
+        #print()
+        #print("solve:admm")
+        muta =self.mu_x[0] #0.01 #[0.1,1.5]  #1e-7 对应论文代码的delta
         p=1.0001
         # 计算出G的数值方便后面的比较
         G_perfect = self.solve_g()
@@ -220,14 +220,14 @@ class gcca_admm(metric):
         tor1 = 1e-3
         tor2 = 1e-5
         res_tor=1e-5
-        print('#delta:',muta)
-        print("#rho:",p)
+        #print('#delta:',muta)
+        #print("#rho:",p)
         iter = 5 #1680## # 迭代次数
         Z_new_old = 0  # 用来存放更新后的Z
         A, B = self.cal_A_B()
                 
         num_view = len(A)  # 返回view的个数
-        print("info: numview is ", num_view)
+        #print("info: numview is ", num_view)
         
         # print("info: A's shape", A[0].shape, A[1].shape)#(49, 4026) (1, 1)  e.g., (50, 5500) (50, 10500) in synthetic data
     
@@ -241,7 +241,7 @@ class gcca_admm(metric):
             beta_list.append(temp)
         beta = np.max(beta_list)  # beta 是标量
         #beta=beta_max
-        print("#beta_init:",beta)
+        #print("#beta_init:",beta)
         # 初始化 每个view的权重(W_list)和tri_list(倒三角)
         W_list = []
         tri_list = []
@@ -362,7 +362,7 @@ class gcca_admm(metric):
             if ((False not in left_judge) and (False not in right_judge)) or iter_k == iter:  # 判断如果都小于容忍值或达到迭代次数
                 break  # 结果已经更新到对应的list上面
         print()
-        print("$$$$$$$$$$$$$$$$$$")
+        #print("$$$$$$$$$$$$$$$$$$")
         AROC_dict = {'train_AROC_list':np.array(train_AROC_list)}
         with open('AROC_dict.pkl', 'wb') as file:
             pickle.dump(AROC_dict, file)

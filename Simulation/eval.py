@@ -1,7 +1,7 @@
 import os
 import numpy as np
 import random
-from validation_method import eval, eval_plot
+from Simulation.validation_method import eval, eval_plot
 import pandas as pd
 from tqdm import tqdm
 

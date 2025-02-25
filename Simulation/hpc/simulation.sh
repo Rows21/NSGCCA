@@ -19,6 +19,6 @@ data_file3=$(echo $data_files | cut -d' ' -f3)
 
 if [[ $(lscpu | grep "Intel(R) Xeon(R) Platinum 8268 CPU @ 2.90GHz" | wc -l) -ne 1 ]]; then exit; fi
 
-python /scratch/rw2867/projects/SNGCCA/SNGCCA/test.py ${SLURM_ARRAY_TASK_ID} $data_file1 $data_file2 $data_file3
+python /scratch/rw2867/projects/SNGCCA/SNGCCA/sngcca_hpc.py ${SLURM_ARRAY_TASK_ID} $data_file1 $data_file2 $data_file3
 
 
