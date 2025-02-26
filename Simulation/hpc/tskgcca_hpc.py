@@ -1,7 +1,7 @@
 import numpy as np
 import os
 import sys
-from networks.ts_kgcca import tskgcca
+from proposedmodels.ts_kgcca import tskgcca
 
 if __name__ == '__main__':
         print("START")

@@ -3,7 +3,7 @@ import torch
 import torch.nn as nn
 import numpy as np
 from linear_gcca import linear_gcca
-from synth_data import create_synthData_new
+#from Simulation.baselines.synth_data import create_synthData_new
 from models import DeepGCCA
 # from utils import load_data, svm_classify
 import time

@@ -3,27 +3,13 @@ import torch
 import torch.nn as nn
 import numpy as np
 from linear_gcca import linear_gcca
-from synth_data import create_synthData_new
-from torch.utils.data import BatchSampler, SequentialSampler, RandomSampler
+#from synth_data import create_synthData_new
 from models import DeepGCCA
 # from utils import load_data, svm_classify
-import time
-import logging
+
 from utils import _get_tcga_new
-try:
-    import cPickle as thepickle
-except ImportError:
-    import _pickle as thepickle
 
-import gzip
 import numpy as np
-import torch.nn as nn
-from validation_method import swiss_score
-from sklearn.metrics import silhouette_score, davies_bouldin_score, calinski_harabasz_score
-import seaborn as sns
-
-import matplotlib.pyplot as plt
-from matplotlib.backends.backend_pdf import PdfPages
 
 import pandas as pd
 

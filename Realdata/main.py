@@ -3,8 +3,8 @@ import numpy as np
 from tqdm import tqdm
 #torch.set_default_tensor_type(torch.DoubleTensor)
 
-from proposedmodels.synth_data import create_synthData
-from proposedmodels.hsic_sgcca import HSIC_SGCCA
+#from synth_data import create_synthData
+from Simulation.proposedmodels.hsic_sgcca import HSIC_SGCCA
 
 from proposedmodels.utils import rbf_kl, rbf_kx
 import itertools
@@ -13,7 +13,7 @@ import time
 #torch.manual_seed(0)
 class Solver():
     def __init__(self, device='cpu'):
-        self.SNGCCA = HSIC_SGCCA(device)
+        self.SNGCCA = SGCCA_HSIC(device)
         self.device = device
 
     def fit(self, x_list, test_list=None, train_list=None, eps=1e-7, maxit=100, b=(100,100,100), k=3):

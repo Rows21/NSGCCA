@@ -100,7 +100,7 @@ def create_synthData(v=2, N=400, outDir='./', device='cpu', mode=1, F=20):
 
 if __name__ == '__main__':
     import matplotlib.pyplot as plt
-    views = create_synthData_new(5,100, mode=1, F=100)
+    views = create_synthData(5,100, mode=1, F=100)
     x = views[0].numpy()[:,0]
     #x = np.sum(x, axis=1)
     y = views[1].numpy()[:,0]

@@ -9,9 +9,9 @@ if device == 'cuda':
 #import cupy as cp
 from tqdm import tqdm
 
-from networks.utils import *
+from proposedmodels.utils import *
 
-class SGCCA_HSIC():
+class HSIC_SGCCA():
     def __init__(self, device='cpu'):
         self.device = device
     

@@ -1,7 +1,7 @@
 import numpy as np
 import os
 import sys
-from sakgcca import sakcca
+from proposedmodels.sa_kgcca import sakgcca
 
 if __name__ == '__main__':
         print("START")
@@ -29,7 +29,7 @@ if __name__ == '__main__':
         for i, view in enumerate(views):
                 print(f'view_{i} :  {view.shape}')
 
-        u, delta, best_alpha, best_s_k = sakcca(views)
+        u, delta, best_alpha, best_s_k = sakgcca(views)
 
         root = '/scratch/rw2867/projects/SNGCCA/baselines/'
         res = root+'hpcres/sakgcca/' + folder + '/' + str(N) + '_' + str(tol) + '_' + str(num) + '/'
