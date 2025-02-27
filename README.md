@@ -5,7 +5,7 @@ Official Python implementation of NSGCCA, from the following paper:
 [Nonlinear Sparse Generalized Canonical Correlation Analysis for Multi-view High-dimensional Data]().  \
 Rong Wu, Ziqi Chen, Gen Li and Hai Shu. \
 New York University \
-[[`arXiv`]()]
+[[`arXiv`](https://arxiv.org/abs/2502.18756)]
 
 ---
 
