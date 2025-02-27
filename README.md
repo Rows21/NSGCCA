@@ -1,8 +1,8 @@
-### [Nonlinear Sparse Generalized Canonical Correlation Analysis]()
+### [Nonlinear Sparse Generalized Canonical Correlation Analysis](https://arxiv.org/abs/2502.18756)
 
 Official Python implementation of NSGCCA, from the following paper:
 
-[Nonlinear Sparse Generalized Canonical Correlation Analysis for Multi-view High-dimensional Data]().  \
+[Nonlinear Sparse Generalized Canonical Correlation Analysis for Multi-view High-dimensional Data](https://arxiv.org/abs/2502.18756).  \
 Rong Wu, Ziqi Chen, Gen Li and Hai Shu. \
 New York University \
 [[`arXiv`](https://arxiv.org/abs/2502.18756)]
