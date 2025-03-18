@@ -32,7 +32,12 @@ git clone git@github.com:Rows21/NSGCCA
  ## Citation
 If you find this repository helpful, please consider citing:
 ```
-
+@article{wu2025nonlinear,
+  title={Nonlinear Sparse Generalized Canonical Correlation Analysis for Multi-view High-dimensional Data},
+  author={Wu, Rong and Chen, Ziqi and Li, Gen and Shu, Hai},
+  journal={arXiv preprint arXiv:2502.18756},
+  year={2025}
+}
 ```
 
  ## Results 
