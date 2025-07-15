@@ -52,8 +52,15 @@ If you find this repository helpful, please consider citing:
 This repository is built using the [timm](https://github.com/rwightman/pytorch-image-models) library.
 
 ## License
-This project is released under the MIT license. Please see the [LICENSE](LICENSE) file for more information.
+Shield: [![CC BY-NC 4.0][cc-by-nc-shield]][cc-by-nc]
+
+This work is licensed under a
+[Creative Commons Attribution-NonCommercial 4.0 International License][cc-by-nc].
+
+[![CC BY-NC 4.0][cc-by-nc-image]][cc-by-nc]
 
 [cc-by-nc]: https://creativecommons.org/licenses/by-nc/4.0/
 [cc-by-nc-image]: https://licensebuttons.net/l/by-nc/4.0/88x31.png
 [cc-by-nc-shield]: https://img.shields.io/badge/License-CC%20BY--NC%204.0-lightgrey.svg
+
+© 2025 Rong Wu. You are free to share and adapt the material with attribution.
