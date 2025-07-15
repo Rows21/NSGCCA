@@ -52,8 +52,6 @@ If you find this repository helpful, please consider citing:
 This repository is built using the [timm](https://github.com/rwightman/pytorch-image-models) library.
 
 ## License
-Shield: [![CC BY-NC 4.0][cc-by-nc-shield]][cc-by-nc]
-
 This work is licensed under a
 [Creative Commons Attribution-NonCommercial 4.0 International License][cc-by-nc].
 
