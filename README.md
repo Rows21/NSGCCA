@@ -1,4 +1,4 @@
-### [Nonlinear Sparse Generalized Canonical Correlation Analysis](https://arxiv.org/abs/2502.18756)
+# [Nonlinear Sparse Generalized Canonical Correlation Analysis](https://arxiv.org/abs/2502.18756)
 
 <p align="center">
     <a href='https://arxiv.org/abs/2502.18756'>
