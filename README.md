@@ -8,8 +8,6 @@
       <img src='https://img.shields.io/badge/License-CC%20BY--NC%204.0-lightgrey.svg'>
     </a>
   </p>
-  
-[![CC BY-NC 4.0][cc-by-nc-shield]][cc-by-nc]
 
 Official Python implementation of NSGCCA, from the following paper:
 
