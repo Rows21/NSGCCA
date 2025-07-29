@@ -4,7 +4,9 @@
     <a href='https://arxiv.org/abs/2502.18756'>
       <img src='https://img.shields.io/badge/Paper-PDF-green?style=flat&logo=arXiv&logoColor=green' alt='arXiv PDF'>
     </a>
-    [![CC BY-NC 4.0][cc-by-nc-shield]][cc-by-nc]
+    <a href='https://creativecommons.org/licenses/by-nc/4.0/'>
+      <img src='https://img.shields.io/badge/License-CC%20BY--NC%204.0-lightgrey.svg'>
+    </a>
   </p>
   
 [![CC BY-NC 4.0][cc-by-nc-shield]][cc-by-nc]
