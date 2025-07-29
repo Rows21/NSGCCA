@@ -1,4 +1,4 @@
-## [Nonlinear Sparse Generalized Canonical Correlation Analysis]
+## Nonlinear Sparse Generalized Canonical Correlation Analysis
 
 <p align="center">
     <a href='https://arxiv.org/abs/2502.18756'>
