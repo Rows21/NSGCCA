@@ -24,12 +24,16 @@ We efficiently address this challenge by integrating the block prox-linear metho
 alternating direction method of multipliers. 
 Simulations and TCGA-BRCA data analysis demonstrate that HSIC-SGCCA outperforms competing methods in variable selection.
 
- ## Installation
+## Installation
+Requirements: `Python 3.10`
 Clone this repository and install other required packages:
 ```
 git clone git@github.com:Rows21/NSGCCA
+cd NSGCCA
+conda env create -f env.yml
 ```
- 
+
+## Model Training
  ## Datasets
   - [x] Synthetic Datasets [synth_data.py](/Simulation/proposedmodels/synth_data.py)
   - [x] TCGA Breast Cancer Database in [Realdata](/Realdata/Data_download_preprocess.R) from (https://tcga-data.nci.nih.gov/docs/publications)
@@ -38,7 +42,21 @@ git clone git@github.com:Rows21/NSGCCA
  
  <!-- ✅ ⬜️  -->
 
- ## Citation
+ ## Training
+  - Follow the [Tutorial](/Tutorial.ipynb) file for training `HSIC-SGCCA`, `SA-KGCCA` and `TS-KGCCA`.
+  ```
+  ## For HSIC-SGCCA
+  u = solver.SNGCCA.fit_admm(views, constraint=constraint)
+
+  ## For TS-KGCCA
+  s_k, u = tskgcca(views)
+
+  ## For SA-KGCCA
+  u = sakgcca(views)
+  ```
+
+
+## Citation
 If you find this repository helpful, please consider citing:
 ```
 @article{wu2025nonlinear,

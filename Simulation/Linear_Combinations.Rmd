@@ -1,0 +1,228 @@
+---
+title: "Linear Combinations"
+author: "Rong Wu"
+date: "2025-07-09"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+#library(r.jive)
+#data(SimData)
+library(readr)
+library(dplyr)
+library(energy)
+library(ggplot2)
+library(tidyr)
+library(purrr)
+library(ggthemr)
+library(matrixStats)
+```
+
+```{r plot_lc2}
+color_bar <- c("#FF7F00","#377EB8","#E41A1C","#FFDA22","#984EA3","#4DAF4A","black")
+# root
+methods <- c("PDD", "DGCCA", "SNGCCA", "SGCCA", "SAKGCCA", "TSKGCCA", "Ground Truth")
+prefixes <- c("pdd_", "dgcca_", "", "sgcca_", "sakgcca_", "tskcca_", "")
+names(prefixes) <- methods
+
+plot_list <- list()
+combinations <- list(c(100,100,5))
+plot_df_list <- list()
+#plot_df <- data.frame()
+snr <- 1
+
+for(ln in c("Linear", "Nonlinear")){
+  for(cb in combinations){
+    
+    # ln <- 'Linear'
+    n <- cb[1]
+    p <- cb[2]
+    q <- cb[3]
+    root <- paste0("E:/Github/res/SNGCCA/SNGCCA/newSimulation/pair1/",ln,"/",n,"_",p,"_",q,"/")
+    
+    
+    root_dat <- paste0("E:/Github/res/SNGCCA/SNGCCA/newData/",ln,"/",n,"_",p,"_",q,"/")
+
+    listname <- paste0(ln,"_",cb[1],"_",cb[2],"_",cb[3])
+    
+    u1_a <- list()
+    u2_a <- list()
+    u3_a <- list()
+    # method
+    for (i in 6){
+      
+      method <- methods[i]
+      
+      plotname <- paste0(listname, method)
+      prefix <- prefixes[i]
+      #print(paste0(root, prefix, "u1.csv"))
+      # u
+      
+      
+      if(i == 4 | i == 5){
+        u1 <- as.matrix(read.csv(paste0(root, "snr", snr, prefix, "u1.csv"), header = T))
+        u2 <- as.matrix(read.csv(paste0(root, "snr", snr, prefix, "u2.csv"), header = T))
+        u3 <- as.matrix(read.csv(paste0(root, "snr", snr, prefix, "u3.csv"), header = T))
+      }else if(i == 7){
+          u1 <- c(rep(sqrt(1/q), q), rep(0,p-q))
+          u2 <- c(rep(sqrt(1/q), q), rep(0,p-q))
+          u3 <- c(rep(sqrt(1/q), q), rep(0,p-q))
+        
+      }else{
+        u1 <- as.matrix(read.csv(paste0(root, "snr", snr, prefix, "u1.csv"), header = F))
+        u2 <- as.matrix(read.csv(paste0(root, "snr", snr, prefix, "u2.csv"), header = F))
+        u3 <- as.matrix(read.csv(paste0(root, "snr", snr, prefix, "u3.csv"), header = F))
+      }
+      
+      u1_a[[method]] <- u1
+      u2_a[[method]] <- u2
+      u3_a[[method]] <- u3
+    
+      proj_df1 <- matrix(NA, ncol = 100, nrow = n)
+      proj_df2 <- matrix(NA, ncol = 100, nrow = n)
+      proj_df3 <- matrix(NA, ncol = 100, nrow = n)
+      
+      rep <- 2
+      # data
+      
+      data1 <- as.matrix(read.csv(paste0(root_dat, "snr", snr,"data1_",rep-1,".csv"), header = F))
+      data2 <- as.matrix(read.csv(paste0(root_dat, "snr", snr,"data2_",rep-1,".csv"), header = F))
+      data3 <- as.matrix(read.csv(paste0(root_dat, "snr", snr,"data3_",rep-1,".csv"), header = F))
+      if(ln != 'Linear'){
+        data1 <- data1/sd(data1)
+        data2 <- data2/sd(data2)
+        data3 <- data3/sd(data3)
+      }
+
+
+      if(i != 7){
+        
+        u1 <- u1_a[[method]][rep,]
+        u2 <- u2_a[[method]][rep,]
+        u3 <- u3_a[[method]][rep,]
+        if(i == 1 | i == 2){
+          u1[abs(u1) < 0.05] <- 1/p
+          u2[abs(u2) < 0.05] <- 1/p
+          u3[abs(u3) < 0.05] <- 1/p
+        }else{
+          u1[abs(u1) < 0.05] <- 0
+          u2[abs(u2) < 0.05] <- 0
+          u3[abs(u3) < 0.05] <- 0
+        }
+        
+      
+        proj1 <- data1 %*% u1
+        proj2 <- data2 %*% u2
+        proj3 <- data3 %*% u3
+        
+        if(i == 6){ # TSKGCCA
+          X_list <- list(data1, data2, data3)
+                
+                u_list <- list(
+                  u1 = u1,
+                  u2 = u2,
+                  u3 = u3
+                )
+                
+                Ktilde_list <- mapply(
+                            FUN  = combine_kernel_from_X_u,
+                            Xk   = X_list,
+                            uk   = u_list,
+                            SIMPLIFY = FALSE
+                          )
+              
+                result <- rgcca(Ktilde_list, tau = c(1,1,1), ncomp = 1,n_iter_max = 10)
+              
+                proj1 <- result$a[[1]]
+                proj2 <- result$a[[2]]
+                proj3 <- result$a[[3]]
+                      }
+    
+      }else{
+        #print(u1_a[[method]])
+        proj1 <- data1 %*% u1_a[[method]]
+        proj2 <- data2 %*% u2_a[[method]]
+        proj3 <- data3 %*% u3_a[[method]]
+        
+      }
+      
+      meta_df <- data.frame(X1 = proj1/sd(proj1), 
+                            X2 = proj2/sd(proj2), 
+                            X3 = proj3/sd(proj3), 
+                            method = method)
+      plot_df_list[[method]] <- meta_df
+
+      plot_sub <- plot_df_list[[method]]
+      
+      ggplot(plot_sub, aes(x = X1, y = X2)) + # 12 13 23
+      geom_point(size = 5, color = color_bar[i]) +
+
+      xlab("") + ylab("") + 
+      theme_minimal() +
+      theme(
+        panel.grid = element_blank(),
+        legend.position = "none",
+        axis.title = element_text(size = 10),
+        axis.text  = element_text(size = 30),
+        #axis.ticks = element_line(color = "black"),
+        strip.text.x = element_text(size = 10),
+        strip.text.y = element_text(size = 10),
+        axis.line.x = element_line(linewidth = 0.5),
+        axis.line.y = element_line(linewidth = 0.5),
+      )
+    
+    #ggsave('Fig_lc2_p2.eps')
+    ggsave(paste0(plotname,'lc1.png'))
+    
+    ggplot(plot_sub, aes(x = X1, y = X3)) + # 12 13 23
+      geom_point(size = 5, color = color_bar[i]) +
+
+      xlab("") + ylab("") + 
+      theme_minimal() +
+      theme(
+        panel.grid = element_blank(),
+        legend.position = "none",
+        axis.title = element_text(size = 10),
+        axis.text  = element_text(size = 30),
+        #axis.ticks = element_line(color = "black"),
+        strip.text.x = element_text(size = 10),
+        strip.text.y = element_text(size = 10),
+        axis.line.x = element_line(linewidth = 0.5),
+        axis.line.y = element_line(linewidth = 0.5),
+      )
+    
+    #ggsave('Fig_lc2_p2.eps')
+    ggsave(paste0(plotname,'lc2.png'))
+    
+    ggplot(plot_sub, aes(x = X2, y = X3)) + # 12 13 23
+      geom_point(size = 5, color = color_bar[i]) +
+
+      xlab("") + ylab("") + 
+      theme_minimal() +
+      theme(
+        panel.grid = element_blank(),
+        legend.position = "none",
+        axis.title = element_text(size = 10),
+        axis.text  = element_text(size = 30),
+        #axis.ticks = element_line(color = "black"),
+        strip.text.x = element_text(size = 10),
+        strip.text.y = element_text(size = 10),
+        axis.line.x = element_line(linewidth = 0.5),
+        axis.line.y = element_line(linewidth = 0.5),
+      )
+    
+    ggsave(paste0(plotname,'lc3.png'))
+    
+    }
+    plot_list[[listname]] <- plot_df_list
+    
+  }
+}
+
+
+```
+
+
+
+

@@ -1,7 +1,7 @@
 import numpy as np
 import os
 import sys
-from main import Solver
+from Simulation.main import Solver
 import time
 
 if __name__ == '__main__':

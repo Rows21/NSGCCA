@@ -26,10 +26,13 @@ def centered_gram_matrix(X, n):
     return K_centered, K_half#P_psd #K_centered
 
 # Function to solve for all alpha_{kj} (simultaneously update for view k)
-def solve_alpha_block(n, p, k, K, alpha_fixed, K_matrices, K_matrices_half, s_k, epsilon_k):
+def solve_alpha_block(n, p, k, K, alpha_fixed, K_matrices, K_matrices_half, s_k, epsilon_k, stage = 1, alpha_m = None):
     """Solve for all alpha_{kj} (j=1 to p_k) together for view k."""
     # Define variables
     alpha_vars = [cp.Variable((n, 1)) for j in range(p[k])]
+    if stage > 1:
+        alpha_vars_0 = [cp.Constant(alpha_m[k,j]) for j in range(p[k])]
+
     #alpha_vars = {
     #    (k, j): cp.Variable(n) for k in range(K) for j in range(p[k])
     #}
@@ -52,15 +55,17 @@ def solve_alpha_block(n, p, k, K, alpha_fixed, K_matrices, K_matrices_half, s_k,
     constraints = []
     constraints.append((1 / n) * cp.norm(alpha_sum_k, "fro")**2 + epsilon_k * sum(cp.norm(K_matrices_half[(k,j)] @ alpha_vars[j],"fro")**2 for j in range(p[k])) <= 1)
     constraints.append(cp.sqrt(1/n) * sum(cp.norm(K_matrices[(k, j)] @ alpha_vars[j], "fro") for j in range(p[k])) <= s_k)  # SOC: ||summation_term||_2 <= t1
+    if stage > 1:
+        constraints.append((1 / n) * sum(K_matrices_half[(k,j)] @ alpha_vars[j] for j in range(p[k])).T @  sum(K_matrices_half[(k,j)] @ alpha_vars_0[j] for j in range(p[k])) == 0)  # Non-negativity constraints
 
     # Solve the optimization problem
     problem = cp.Problem(objective, constraints)
-    problem.solve(solver=cp.SCS, ignore_dpp=True, use_indirect=True, max_iters=50)
+    problem.solve(solver=cp.SCS, ignore_dpp=True, use_indirect=True, max_iters=20)
 
     # Return the updated values for alpha_{kj} and the objective value
     return [alpha_var.value for alpha_var in alpha_vars], problem.value
 
-def sakgcca(data, epsilon_k=0.02, max_iter=5, tol=1e-5, r=0, best_alpha=None, best_s_k=None):
+def sakgcca(data, epsilon_k=0.02, max_iter=5, tol=1e-5, r=0, best_alpha=None, best_s_k=None, stage=1):
     
     K = len(data)
     print(K)
@@ -143,47 +148,70 @@ def sakgcca(data, epsilon_k=0.02, max_iter=5, tol=1e-5, r=0, best_alpha=None, be
     best_alpha = alpha
     
     for k in range(K):
-            for _ in range(max_iter):
-                #prev_alpha = best_alpha.copy()
+        for _ in range(max_iter):
+            #prev_alpha = best_alpha.copy()
                 
-                prev_alpha = alpha.copy()
-                #for j in range(p[k]):
-                #    best_alpha[(k, j)] = prev_alpha[j] / np.linalg.norm(prev_alpha[j])
-                    
-                updated_alphas, objective_value = solve_alpha_block(n, p, k, K, best_alpha, K_matrices, K_matrices_half, s_k, epsilon_k)
+            prev_alpha = alpha.copy()
+            #for j in range(p[k]):
+            #    best_alpha[(k, j)] = prev_alpha[j] / np.linalg.norm(prev_alpha[j])
                 
-                for j in range(p[k]):
-                    best_alpha[(k, j)] = updated_alphas[j] / np.linalg.norm(updated_alphas[j])
-
-                # Check convergence
-                diff = max(
-                    np.max(np.abs(best_alpha[(k, j)] - prev_alpha[(k, j)]))
-                    for j in range(p[k])
-                )
-                if diff < tol:
-                    break
-    
-    u = [np.zeros((p[k])) for k in range(K)]
+            updated_alphas, objective_value = solve_alpha_block(n, p, k, K, best_alpha, K_matrices, K_matrices_half, s_k, epsilon_k)
+                
+            for j in range(p[k]):
+                best_alpha[(k, j)] = updated_alphas[j] / np.linalg.norm(updated_alphas[j])
+            # Check convergence
+            diff = max(
+                np.max(np.abs(best_alpha[(k, j)] - prev_alpha[(k, j)]))
+                for j in range(p[k])
+            )
+            if diff < tol:
+                break
+            
+    u1 = [np.zeros((p[k])) for k in range(K)]
     for k in range(K):
         for j in range(p[k]):
             l2 = (1 / np.sqrt(n)) * np.linalg.norm(K_matrices[(k, j)] @ best_alpha[(k, j)], 'fro')
-            u[k][j] = l2
+            u1[k][j] = l2
+            
+    for k in range(K):
+        for _ in range(max_iter):
+            #prev_alpha = best_alpha.copy()
+                
+            prev_alpha = alpha.copy()
+            #for j in range(p[k]):
+            #    best_alpha[(k, j)] = prev_alpha[j] / np.linalg.norm(prev_alpha[j])
+            updated_alphas, objective_value = solve_alpha_block(n, p, k, K, best_alpha, K_matrices, K_matrices_half, s_k, epsilon_k, stage = stage, alpha_m = best_alpha)
+            for j in range(p[k]):
+                best_alpha[(k, j)] = updated_alphas[j] / np.linalg.norm(updated_alphas[j])
+            # Check convergence
+            diff = max(
+                np.max(np.abs(best_alpha[(k, j)] - prev_alpha[(k, j)]))
+                for j in range(p[k])
+            )
+            if diff < tol:
+                break        
+            
+    u2 = [np.zeros((p[k])) for k in range(K)]
+    for k in range(K):
+        for j in range(p[k]):
+            l2 = (1 / np.sqrt(n)) * np.linalg.norm(K_matrices[(k, j)] @ best_alpha[(k, j)], 'fro')
+            u2[k][j] = l2
     end_time = time.time()   
     delta = end_time - start_time         
-    return u, delta, best_alpha, best_s_k
+    return u1, u2, delta, best_alpha, best_s_k
 
 if __name__ == "__main__":
     combinations = [
-        #[100, 30, 5],
+        [100, 30, 5],
         [100, 50, 5],
-        #[100, 100, 5],
-        #[100, 100, 10],
-        #[100, 100, 20],
+        [100, 100, 5],
+        [100, 100, 10],
+        [100, 100, 20],
         [100, 200, 5],
         [200, 100, 5],
         [400, 100, 5]
     ]
-    
+    stage = 2
     for params in combinations:
         for mode in [1,2]:
             print(params)
@@ -195,13 +223,18 @@ if __name__ == "__main__":
             N = params[0]
             P = params[1]
             S = params[2]
-            root = 'E:/Github/SNGCCA/SNGCCA/'
+            root = 'E:/res/SNGCCA/SNGCCA/'
             if mode == 1:
                     folder = 'Linear/'
             else:
                     folder = 'Nonlinear/'
             data_path = root + 'Data/' + folder + '/' + str(N) + '_' + str(P) + '_' + str(S) + '/'
-
+            if stage > 1:
+                path_u = 'E:/GitHub/res/SNGCCA/SNGCCA/Simulation/' + folder + '/' + str(N) + '_' + str(P) + '_' + str(S) + '/'
+                u1_m = np.genfromtxt(path_u + 'sakgcca_u1.csv', delimiter=',')
+                u2_m = np.genfromtxt(path_u + 'sakgcca_u2.csv', delimiter=',')
+                u3_m = np.genfromtxt(path_u + 'sakgcca_u3.csv', delimiter=',')
+                
             for r in range(50):
                 print(f'Iteration : {r}')
                 #views = create_synthData_new(v=5,N=N,mode=1,F=30)
@@ -212,25 +245,33 @@ if __name__ == "__main__":
                 #print(f'input views shape :')
                 #for i, view in enumerate(views):
                 #    print(f'view_{i} :  {view.shape}')
-                if r == 0:
-                    u, delta, best_alpha, best_s_k = sakgcca(views)
+                if stage == 1:
+                    if r == 0:
+                        u1, u2, delta, best_alpha, best_s_k = sakgcca(views)
+                    else:
+                        u1, u2, delta, best_alpha, best_s_k = sakgcca(views, best_alpha=best_alpha, best_s_k=best_s_k)
                 else:
-                    u, delta, best_alpha, best_s_k = sakgcca(views, best_alpha=best_alpha, best_s_k=best_s_k)
+                    u_m = [u1_m[r:r+1,].T, u2_m[r:r+1,].T, u3_m[r:r+1,].T]
+                    if r == 0:
+                        u1, u2, delta, best_alpha, best_s_k = sakgcca(views, stage=2)
+                    else:
+                        u1, u2, delta, best_alpha, best_s_k = sakgcca(views, best_alpha=best_alpha, best_s_k=best_s_k, stage=2)
+                    
                 t.append(delta)
-                u1.append(u[0])
-                u2.append(u[1])
-                u3.append(u[2])
+                u1.append(u1[0])
+                u2.append(u1[1])
+                u3.append(u1[2])
                     
             merged_array = merged_array = np.empty((100,P))
-            path = 'E:/GitHub/SNGCCA/SNGCCA/Simulation/' + folder + '/' + str(N) + '_' + str(P) + '_' + str(S) + '/'
+            path = 'E:/GitHub/res/SNGCCA/SNGCCA/Simulation/pair2/' + folder + '/' + str(N) + '_' + str(P) + '_' + str(S) + '/'
                 
             for i, arr in enumerate(u1):
                 merged_array[i] = u1[i].flatten()
-            np.savetxt(path + 'sakcca_u1.csv', merged_array, delimiter=',')
+            np.savetxt(path + 'sakgcca_u1.csv', merged_array, delimiter=',')
             for i, arr in enumerate(u2):
                 merged_array[i] = u2[i].flatten()
-            np.savetxt(path + 'sakcca_u2.csv', merged_array, delimiter=',')
+            np.savetxt(path + 'sakgcca_u2.csv', merged_array, delimiter=',')
             for i, arr in enumerate(u3):
                 merged_array[i] = u3[i].flatten()
-            np.savetxt(path + 'sakcca_u3.csv', merged_array, delimiter=',')
-            np.savetxt(path + 'sakcca_t.csv', t, delimiter=',')
+            np.savetxt(path + 'sakgcca_u3.csv', merged_array, delimiter=',')
+            np.savetxt(path + 'sakgcca_t.csv', t, delimiter=',')

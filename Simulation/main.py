@@ -7,7 +7,7 @@ from proposedmodels.synth_data import create_synthData
 from proposedmodels.hsic_sgcca import HSIC_SGCCA
 
 from proposedmodels.utils import rbf_kl, rbf_kx
-import itertools
+from itertools import product, combinations
 
 import time
 #torch.manual_seed(0)
@@ -40,7 +40,7 @@ class Solver():
 
         return train_list, test_list, u
 
-    def tune_hyper(self, x_list, k=5, mode = 'cv', a=[1e-5, 1e-5, 1e-5]):
+    def tune_hyper(self, x_list, k=5, mode = 'cv', grid_value = [1e-3, 1e-2, 1e-1], a = [1e-4, 1e-4, 1e-4]):
         # split
         shuffled_index = np.random.permutation(len(x_list[0]))
         split_index = int(len(x_list[0]) * 1/k)
@@ -60,9 +60,11 @@ class Solver():
             b0 = a
             count = 0
 
-            # for a in combinations_with_replacement(a, 3):
-            while max(a) < 1e-1:
-                a = [i * 10 for i in a]
+            grid = grid_value
+            
+            for a in product(grid, repeat=3):
+            #while max(a) < 1e-1:
+                #a = [i * 10 for i in a]
                 count +=1
                 o_list = [0] * 3
                 obj_temp = np.zeros((k, len(x_list)))
@@ -115,7 +117,7 @@ class Solver():
             Pi_list, u_list = self.SNGCCA.fit_admm(train_data, constraint=a, criterion = 1e-4, logging=2, mode=mode)
             K_list = [rbf_kx(test_data[i], Pi_list[i]) for i in range(len(test_data))]
             obj_k = []
-            for items in itertools.combinations(range(len(K_list)), 2):
+            for items in combinations(range(len(K_list)), 2):
                 obj_k.append(np.trace(K_list[items[0]] @ rbf_kl(K_list[items[1]])))
             obj_temp[fold] = np.stack(obj_k)
             o_list = [np.sum(abs(u_list[i]) < 0.05) + o_list[i] for i in range(3)]

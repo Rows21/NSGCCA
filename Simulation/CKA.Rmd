@@ -1,0 +1,450 @@
+---
+title: "Linear Combinations"
+author: "Rong Wu"
+date: "2025-07-09"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+#library(r.jive)
+#data(SimData)
+library(readr)
+library(dplyr)
+library(energy)
+library(ggplot2)
+library(tidyr)
+library(purrr)
+library(ggthemr)
+library(matrixStats)
+library(rgcca)
+```
+
+```{r functions}
+# =========================
+# 1) Gaussian (RBF) kernel
+# =========================
+rbf_kernel <- function(X, sigma = NULL) {
+  # X: numeric vector (length n) or numeric matrix (n x d)
+  if (is.vector(X)) X <- matrix(X, ncol = 1)
+  X <- as.matrix(X)
+  n <- nrow(X)
+
+  # sigma = std of input variable (as you requested)
+  if (is.null(sigma)) {
+    sigma <- stats::sd(as.vector(X))
+  }
+  if (!is.finite(sigma) || sigma <= 0) {
+    stop("sigma is not positive/finite. (sd of input is 0?)")
+  }
+
+  # pairwise squared Euclidean distances: D_ij = ||x_i - x_j||^2
+  # Use: ||a-b||^2 = ||a||^2 + ||b||^2 - 2 a^T b
+  sq_norm <- rowSums(X * X)                    # length n
+  G <- X %*% t(X)                              # Gram
+  D <- outer(sq_norm, sq_norm, "+") - 2 * G    # n x n
+
+  # numerical guard: distances should be >= 0
+  D[D < 0] <- 0
+
+  K <- exp(-D / (2 * sigma^2))
+  return(K)
+}
+
+# =========================
+# 2) Centering: HKH without explicitly forming H
+#    HKH = K - rowMeans(K) - colMeans(K) + mean(K)
+# =========================
+center_kernel <- function(K) {
+  K <- as.matrix(K)
+  rm <- rowMeans(K)
+  cm <- colMeans(K)
+  mu <- mean(K)
+  Kc <- K - rm - matrix(cm, nrow = nrow(K), ncol = ncol(K), byrow = TRUE) + mu
+  return(Kc)
+}
+
+# =========================
+# 3) HSIC0(K, L) = tr(K H L H) / (n-1)^2
+#    using centered kernels: tr((HKH)(HLH)) = sum(Kc * Lc)  (for symmetric)
+# =========================
+hsic0 <- function(K, L) {
+  K <- as.matrix(K); L <- as.matrix(L)
+  if (nrow(K) != ncol(K) || nrow(L) != ncol(L) || nrow(K) != nrow(L)) {
+    stop("K and L must be square and have the same size.")
+  }
+  n <- nrow(K)
+  if (n < 2) stop("Need n >= 2.")
+
+  Kc <- center_kernel(K)
+  Lc <- center_kernel(L)
+
+  hs <- sum(Kc * Lc) / ( (n - 1)^2 )
+  return(hs)
+}
+
+# =========================
+# 4) CKA(K, L) = HSIC(K, L) / sqrt( HSIC(K,K) * HSIC(L,L) )
+#    Here HSIC = HSIC0 above
+# =========================
+cka_from_kernels <- function(K, L, eps = 1e-12) {
+  a <- hsic0(K, L)
+  b <- hsic0(K, K)
+  c <- hsic0(L, L)
+  #denom <- sqrt(max(b, 0) * max(c, 0)) + eps
+  return(a / sqrt(b * c))
+}
+
+# =========================
+# 5) Convenience: CKA directly from canonical variables (X, Y)
+#    sigmaX = sd(X), sigmaY = sd(Y) by default
+# =========================
+cka_rbf <- function(X, Y, sigmaX = NULL, sigmaY = NULL, eps = 1e-12) {
+  if (is.vector(X)) X <- matrix(X, ncol = 1)
+  if (is.vector(Y)) Y <- matrix(Y, ncol = 1)
+  X <- as.matrix(X); Y <- as.matrix(Y)
+
+  if (nrow(X) != nrow(Y)) stop("X and Y must have the same number of rows (samples).")
+
+  K <- rbf_kernel(X, sigma = sigmaX)  # sigmaX defaults to sd(X)
+  L <- rbf_kernel(Y, sigma = sigmaY)  # sigmaY defaults to sd(Y)
+
+  cka_from_kernels(K, L, eps = eps)
+}
+
+compute_SAKGCCA_canon <- function(Ktilde_list, alpha_list, scale = TRUE) {
+  K <- length(Ktilde_list)
+  if (length(alpha_list) != K) {
+    stop("Ktilde_list 和 alpha_list 的长度(K个视图)不一致")
+  }
+  
+  canon_list <- vector("list", K)   
+  
+  for (k in seq_len(K)) {
+    Kk  <- Ktilde_list[[k]]   # list of length p_k
+    alk <- alpha_list[[k]]    # list of length p_k
+    pk  <- length(Kk)
+    if (length(alk) != pk) {
+      stop(sprintf("第 %d 个 view 的 Ktilde 和 alpha 变量数不一致", k))
+    }
+    
+    n <- nrow(Kk[[1]])
+    
+    comp_list <- vector("list", pk)
+    for (j in seq_len(pk)) {
+      Kj <- Kk[[j]]      # n x n
+      aj <- alk[[j]]     # n / n x R
+      
+
+      if (is.vector(aj)) {
+        aj <- matrix(aj, ncol = 1)
+      }
+      comp_list[[j]] <- Kj %*% aj  # n x R
+    }
+    
+    # sum_j Ktilde_{kj} %*% alpha_{kj}
+    Fk <- Reduce("+", comp_list)   # n x R
+    
+    if (scale) {
+      Fk <- Fk / sqrt(n)        
+    }
+    
+    canon_list[[k]] <- Fk   
+  }
+  
+  canon_list
+}
+
+
+
+gaussian_kernel_univariate <- function(x, sigma = NULL) {
+  n <- length(x)
+  dmat <- as.matrix(dist(x))
+  if (is.null(sigma)) {
+    d_vec <- dmat[upper.tri(dmat)]
+    d_vec <- d_vec[d_vec > 0]
+    if (length(d_vec) == 0) {
+      sigma <- 1
+    } else {
+      sigma <- median(d_vec)
+    }
+  }
+  if (sigma <= 0) sigma <- 1
+  K <- exp(- (dmat^2) / (2 * sigma^2))
+  return(K)
+}
+
+combine_kernel_from_X_u <- function(Xk, uk) {
+  n  <- nrow(Xk)
+  pk <- ncol(Xk)
+  stopifnot(length(uk) == pk)
+  
+  Ktilde <- matrix(0, n, n)
+  for (j in seq_len(pk)) {
+    if (uk[j] == 0) next
+    Kj <- gaussian_kernel_univariate(Xk[, j])
+    Ktilde <- Ktilde + uk[j] * Kj
+  }
+  return(Ktilde)
+}
+
+```
+
+```{r load_data}
+
+# root
+methods <- c("PDD", "DGCCA", "SNGCCA", "SGCCA", "SAKGCCA", "TSKGCCA", "Ground Truth")
+prefixes <- c("pdd_", "dgcca_", "", "sgcca_", "sakgcca_", "tskcca_", "")
+names(prefixes) <- methods
+
+dcov12_all <- list()
+dcov13_all <- list()
+dcov23_all <- list()
+
+snr <- 1
+
+combinations <- list(c(100,30,5),
+                     c(100,50,5),
+                     c(100,100,5),
+                     c(100,200,5),
+                     c(200,100,5),
+                     c(400,100,5),
+                     c(100,100,10),
+                     c(100,100,20)
+                     )
+
+linearity <- c("Linear", "Nonlinear")
+for(ln in linearity){
+for(cb in combinations){
+  print(cb)
+  print(ln)
+  n <- cb[1]
+  p <- cb[2]
+  q <- cb[3]
+
+root <- paste0("E:/Github/res/SNGCCA/SNGCCA/newSimulation/",ln,"/",n,"_",p,"_",q,"/")
+root_dat <- paste0("E:/Github/res/SNGCCA/SNGCCA/newData/",ln,"/",n,"_",p,"_",q,"/")
+
+modelname <- paste0(ln,"_",n,"_",p,"_",q)
+proj_list1 <- list()
+proj_list2 <- list()
+proj_list3 <- list()
+
+# dcov table
+dcor12 <- matrix(NA, ncol = 7, nrow = 100)
+dcor13 <- matrix(NA, ncol = 7, nrow = 100)
+dcor23 <- matrix(NA, ncol = 7, nrow = 100)
+# dcov12[,1]
+for(i in c(6)){
+  prefix <- prefixes[i]
+if(i == 1){
+  u1 <- as.matrix(read.csv(paste0(root, "snr", snr, prefix,"u1.csv"), header = F))
+  u2 <- as.matrix(read.csv(paste0(root, "snr", snr, prefix,"u2.csv"), header = F))
+  u3 <- as.matrix(read.csv(paste0(root, "snr", snr, prefix,"u3.csv"), header = F))
+  
+  for(rep in 1:min(100,dim(u1)[1])){
+  
+  data1 <- as.matrix(read.csv(paste0(root_dat, "snr", snr,"data1_",rep-1,".csv"), header = F))
+  data2 <- as.matrix(read.csv(paste0(root_dat, "snr", snr,"data2_",rep-1,".csv"), header = F))
+  data3 <- as.matrix(read.csv(paste0(root_dat, "snr", snr,"data3_",rep-1,".csv"), header = F))
+  u1[rep, abs(u1[rep, ]) < 0.05] <- 0
+  u2[rep, abs(u2[rep, ]) < 0.05] <- 0
+  u3[rep, abs(u3[rep, ]) < 0.05] <- 0
+  # proj_df1[,rep] <- data1 %*% u1[rep, ]
+  # proj_df2[,rep] <- data2 %*% u2[rep, ]
+  # proj_df3[,rep] <- data3 %*% u3[rep, ]
+  proj1 <- data1 %*% u1[rep, ]
+  proj2 <- data2 %*% u2[rep, ]
+  proj3 <- data3 %*% u3[rep, ]
+  k1 <- center_kernel(rbf_kernel(proj1, sigma = sd(proj1)))
+  k2 <- center_kernel(rbf_kernel(proj2, sigma = sd(proj2)))
+  k3 <- center_kernel(rbf_kernel(proj3, sigma = sd(proj3)))
+  
+  dcor12[rep,i] <- cka_from_kernels(k2,k3)
+  dcor13[rep,i] <- cka_from_kernels(k1,k2)
+  dcor23[rep,i] <- cka_from_kernels(k1,k3)
+
+  }
+  
+}else if(i == 2){
+  u1 <- as.matrix(read.csv(paste0(root, "snr", snr, prefix,"u1.csv"), header = F))
+  u2 <- as.matrix(read.csv(paste0(root, "snr", snr, prefix,"u2.csv"), header = F))
+  u3 <- as.matrix(read.csv(paste0(root, "snr", snr, prefix,"u3.csv"), header = F))
+  
+  for(rep in 1:min(100,dim(u1)[1])){
+  
+  data1 <- as.matrix(read.csv(paste0(root_dat, "snr", snr,"data1_",rep-1,".csv"), header = F))
+  data2 <- as.matrix(read.csv(paste0(root_dat, "snr", snr,"data2_",rep-1,".csv"), header = F))
+  data3 <- as.matrix(read.csv(paste0(root_dat, "snr", snr,"data3_",rep-1,".csv"), header = F))
+  u1[rep, abs(u1[rep, ]) < 0.05] <- 0
+  u2[rep, abs(u2[rep, ]) < 0.05] <- 0  
+  u3[rep, abs(u3[rep, ]) < 0.05] <- 0
+  proj1 <- data1 %*% u1[rep, ]
+  proj2 <- data2 %*% u2[rep, ]
+  proj3 <- data3 %*% u3[rep, ]
+  
+  k1 <- center_kernel(rbf_kernel(proj1, sigma = sd(proj1)))
+  k2 <- center_kernel(rbf_kernel(proj2, sigma = sd(proj2)))
+  k3 <- center_kernel(rbf_kernel(proj3, sigma = sd(proj3)))
+  
+  dcor12[rep,i] <- cka_from_kernels(k2,k3)
+  dcor13[rep,i] <- cka_from_kernels(k1,k2)
+  dcor23[rep,i] <- cka_from_kernels(k1,k3)
+}
+
+}else if(i == 3){
+
+  u1 <- as.matrix(read.csv(paste0(root, "snr", snr, prefix,"u1.csv"), header = F))
+  u2 <- as.matrix(read.csv(paste0(root, "snr", snr, prefix,"u2.csv"), header = F))
+  u3 <- as.matrix(read.csv(paste0(root, "snr", snr, prefix,"u3.csv"), header = F))
+  
+  for(rep in 1:min(100,dim(u1)[1])){
+  
+  data1 <- as.matrix(read.csv(paste0(root_dat, "snr", snr,"data1_",rep-1,".csv"), header = F))
+  data2 <- as.matrix(read.csv(paste0(root_dat, "snr", snr,"data2_",rep-1,".csv"), header = F))
+  data3 <- as.matrix(read.csv(paste0(root_dat, "snr", snr,"data3_",rep-1,".csv"), header = F))
+  u1[rep, abs(u1[rep, ]) < 0.05] <- 0
+  u2[rep, abs(u2[rep, ]) < 0.05] <- 0  
+  u3[rep, abs(u3[rep, ]) < 0.05] <- 0
+  proj1 <- data1 %*% u1[rep, ]
+  proj2 <- data2 %*% u2[rep, ]
+  proj3 <- data3 %*% u3[rep, ]
+  
+  k1 <- center_kernel(rbf_kernel(proj1, sigma = sd(proj1)))
+  k2 <- center_kernel(rbf_kernel(proj2, sigma = sd(proj2)))
+  k3 <- center_kernel(rbf_kernel(proj3, sigma = sd(proj3)))
+  
+  dcor12[rep,i] <- cka_from_kernels(k2,k3)
+  dcor13[rep,i] <- cka_from_kernels(k1,k2)
+  dcor23[rep,i] <- cka_from_kernels(k1,k3)
+}
+
+}else if(i == 4){
+
+  u1 <- as.matrix(read.csv(paste0(root, "snr", snr, prefix,"u1.csv"), header = T))
+  u2 <- as.matrix(read.csv(paste0(root, "snr", snr, prefix,"u2.csv"), header = T))
+  u3 <- as.matrix(read.csv(paste0(root, "snr", snr, prefix,"u3.csv"), header = T))
+  
+  for(rep in 1:min(100,dim(u1)[1])){
+  
+  data1 <- as.matrix(read.csv(paste0(root_dat, "snr", snr,"data1_",rep-1,".csv"), header = F))
+  data2 <- as.matrix(read.csv(paste0(root_dat, "snr", snr,"data2_",rep-1,".csv"), header = F))
+  data3 <- as.matrix(read.csv(paste0(root_dat, "snr", snr,"data3_",rep-1,".csv"), header = F))
+  u1[rep, abs(u1[rep, ]) < 0.05] <- 0
+  u2[rep, abs(u2[rep, ]) < 0.05] <- 0
+  u3[rep, abs(u3[rep, ]) < 0.05] <- 0
+  proj1 <- data1 %*% u1[rep, ]
+  proj2 <- data2 %*% u2[rep, ]
+  proj3 <- data3 %*% u3[rep, ]
+  
+  k1 <- center_kernel(rbf_kernel(proj1, sigma = sd(proj1)))
+  k2 <- center_kernel(rbf_kernel(proj2, sigma = sd(proj2)))
+  k3 <- center_kernel(rbf_kernel(proj3, sigma = sd(proj3)))
+  
+  dcor12[rep,i] <- cka_from_kernels(k2,k3)
+  dcor13[rep,i] <- cka_from_kernels(k1,k2)
+  dcor23[rep,i] <- cka_from_kernels(k1,k3)
+}
+  
+}else if(i == 5){
+  
+  u1 <- as.matrix(read.csv(paste0(root, "snr", snr, prefix,"u1.csv"), header = F))
+  u2 <- as.matrix(read.csv(paste0(root, "snr", snr, prefix,"u2.csv"), header = F))
+  u3 <- as.matrix(read.csv(paste0(root, "snr", snr, prefix,"u3.csv"), header = F))
+  
+  for(rep in 1:min(100,dim(u1)[1])){
+  
+  data1 <- as.matrix(read.csv(paste0(root_dat, "snr", snr,"data1_",rep-1,".csv"), header = F))
+  data2 <- as.matrix(read.csv(paste0(root_dat, "snr", snr,"data2_",rep-1,".csv"), header = F))
+  data3 <- as.matrix(read.csv(paste0(root_dat, "snr", snr,"data3_",rep-1,".csv"), header = F))
+  u1[rep, abs(u1[rep, ]) < 0.05] <- 0
+  u2[rep, abs(u2[rep, ]) < 0.05] <- 0  
+  u3[rep, abs(u3[rep, ]) < 0.05] <- 0
+  proj1 <- data1 %*% u1[rep, ]
+  proj2 <- data2 %*% u2[rep, ]
+  proj3 <- data3 %*% u3[rep, ]
+  
+  k1 <- center_kernel(rbf_kernel(proj1, sigma = sd(proj1)))
+  k2 <- center_kernel(rbf_kernel(proj2, sigma = sd(proj2)))
+  k3 <- center_kernel(rbf_kernel(proj3, sigma = sd(proj3)))
+  
+  dcor12[rep,i] <- cka_from_kernels(k2,k3)
+  dcor13[rep,i] <- cka_from_kernels(k1,k2)
+  dcor23[rep,i] <- cka_from_kernels(k1,k3)
+}
+
+}else if(i == 6){
+  
+  u1 <- as.matrix(read.csv(paste0(root, "snr", snr, prefix,"u1.csv"), header = F))
+  u2 <- as.matrix(read.csv(paste0(root, "snr", snr, prefix,"u2.csv"), header = F))
+  u3 <- as.matrix(read.csv(paste0(root, "snr", snr, prefix,"u3.csv"), header = F))
+  
+  for(rep in 1:min(100,dim(u1)[1])){
+  
+  data1 <- as.matrix(read.csv(paste0(root_dat, "snr", snr,"data1_",rep-1,".csv"), header = F))
+  data2 <- as.matrix(read.csv(paste0(root_dat, "snr", snr,"data2_",rep-1,".csv"), header = F))
+  data3 <- as.matrix(read.csv(paste0(root_dat, "snr", snr,"data3_",rep-1,".csv"), header = F))
+  X_list <- list(data1, data2, data3)
+  u1[rep, abs(u1[rep, ]) < 0.05] <- 0
+  u2[rep, abs(u2[rep, ]) < 0.05] <- 0  
+  u3[rep, abs(u3[rep, ]) < 0.05] <- 0
+  u_list <- list(u1 = u1[rep,],u2 = u2[rep,],u3 = u3[rep,])
+  Ktilde_list <- mapply(
+              FUN  = combine_kernel_from_X_u,
+              Xk   = X_list,
+              uk   = u_list,
+              SIMPLIFY = FALSE
+            )
+
+  result <- rgcca(Ktilde_list, tau = c(1,1,1), ncomp = 1,n_iter_max = 10)
+
+  proj1 <- result$a[[1]]
+  proj2 <- result$a[[2]]
+  proj3 <- result$a[[3]]
+  
+  k1 <- center_kernel(rbf_kernel(proj1, sigma = sd(proj1)))
+  k2 <- center_kernel(rbf_kernel(proj2, sigma = sd(proj2)))
+  k3 <- center_kernel(rbf_kernel(proj3, sigma = sd(proj3)))
+  
+  dcor12[rep,i] <- cka_from_kernels(k2,k3)
+  dcor13[rep,i] <- cka_from_kernels(k1,k2)
+  dcor23[rep,i] <- cka_from_kernels(k1,k3)
+}
+
+}else if(i == 7){
+  for(rep in 1:min(100,dim(u1)[1])){
+  
+  u1 <- c(rep(sqrt(1/q), q), rep(0,p-q))
+  #c1 <- sqrt(as.numeric(t(u1) %*% cov(data1) %*% u1))
+  
+  u2 <- c(rep(sqrt(1/q), q), rep(0,p-q))
+  #c2 <- sqrt(as.numeric(t(u2) %*% cov(data2) %*% u2))
+  
+  u3 <- c(rep(sqrt(1/q), q), rep(0,p-q))
+  #c3 <- sqrt(as.numeric(t(u3) %*% cov(data3) %*% u3))
+  
+  data1 <- as.matrix(read.csv(paste0(root_dat, "snr", snr,"data1_",rep-1,".csv"), header = F))
+  data2 <- as.matrix(read.csv(paste0(root_dat, "snr", snr,"data2_",rep-1,".csv"), header = F))
+  data3 <- as.matrix(read.csv(paste0(root_dat, "snr", snr,"data3_",rep-1,".csv"), header = F))
+
+  proj1 <- data1 %*% u1
+  proj2 <- data2 %*% u2
+  proj3 <- data3 %*% u3
+  
+  k1 <- center_kernel(rbf_kernel(proj1, sigma = sd(proj1)))
+  k2 <- center_kernel(rbf_kernel(proj2, sigma = sd(proj2)))
+  k3 <- center_kernel(rbf_kernel(proj3, sigma = sd(proj3)))
+  
+  dcor12[rep,i] <- cka_from_kernels(k2,k3)
+  dcor13[rep,i] <- cka_from_kernels(k1,k2)
+  dcor23[rep,i] <- cka_from_kernels(k1,k3)
+}
+}
+}
+dcov12_all[[modelname]] <- dcor12
+dcov13_all[[modelname]] <- dcor13
+dcov23_all[[modelname]] <- dcor23
+}
+}
+```
+

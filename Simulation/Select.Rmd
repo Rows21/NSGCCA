@@ -1,0 +1,903 @@
+---
+title: "Linear Combinations"
+author: "Rong Wu"
+date: "2025-07-09"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(r.jive)
+#data(SimData)
+library(readr)
+library(dplyr)
+library(energy)
+library(ggplot2)
+library(tidyr)
+library(purrr)
+library(ggthemr)
+library(matrixStats)
+```
+
+```{r load_data}
+
+methods <- c("PDD", "DGCCA", "SNGCCA", "SGCCA", "SAKGCCA", "TSKGCCA", "Ground Truth")
+prefixes <- c("pdd_", "dgcca_", "", "sgcca_", "sakgcca_", "tskcca_", "")
+names(prefixes) <- methods
+
+s1_all <- list()
+s2_all <- list()
+s3_all <- list()
+
+snr <- 1 #1,25
+
+combinations <- list(c(100,30,5),
+                     c(100,50,5),
+                     c(100,100,5),
+                     c(100,200,5),
+                     c(200,100,5),
+                     c(400,100,5),
+                     c(100,100,10),
+                     c(100,100,20)
+                     )
+
+linearity <- c("Linear", "Nonlinear")
+for(ln in linearity){
+for(cb in combinations){
+  print(cb)
+  print(ln)
+  n <- cb[1]
+  p <- cb[2]
+  q <- cb[3]
+
+root <- paste0("E:/Github/res/SNGCCA/SNGCCA/Simulation/",ln,"/",n,"_",p,"_",q,"/")
+
+root_dat <- paste0("E:/Github/res/SNGCCA/SNGCCA/newData/",ln,"/",n,"_",p,"_",q,"/")
+
+modelname <- paste0(ln,"_",n,"_",p,"_",q)
+proj_list1 <- list()
+proj_list2 <- list()
+proj_list3 <- list()
+
+# dcov table
+s1 <- matrix(NA, ncol = 7, nrow = 100)
+s2 <- matrix(NA, ncol = 7, nrow = 100)
+s3 <- matrix(NA, ncol = 7, nrow = 100)
+# dcov12[,1]
+for(i in c(1,4)){
+  prefix <- prefixes[i]
+if(i == 1){
+  u1 <- as.matrix(read.csv(paste0(root, prefix,"u1.csv"), header = F))
+  u2 <- as.matrix(read.csv(paste0(root, prefix,"u2.csv"), header = F))
+  u3 <- as.matrix(read.csv(paste0(root, prefix,"u3.csv"), header = F))
+  
+  for(rep in 1:100){
+  
+  s1[rep,i] <- sum(abs(u1[rep, 1:q]) > 0.05)
+  s2[rep,i] <- sum(abs(u2[rep, 1:q]) > 0.05)
+  s3[rep,i] <- sum(abs(u3[rep, 1:q]) > 0.05)
+
+  }
+  
+}else if(i == 2){
+  u1 <- as.matrix(read.csv(paste0(root, "snr", snr, prefix,"u1.csv"), header = F))
+  u2 <- as.matrix(read.csv(paste0(root, "snr", snr, prefix,"u2.csv"), header = F))
+  u3 <- as.matrix(read.csv(paste0(root, "snr", snr, prefix,"u3.csv"), header = F))
+  
+  for(rep in 1:100){
+  
+  s1[rep,i] <- sum(abs(u1[rep, 1:q]) > 0.05)
+  s2[rep,i] <- sum(abs(u2[rep, 1:q]) > 0.05)
+  s3[rep,i] <- sum(abs(u3[rep, 1:q]) > 0.05)
+}
+
+}else if(i == 3){
+
+  u1 <- as.matrix(read.csv(paste0(root, "snr", snr, prefix,"u1.csv"), header = F))
+  u2 <- as.matrix(read.csv(paste0(root, "snr", snr, prefix,"u2.csv"), header = F))
+  u3 <- as.matrix(read.csv(paste0(root, "snr", snr, prefix,"u3.csv"), header = F))
+  
+  for(rep in 1:100){
+  
+  s1[rep,i] <- sum(abs(u1[rep, 1:q]) > 0.05)
+  s2[rep,i] <- sum(abs(u2[rep, 1:q]) > 0.05)
+  s3[rep,i] <- sum(abs(u3[rep, 1:q]) > 0.05)
+}
+
+}else if(i == 4){
+
+  u1 <- as.matrix(read.csv(paste0(root, prefix,"u1.csv"), header = T))
+  u2 <- as.matrix(read.csv(paste0(root, prefix,"u2.csv"), header = T))
+  u3 <- as.matrix(read.csv(paste0(root, prefix,"u3.csv"), header = T))
+  
+  for(rep in 1:100){
+  s1[rep,i] <- sum(abs(u1[rep, 1:q]) > 0.05)
+  s2[rep,i] <- sum(abs(u2[rep, 1:q]) > 0.05)
+  s3[rep,i] <- sum(abs(u3[rep, 1:q]) > 0.05)
+}
+  
+}else if(i == 5){
+  
+  u1 <- as.matrix(read.csv(paste0(root, "snr", snr, prefix,"u1.csv"), header = F))
+  u2 <- as.matrix(read.csv(paste0(root, "snr", snr, prefix,"u2.csv"), header = F))
+  u3 <- as.matrix(read.csv(paste0(root, "snr", snr, prefix,"u3.csv"), header = F))
+  
+  for(rep in 1:100){
+  s1[rep,i] <- sum(abs(u1[rep, 1:q]) > 0.05)
+  s2[rep,i] <- sum(abs(u2[rep, 1:q]) > 0.05)
+  s3[rep,i] <- sum(abs(u3[rep, 1:q]) > 0.05)
+}
+
+}else if(i == 6){
+
+  u1 <- as.matrix(read.csv(paste0(root, "snr", snr, prefix,"u1.csv"), header = F))
+  u2 <- as.matrix(read.csv(paste0(root, "snr", snr, prefix,"u2.csv"), header = F))
+  u3 <- as.matrix(read.csv(paste0(root, "snr", snr, prefix,"u3.csv"), header = F))
+  
+  for(rep in 1:100){
+  s1[rep,i] <- sum(abs(u1[rep, 1:q]) > 0.05)
+  s2[rep,i] <- sum(abs(u2[rep, 1:q]) > 0.05)
+  s3[rep,i] <- sum(abs(u3[rep, 1:q]) > 0.05)
+}
+
+}else if(i == 7){
+  for(rep in 1:100){
+  
+  u1 <- c(rep(1/5, q), rep(0,p-q))
+  u2 <- c(rep(1/5, q), rep(0,p-q))
+  u3 <- c(rep(1/5, q), rep(0,p-q))
+    
+  s1[rep,i] <- sum(u1 > 0.05)
+  s2[rep,i] <- sum(u2 > 0.05)
+  s3[rep,i] <- sum(u3 > 0.05)
+}
+}
+}
+s1_all[[modelname]] <- s1
+s2_all[[modelname]] <- s2
+s3_all[[modelname]] <- s3
+}
+}
+
+
+```
+
+
+```{r saveres}
+
+df_all <- data.frame()
+for(cb in combinations){
+  for(ln in linearity){
+      n <- cb[1]
+      p <- cb[2]
+      q <- cb[3]
+      modelname <- paste0(ln,"_",n,"_",p,"_",q)
+      mean1 <- colMeans(s1_all[[modelname]], na.rm = TRUE)[1:7]
+      mean2 <- colMeans(s2_all[[modelname]], na.rm = TRUE)[1:7]
+      mean3 <- colMeans(s3_all[[modelname]], na.rm = TRUE)[1:7]
+      sd1 <- colSds(s1_all[[modelname]], na.rm = TRUE)[1:7]/sqrt(n)
+      sd2 <- colSds(s2_all[[modelname]], na.rm = TRUE)[1:7]/sqrt(n)
+      sd3 <- colSds(s3_all[[modelname]], na.rm = TRUE)[1:7]/sqrt(n)
+      
+      df1 <- data.frame(Methods = methods,
+                 Scenario = ln,
+                 n = n,
+                 p = p,
+                 s = q,
+                 type = "X1 vs X2",
+                 Values = mean1,
+                 std = sd1)
+      df2 <- data.frame(Methods = methods,
+                 Scenario = ln,
+                 n = n,
+                 p = p,
+                 s = q,
+                 type = "X1 vs X3",
+                 Values = mean2,
+                 std = sd2)
+      df3 <- data.frame(Methods = methods,
+                 Scenario = ln,
+                 n = n,
+                 p = p,
+                 s = q,
+                 type = "X2 vs X3",
+                 Values = mean3,
+                 std = sd3)
+      df <- rbind(df1, df2, df3)
+      df_all <- rbind(df_all,df)
+  }
+}
+root_plot <- "E:/Github/res/SNGCCA/SNGCCA/Results/fig_select/main/"
+data1 <- df_all[1:168, ]
+write.csv(data1, file.path(root_plot,"data11.csv"))
+data2 <- df_all[c(85:126, 169:252),]
+write.csv(data2, file.path(root_plot,"data21.csv"))
+data3 <- df_all[c(85:126, 253:336),]
+write.csv(data3, file.path(root_plot,"data31.csv"))
+```
+
+```{r dcorplot1}
+ggthemr('fresh')
+#data <- data1
+data <- read.csv(file.path(root_plot, 'data1.csv'))
+# data <- data[which(data$Methods != "DGCCA"),]
+data$type[which(data$type == 'X1 vs X2' & data$Scenario == 'Linear')] <- 'X2'
+data$type[which(data$type == 'X1 vs X3' & data$Scenario == 'Linear')] <- 'X1'
+data$type[which(data$type == 'X2 vs X3' & data$Scenario == 'Linear')] <- 'X3'
+data$type[which(data$type == 'X1 vs X2' & data$Scenario == 'Nonlinear')] <- 'X1'
+data$type[which(data$type == 'X1 vs X3' & data$Scenario == 'Nonlinear')] <- 'X2'
+data$type[which(data$type == 'X2 vs X3' & data$Scenario == 'Nonlinear')] <- 'X3'
+
+data$Methods[data$Methods == "PDD"] <- "SUMCOR-SGCCA"
+data$Methods[data$Methods == "SGCCA"] <- "MAXVAR-SGCCA"
+data$Methods[data$Methods == "SAKGCCA"] <- "SA-KGCCA"
+data$Methods[data$Methods == "TSKGCCA"] <- "TS-KGCCA"
+data$Methods[data$Methods == "SNGCCA"] <- "HSIC-SGCCA"
+
+data$Methods <- factor(data$Methods, levels = c("HSIC-SGCCA", 
+                                                "DGCCA", 
+                                                "SA-KGCCA", 
+                                                "SUMCOR-SGCCA", 
+                                                "TS-KGCCA", 
+                                                "MAXVAR-SGCCA", 
+                                                "Ground Truth"
+                                                ))
+sp = ggplot(data = data, aes(x=p,y=Values,color=Methods, group=Methods)) + 
+  geom_line(size=0.6,position = position_dodge(0.05)) + 
+  geom_point(size=0.5,position = position_dodge(0.05))+
+  geom_errorbar(aes(ymin = Values - 1.96*std, ymax = Values + 1.96*std), width=0.09, position = position_dodge(0.05))
+
+sp + facet_grid(Scenario ~ type) +xlab("Variable Dimension (p)")+ylab("Value")+
+  scale_color_manual(values = c("#E41A1C", 
+                                "#377EB8", 
+                                "#984EA3", 
+                                "#FF7F00", 
+                                "#4DAF4A", 
+                                "#FFDA22", 
+                                "black"
+                                ))+ 
+  theme(legend.title = element_blank(),
+        strip.text.x = element_text(size=12),
+        strip.text.y = element_text(size=12),
+        legend.text = element_text(size = 10),   
+        legend.key.width = unit(0.3, "cm"),
+        legend.position = 'bottom',
+        legend.direction = "horizontal",
+        legend.box = "horizontal",
+        legend.key.size = unit(0.2, "cm")) + scale_x_log10(breaks = c(30,50,100,200))
+
+
+#ggsave('Fig_dcor1_s2.eps')
+ggsave(paste0(root_plot,'/Fig_select1_snr',snr,'.png'))
+
+
+```
+
+```{r dcorplot2}
+data <- read.csv(file.path(root_plot, 'data2.csv'))
+#data <- data2
+data$type[which(data$type == 'X1 vs X2' & data$Scenario == 'Linear')] <- 'X2'
+data$type[which(data$type == 'X1 vs X3' & data$Scenario == 'Linear')] <- 'X1'
+data$type[which(data$type == 'X2 vs X3' & data$Scenario == 'Linear')] <- 'X3'
+data$type[which(data$type == 'X1 vs X2' & data$Scenario == 'Nonlinear')] <- 'X1'
+data$type[which(data$type == 'X1 vs X3' & data$Scenario == 'Nonlinear')] <- 'X2'
+data$type[which(data$type == 'X2 vs X3' & data$Scenario == 'Nonlinear')] <- 'X3'
+
+#data <- data2
+data$Methods[data$Methods == "PDD"] <- "SUMCOR-SGCCA"
+data$Methods[data$Methods == "SGCCA"] <- "MAXVAR-SGCCA"
+data$Methods[data$Methods == "SAKGCCA"] <- "SA-KGCCA"
+data$Methods[data$Methods == "TSKGCCA"] <- "TS-KGCCA"
+data$Methods[data$Methods == "SNGCCA"] <- "HSIC-SGCCA"
+
+data$Methods <- factor(data$Methods, levels = c("HSIC-SGCCA", 
+                                                "DGCCA", 
+                                                "SA-KGCCA", 
+                                                "SUMCOR-SGCCA", 
+                                                "TS-KGCCA", 
+                                                "MAXVAR-SGCCA", 
+                                                "Ground Truth"))
+sp = ggplot(data = data, aes(x=n,y=Values,color=Methods, group=Methods)) + 
+  geom_line(size=0.6,position = position_dodge(0.05)) + 
+  geom_point(size=0.5,position = position_dodge(0.05))+
+  geom_errorbar(aes(ymin = Values - 1.96*std, ymax = Values + 1.96*std), width=0.09, position = position_dodge(0.05))
+
+sp + facet_grid(Scenario ~ type) +xlab("Sample Size (n)")+ylab("Value")+
+  scale_color_manual(values = c("#E41A1C", 
+                                "#377EB8", 
+                                "#984EA3", 
+                                "#FF7F00", 
+                                "#4DAF4A", 
+                                "#FFDA22", 
+                                "black"
+                                ))+
+  #scale_y_continuous(
+  #  limits = c(-0.25, 1),         
+  #  breaks = seq(-0.25, 1,0.25)  
+  #) +
+  theme(legend.title = element_blank(),
+        strip.text.x = element_text(size=12),
+        strip.text.y = element_text(size=12),
+        legend.text = element_text(size = 10),   
+        legend.key.width = unit(0.3, "cm"),
+        legend.position = 'bottom',
+        legend.direction = "horizontal",
+        legend.box = "horizontal",
+        legend.key.size = unit(0.2, "cm")) + scale_x_log10(breaks = c(100,200,400))
+
+#ggsave('Fig_dcor2_s2.eps')
+ggsave(paste0(root_plot,'/Fig_select2_snr',snr,'.png'))
+
+```
+
+```{r dcorplot3}
+data <- read.csv(file.path(root_plot, 'data3.csv'))
+#data <- data3
+
+data$type[which(data$type == 'X1 vs X2' & data$Scenario == 'Linear')] <- 'X2'
+data$type[which(data$type == 'X1 vs X3' & data$Scenario == 'Linear')] <- 'X1'
+data$type[which(data$type == 'X2 vs X3' & data$Scenario == 'Linear')] <- 'X3'
+data$type[which(data$type == 'X1 vs X2' & data$Scenario == 'Nonlinear')] <- 'X1'
+data$type[which(data$type == 'X1 vs X3' & data$Scenario == 'Nonlinear')] <- 'X2'
+data$type[which(data$type == 'X2 vs X3' & data$Scenario == 'Nonlinear')] <- 'X3'
+
+data$Methods[data$Methods == "PDD"] <- "SUMCOR-SGCCA"
+data$Methods[data$Methods == "SGCCA"] <- "MAXVAR-SGCCA"
+data$Methods[data$Methods == "SAKGCCA"] <- "SA-KGCCA"
+data$Methods[data$Methods == "TSKGCCA"] <- "TS-KGCCA"
+data$Methods[data$Methods == "SNGCCA"] <- "HSIC-SGCCA"
+unique(data$Methods)
+data$Methods <- factor(data$Methods, levels = c("HSIC-SGCCA", 
+                                                "DGCCA", 
+                                                "SA-KGCCA", "SUMCOR-SGCCA", "TS-KGCCA", "MAXVAR-SGCCA", "Ground Truth"))
+sp = ggplot(data = data, aes(x=s,y=Values,color=Methods, group=Methods)) + 
+  geom_line(size=0.6,position = position_dodge(0.05)) + 
+  geom_point(size=1,position = position_dodge(0.05))+
+  geom_errorbar(aes(ymin = Values - 1.96*std, ymax = Values + 1.96*std), width=0.09, position = position_dodge(0.05))
+
+sp + facet_grid(Scenario ~ type) +xlab("Sparsity Level (q)")+ylab("Value")+
+  scale_color_manual(values = c("#E41A1C", 
+                                "#377EB8", 
+                                "#984EA3", "#FF7F00", "#4DAF4A", "#FFDA22", "black"))+ 
+  #scale_y_continuous(
+  #  limits = c(-0.25, 1),         
+  #  breaks = seq(-0.25, 1,0.25)  
+  #) +
+  theme(legend.title = element_blank(),
+        strip.text.x = element_text(size=12),
+        strip.text.y = element_text(size=12),
+        legend.text = element_text(size = 10),   
+        legend.key.width = unit(0.3, "cm"),
+        legend.position = 'bottom',
+        legend.direction = "horizontal",
+        legend.box = "horizontal",
+        legend.key.size = unit(0.2, "cm")) + scale_x_log10()
+
+
+#ggsave('Fig_dcor3_s2.eps')
+ggsave(paste0(root_plot,'/Fig_select3_snr',snr,'.png'))
+
+```
+
+
+```{r dcorplot1}
+ggthemr('fresh')
+#data <- data1
+data <- read.csv(file.path(root_plot, 'data1.csv'))
+data <- data[which(data$Methods != "DGCCA"),]
+data$type[which(data$type == 'X1 vs X2' & data$Scenario == 'Linear')] <- 'X2'
+data$type[which(data$type == 'X1 vs X3' & data$Scenario == 'Linear')] <- 'X1'
+data$type[which(data$type == 'X2 vs X3' & data$Scenario == 'Linear')] <- 'X3'
+data$type[which(data$type == 'X1 vs X2' & data$Scenario == 'Nonlinear')] <- 'X1'
+data$type[which(data$type == 'X1 vs X3' & data$Scenario == 'Nonlinear')] <- 'X2'
+data$type[which(data$type == 'X2 vs X3' & data$Scenario == 'Nonlinear')] <- 'X3'
+
+data$Methods[data$Methods == "PDD"] <- "SUMCOR-SGCCA"
+data$Methods[data$Methods == "SGCCA"] <- "MAXVAR-SGCCA"
+data$Methods[data$Methods == "SAKGCCA"] <- "SA-KGCCA"
+data$Methods[data$Methods == "TSKGCCA"] <- "TS-KGCCA"
+data$Methods[data$Methods == "SNGCCA"] <- "HSIC-SGCCA"
+
+data$Methods <- factor(data$Methods, levels = c("HSIC-SGCCA", 
+                                                #"DGCCA", 
+                                                "SA-KGCCA", 
+                                                "SUMCOR-SGCCA", 
+                                                "TS-KGCCA", 
+                                                "MAXVAR-SGCCA", 
+                                                "Ground Truth"
+                                                ))
+sp = ggplot(data = data, aes(x=p,y=Values,color=Methods, group=Methods)) + 
+  geom_line(size=0.6,position = position_dodge(0.05)) + 
+  geom_point(size=0.5,position = position_dodge(0.05))+
+  geom_errorbar(aes(ymin = Values - 1.96*std, ymax = Values + 1.96*std), width=0.09, position = position_dodge(0.05))
+
+sp + facet_grid(Scenario ~ type) +xlab("Variable Dimension (p)")+ylab("Value")+
+  scale_color_manual(values = c("#E41A1C", 
+                                #"#377EB8", 
+                                "#984EA3", 
+                                "#FF7F00", 
+                                "#4DAF4A", 
+                                "#FFDA22", 
+                                "black"
+                                ))+ 
+  theme(legend.title = element_blank(),
+        strip.text.x = element_text(size=12),
+        strip.text.y = element_text(size=12),
+        legend.text = element_text(size = 10),   
+        legend.key.width = unit(0.3, "cm"),
+        legend.position = 'bottom',
+        legend.direction = "horizontal",
+        legend.box = "horizontal",
+        legend.key.size = unit(0.2, "cm")) + scale_x_log10(breaks = c(30,50,100,200))
+
+
+#ggsave('Fig_dcor1_s2.eps')
+ggsave(paste0(root_plot,'/Fig_select1_snr',snr,'_s1.png'))
+
+
+```
+
+```{r dcorplot2}
+data <- read.csv(file.path(root_plot, 'data2.csv'))
+data <- data[which(data$Methods != "DGCCA"),]
+data$type[which(data$type == 'X1 vs X2' & data$Scenario == 'Linear')] <- 'X2'
+data$type[which(data$type == 'X1 vs X3' & data$Scenario == 'Linear')] <- 'X1'
+data$type[which(data$type == 'X2 vs X3' & data$Scenario == 'Linear')] <- 'X3'
+data$type[which(data$type == 'X1 vs X2' & data$Scenario == 'Nonlinear')] <- 'X1'
+data$type[which(data$type == 'X1 vs X3' & data$Scenario == 'Nonlinear')] <- 'X2'
+data$type[which(data$type == 'X2 vs X3' & data$Scenario == 'Nonlinear')] <- 'X3'
+
+#data <- data2
+data$Methods[data$Methods == "PDD"] <- "SUMCOR-SGCCA"
+data$Methods[data$Methods == "SGCCA"] <- "MAXVAR-SGCCA"
+data$Methods[data$Methods == "SAKGCCA"] <- "SA-KGCCA"
+data$Methods[data$Methods == "TSKGCCA"] <- "TS-KGCCA"
+data$Methods[data$Methods == "SNGCCA"] <- "HSIC-SGCCA"
+
+data$Methods <- factor(data$Methods, levels = c("HSIC-SGCCA", 
+                                                #"DGCCA", 
+                                                "SA-KGCCA", 
+                                                "SUMCOR-SGCCA", 
+                                                "TS-KGCCA", 
+                                                "MAXVAR-SGCCA", 
+                                                "Ground Truth"))
+sp = ggplot(data = data, aes(x=n,y=Values,color=Methods, group=Methods)) + 
+  geom_line(size=0.6,position = position_dodge(0.05)) + 
+  geom_point(size=0.5,position = position_dodge(0.05))+
+  geom_errorbar(aes(ymin = Values - 1.96*std, ymax = Values + 1.96*std), width=0.09, position = position_dodge(0.05))
+
+sp + facet_grid(Scenario ~ type) +xlab("Sample Size (n)")+ylab("Value")+
+  scale_color_manual(values = c("#E41A1C", 
+                                #"#377EB8", 
+                                "#984EA3", 
+                                "#FF7F00", 
+                                "#4DAF4A", 
+                                "#FFDA22", 
+                                "black"
+                                ))+
+  #scale_y_continuous(
+  #  limits = c(-0.25, 1),         
+  #  breaks = seq(-0.25, 1,0.25)  
+  #) +
+  theme(legend.title = element_blank(),
+        strip.text.x = element_text(size=12),
+        strip.text.y = element_text(size=12),
+        legend.text = element_text(size = 10),   
+        legend.key.width = unit(0.3, "cm"),
+        legend.position = 'bottom',
+        legend.direction = "horizontal",
+        legend.box = "horizontal",
+        legend.key.size = unit(0.2, "cm")) + scale_x_log10(breaks = c(100,200,400))
+
+#ggsave('Fig_dcor2_s2.eps')
+ggsave(paste0(root_plot,'/Fig_select2_snr',snr,'_s1.png'))
+
+```
+
+```{r dcorplot3}
+data <- read.csv(file.path(root_plot, 'data3.csv'))
+data <- data[which(data$Methods != "DGCCA"),]
+
+data$type[which(data$type == 'X1 vs X2' & data$Scenario == 'Linear')] <- 'X2'
+data$type[which(data$type == 'X1 vs X3' & data$Scenario == 'Linear')] <- 'X1'
+data$type[which(data$type == 'X2 vs X3' & data$Scenario == 'Linear')] <- 'X3'
+data$type[which(data$type == 'X1 vs X2' & data$Scenario == 'Nonlinear')] <- 'X1'
+data$type[which(data$type == 'X1 vs X3' & data$Scenario == 'Nonlinear')] <- 'X2'
+data$type[which(data$type == 'X2 vs X3' & data$Scenario == 'Nonlinear')] <- 'X3'
+
+data$Methods[data$Methods == "PDD"] <- "SUMCOR-SGCCA"
+data$Methods[data$Methods == "SGCCA"] <- "MAXVAR-SGCCA"
+data$Methods[data$Methods == "SAKGCCA"] <- "SA-KGCCA"
+data$Methods[data$Methods == "TSKGCCA"] <- "TS-KGCCA"
+data$Methods[data$Methods == "SNGCCA"] <- "HSIC-SGCCA"
+unique(data$Methods)
+data$Methods <- factor(data$Methods, levels = c("HSIC-SGCCA", 
+                                                #"DGCCA", 
+                                                "SA-KGCCA", "SUMCOR-SGCCA", "TS-KGCCA", "MAXVAR-SGCCA", "Ground Truth"))
+sp = ggplot(data = data, aes(x=s,y=Values,color=Methods, group=Methods)) + 
+  geom_line(size=0.6,position = position_dodge(0.05)) + 
+  geom_point(size=1,position = position_dodge(0.05))+
+  geom_errorbar(aes(ymin = Values - 1.96*std, ymax = Values + 1.96*std), width=0.09, position = position_dodge(0.05))
+
+sp + facet_grid(Scenario ~ type) +xlab("Sparsity Level (q)")+ylab("Value")+
+  scale_color_manual(values = c("#E41A1C", 
+                                #"#377EB8", 
+                                "#984EA3", "#FF7F00", "#4DAF4A", "#FFDA22", "black"))+ 
+  #scale_y_continuous(
+  #  limits = c(-0.25, 1),         
+  #  breaks = seq(-0.25, 1,0.25)  
+  #) +
+  theme(legend.title = element_blank(),
+        strip.text.x = element_text(size=12),
+        strip.text.y = element_text(size=12),
+        legend.text = element_text(size = 10),   
+        legend.key.width = unit(0.3, "cm"),
+        legend.position = 'bottom',
+        legend.direction = "horizontal",
+        legend.box = "horizontal",
+        legend.key.size = unit(0.2, "cm")) + scale_x_log10()
+
+
+#ggsave('Fig_dcor3_s2.eps')
+ggsave(paste0(root_plot,'/Fig_select3_snr',snr,'_s1.png'))
+
+```
+
+
+```{r load_data}
+
+methods <- c("PDD", "DGCCA", "SNGCCA", "SGCCA", "SAKGCCA", "TSKGCCA", "Ground Truth")
+prefixes <- c("pdd_", "dgcca_", "", "sgcca_", "sakgcca_", "tskcca_", "")
+names(prefixes) <- methods
+
+s1_all <- list()
+s2_all <- list()
+s3_all <- list()
+
+snr <- 1
+
+combinations <- list(c(100,30,5),
+                     c(100,50,5),
+                     c(100,100,5),
+                     c(100,200,5),
+                     c(200,100,5),
+                     c(400,100,5),
+                     c(100,100,10),
+                     c(100,100,20)
+                     )
+
+linearity <- c("Linear", "Nonlinear")
+for(ln in linearity){
+for(cb in combinations){
+  print(cb)
+  print(ln)
+  n <- cb[1]
+  p <- cb[2]
+  q <- cb[3]
+
+root <- paste0("E:/Github/res/SNGCCA/SNGCCA/newSimulation/pair2/",ln,"/",n,"_",p,"_",q,"/")
+
+root_dat <- paste0("E:/Github/res/SNGCCA/SNGCCA/newData/",ln,"/",n,"_",p,"_",q,"/")
+
+modelname <- paste0(ln,"_",n,"_",p,"_",q)
+proj_list1 <- list()
+proj_list2 <- list()
+proj_list3 <- list()
+
+# dcov table
+s1 <- matrix(NA, ncol = 7, nrow = 100)
+s2 <- matrix(NA, ncol = 7, nrow = 100)
+s3 <- matrix(NA, ncol = 7, nrow = 100)
+# dcov12[,1]
+for(i in 1:7){
+  prefix <- prefixes[i]
+if(i == 1){
+  u1 <- as.matrix(read.csv(paste0(root, "snr", snr, prefix,"u1.csv"), header = F))
+  u2 <- as.matrix(read.csv(paste0(root, "snr", snr, prefix,"u2.csv"), header = F))
+  u3 <- as.matrix(read.csv(paste0(root, "snr", snr, prefix,"u3.csv"), header = F))
+  
+  for(rep in 1:100){
+  
+  s1[rep,i] <- sum(abs(u1[rep, 1:q]) > 0.05)
+  s2[rep,i] <- sum(abs(u2[rep, 1:q]) > 0.05)
+  s3[rep,i] <- sum(abs(u3[rep, 1:q]) > 0.05)
+
+  }
+  
+}else if(i == 2){
+  u1 <- c(rep(1/5, q), rep(0,p-q))
+  u2 <- c(rep(1/5, q), rep(0,p-q))
+  u3 <- c(rep(1/5, q), rep(0,p-q))
+  
+  s1[rep,i] <- sum(u1[(q+1):p] > 0.05)
+  s2[rep,i] <- sum(u2[(q+1):p] > 0.05)
+  s3[rep,i] <- sum(u3[(q+1):p] > 0.05)
+
+}else if(i == 3){
+
+  u1 <- as.matrix(read.csv(paste0(root, "snr", snr, prefix,"u1.csv"), header = F))
+  u2 <- as.matrix(read.csv(paste0(root, "snr", snr, prefix,"u2.csv"), header = F))
+  u3 <- as.matrix(read.csv(paste0(root, "snr", snr, prefix,"u3.csv"), header = F))
+  
+  for(rep in 1:100){
+  
+  s1[rep,i] <- sum(abs(u1[rep, 1:q]) > 0.01)
+  s2[rep,i] <- sum(abs(u2[rep, 1:q]) > 0.01)
+  s3[rep,i] <- sum(abs(u3[rep, 1:q]) > 0.01)
+}
+
+}else if(i == 4){
+
+  u1 <- as.matrix(read.csv(paste0(root, "snr", snr, prefix,"u1.csv"), header = T))
+  u2 <- as.matrix(read.csv(paste0(root, "snr", snr, prefix,"u2.csv"), header = T))
+  u3 <- as.matrix(read.csv(paste0(root, "snr", snr, prefix,"u3.csv"), header = T))
+  
+  for(rep in 1:100){
+  s1[rep,i] <- sum(abs(u1[rep, 1:q]) > 0.05)
+  s2[rep,i] <- sum(abs(u2[rep, 1:q]) > 0.05)
+  s3[rep,i] <- sum(abs(u3[rep, 1:q]) > 0.05)
+}
+  
+}else if(i == 5){
+  
+  u1 <- as.matrix(read.csv(paste0(root, "snr", snr, prefix,"u1.csv"), header = F))
+  u2 <- as.matrix(read.csv(paste0(root, "snr", snr, prefix,"u2.csv"), header = F))
+  u3 <- as.matrix(read.csv(paste0(root, "snr", snr, prefix,"u3.csv"), header = F))
+  
+  for(rep in 1:100){
+  s1[rep,i] <- sum(abs(u1[rep, 1:q]) > 0.05)
+  s2[rep,i] <- sum(abs(u2[rep, 1:q]) > 0.05)
+  s3[rep,i] <- sum(abs(u3[rep, 1:q]) > 0.05)
+}
+
+}else if(i == 6){
+
+  u1 <- as.matrix(read.csv(paste0(root, "snr", snr, prefix,"u1.csv"), header = F))
+  u2 <- as.matrix(read.csv(paste0(root, "snr", snr, prefix,"u2.csv"), header = F))
+  u3 <- as.matrix(read.csv(paste0(root, "snr", snr, prefix,"u3.csv"), header = F))
+  
+  for(rep in 1:100){
+  s1[rep,i] <- sum(abs(u1[rep, 1:q]) > 0.05)
+  s2[rep,i] <- sum(abs(u2[rep, 1:q]) > 0.05)
+  s3[rep,i] <- sum(abs(u3[rep, 1:q]) > 0.05)
+}
+
+}else if(i == 7){
+  for(rep in 1:100){
+  
+  u1 <- c(rep(1/5, q), rep(0,p-q))
+  u2 <- c(rep(1/5, q), rep(0,p-q))
+  u3 <- c(rep(1/5, q), rep(0,p-q))
+    
+  s1[rep,i] <- sum(u1 > 0.05)
+  s2[rep,i] <- sum(u2 > 0.05)
+  s3[rep,i] <- sum(u3 > 0.05)
+}
+}
+}
+s1_all[[modelname]] <- s1
+s2_all[[modelname]] <- s2
+s3_all[[modelname]] <- s3
+}
+}
+
+
+```
+
+
+```{r saveres}
+
+df_all <- data.frame()
+for(cb in combinations){
+  for(ln in linearity){
+      n <- cb[1]
+      p <- cb[2]
+      q <- cb[3]
+      modelname <- paste0(ln,"_",n,"_",p,"_",q)
+      mean1 <- colMeans(s1_all[[modelname]], na.rm = TRUE)[1:7]
+      mean2 <- colMeans(s2_all[[modelname]], na.rm = TRUE)[1:7]
+      mean3 <- colMeans(s3_all[[modelname]], na.rm = TRUE)[1:7]
+      sd1 <- colSds(s1_all[[modelname]], na.rm = TRUE)[1:7]/sqrt(n)
+      sd2 <- colSds(s2_all[[modelname]], na.rm = TRUE)[1:7]/sqrt(n)
+      sd3 <- colSds(s3_all[[modelname]], na.rm = TRUE)[1:7]/sqrt(n)
+      
+      df1 <- data.frame(Methods = methods,
+                 Scenario = ln,
+                 n = n,
+                 p = p,
+                 s = q,
+                 type = "X1 vs X2",
+                 Values = mean1,
+                 std = sd1)
+      df2 <- data.frame(Methods = methods,
+                 Scenario = ln,
+                 n = n,
+                 p = p,
+                 s = q,
+                 type = "X1 vs X3",
+                 Values = mean2,
+                 std = sd2)
+      df3 <- data.frame(Methods = methods,
+                 Scenario = ln,
+                 n = n,
+                 p = p,
+                 s = q,
+                 type = "X2 vs X3",
+                 Values = mean3,
+                 std = sd3)
+      df <- rbind(df1, df2, df3)
+      df_all <- rbind(df_all,df)
+  }
+}
+root_plot <- "E:/Github/res/SNGCCA/SNGCCA/Results/fig_select"
+data1 <- df_all[1:168, ]
+write.csv(data1, file.path(root_plot,"data1_s2.csv"))
+data2 <- df_all[c(85:126, 169:252),]
+write.csv(data2, file.path(root_plot,"data2_s2.csv"))
+data3 <- df_all[c(85:126, 253:336),]
+write.csv(data3, file.path(root_plot,"data3_s2.csv"))
+```
+
+```{r dcorplot1}
+ggthemr('fresh')
+#data <- data1
+data <- read.csv(file.path(root_plot, 'data1_s2.csv'))
+data <- data[which(data$Methods != "DGCCA" & data$Methods != "Ground Truth"),]
+data$type[which(data$type == 'X1 vs X2' & data$Scenario == 'Linear')] <- 'X2'
+data$type[which(data$type == 'X1 vs X3' & data$Scenario == 'Linear')] <- 'X1'
+data$type[which(data$type == 'X2 vs X3' & data$Scenario == 'Linear')] <- 'X3'
+data$type[which(data$type == 'X1 vs X2' & data$Scenario == 'Nonlinear')] <- 'X1'
+data$type[which(data$type == 'X1 vs X3' & data$Scenario == 'Nonlinear')] <- 'X2'
+data$type[which(data$type == 'X2 vs X3' & data$Scenario == 'Nonlinear')] <- 'X3'
+
+data$Methods[data$Methods == "PDD"] <- "SUMCOR-SGCCA"
+data$Methods[data$Methods == "SGCCA"] <- "MAXVAR-SGCCA"
+data$Methods[data$Methods == "SAKGCCA"] <- "SA-KGCCA"
+data$Methods[data$Methods == "TSKGCCA"] <- "TS-KGCCA"
+data$Methods[data$Methods == "SNGCCA"] <- "HSIC-SGCCA"
+
+data$Methods <- factor(data$Methods, levels = c("HSIC-SGCCA", 
+                                                #"DGCCA", 
+                                                "SA-KGCCA", 
+                                                "SUMCOR-SGCCA", 
+                                                "TS-KGCCA", 
+                                                "MAXVAR-SGCCA"#, 
+                                                #"Ground Truth"
+                                                ))
+sp = ggplot(data = data, aes(x=p,y=Values,color=Methods, group=Methods)) + 
+  geom_line(size=0.6,position = position_dodge(0.05)) + 
+  geom_point(size=0.5,position = position_dodge(0.05))+
+  geom_errorbar(aes(ymin = Values - 1.96*std, ymax = Values + 1.96*std), width=0.09, position = position_dodge(0.05))
+
+sp + facet_grid(Scenario ~ type) +xlab("Variable Dimension (p)")+ylab("Value")+
+  scale_color_manual(values = c("#E41A1C", 
+                                #"#377EB8", 
+                                "#984EA3", 
+                                "#FF7F00", 
+                                "#4DAF4A", 
+                                "#FFDA22"#, 
+                                #"black"
+                                ))+ 
+  theme(legend.title = element_blank(),
+        strip.text.x = element_text(size=12),
+        strip.text.y = element_text(size=12),
+        legend.text = element_text(size = 10),   
+        legend.key.width = unit(0.3, "cm"),
+        legend.position = 'bottom',
+        legend.direction = "horizontal",
+        legend.box = "horizontal",
+        legend.key.size = unit(0.2, "cm")) + scale_x_log10(breaks = c(30,50,100,200))
+
+
+#ggsave('Fig_dcor1_s2.eps')
+ggsave(paste0(root_plot,'/Fig_select1_snr',snr,'_s2.png'))
+
+
+```
+
+```{r dcorplot2}
+data <- read.csv(file.path(root_plot, 'data2_s2.csv'))
+data <- data[which(data$Methods != "DGCCA" & data$Methods != "Ground Truth"),]
+data$type[which(data$type == 'X1 vs X2' & data$Scenario == 'Linear')] <- 'X2'
+data$type[which(data$type == 'X1 vs X3' & data$Scenario == 'Linear')] <- 'X1'
+data$type[which(data$type == 'X2 vs X3' & data$Scenario == 'Linear')] <- 'X3'
+data$type[which(data$type == 'X1 vs X2' & data$Scenario == 'Nonlinear')] <- 'X1'
+data$type[which(data$type == 'X1 vs X3' & data$Scenario == 'Nonlinear')] <- 'X2'
+data$type[which(data$type == 'X2 vs X3' & data$Scenario == 'Nonlinear')] <- 'X3'
+
+#data <- data2
+data$Methods[data$Methods == "PDD"] <- "SUMCOR-SGCCA"
+data$Methods[data$Methods == "SGCCA"] <- "MAXVAR-SGCCA"
+data$Methods[data$Methods == "SAKGCCA"] <- "SA-KGCCA"
+data$Methods[data$Methods == "TSKGCCA"] <- "TS-KGCCA"
+data$Methods[data$Methods == "SNGCCA"] <- "HSIC-SGCCA"
+
+data$Methods <- factor(data$Methods, levels = c("HSIC-SGCCA", 
+                                                #"DGCCA", 
+                                                "SA-KGCCA", 
+                                                "SUMCOR-SGCCA", 
+                                                "TS-KGCCA", 
+                                                "MAXVAR-SGCCA", 
+                                                "Ground Truth"))
+sp = ggplot(data = data, aes(x=n,y=Values,color=Methods, group=Methods)) + 
+  geom_line(size=0.6,position = position_dodge(0.05)) + 
+  geom_point(size=0.5,position = position_dodge(0.05))+
+  geom_errorbar(aes(ymin = Values - 1.96*std, ymax = Values + 1.96*std), width=0.09, position = position_dodge(0.05))
+
+sp + facet_grid(Scenario ~ type) +xlab("Sample Size (n)")+ylab("Value")+
+  scale_color_manual(values = c("#E41A1C", 
+                                #"#377EB8", 
+                                "#984EA3", 
+                                "#FF7F00", 
+                                "#4DAF4A", 
+                                "#FFDA22", 
+                                "black"
+                                ))+
+  #scale_y_continuous(
+  #  limits = c(-0.25, 1),         
+  #  breaks = seq(-0.25, 1,0.25)  
+  #) +
+  theme(legend.title = element_blank(),
+        strip.text.x = element_text(size=12),
+        strip.text.y = element_text(size=12),
+        legend.text = element_text(size = 10),   
+        legend.key.width = unit(0.3, "cm"),
+        legend.position = 'bottom',
+        legend.direction = "horizontal",
+        legend.box = "horizontal",
+        legend.key.size = unit(0.2, "cm")) + scale_x_log10(breaks = c(100,200,400))
+
+#ggsave('Fig_dcor2_s2.eps')
+ggsave(paste0(root_plot,'/Fig_select2_snr',snr,'_s2.png'))
+
+```
+
+```{r dcorplot3}
+data <- read.csv(file.path(root_plot, 'data3_s2.csv'))
+#data <- data3
+data <- data[which(data$Methods != "DGCCA" & data$Methods != "Ground Truth"),]
+data$type[which(data$type == 'X1 vs X2' & data$Scenario == 'Linear')] <- 'X2'
+data$type[which(data$type == 'X1 vs X3' & data$Scenario == 'Linear')] <- 'X1'
+data$type[which(data$type == 'X2 vs X3' & data$Scenario == 'Linear')] <- 'X3'
+data$type[which(data$type == 'X1 vs X2' & data$Scenario == 'Nonlinear')] <- 'X1'
+data$type[which(data$type == 'X1 vs X3' & data$Scenario == 'Nonlinear')] <- 'X2'
+data$type[which(data$type == 'X2 vs X3' & data$Scenario == 'Nonlinear')] <- 'X3'
+
+data$Methods[data$Methods == "PDD"] <- "SUMCOR-SGCCA"
+data$Methods[data$Methods == "SGCCA"] <- "MAXVAR-SGCCA"
+data$Methods[data$Methods == "SAKGCCA"] <- "SA-KGCCA"
+data$Methods[data$Methods == "TSKGCCA"] <- "TS-KGCCA"
+data$Methods[data$Methods == "SNGCCA"] <- "HSIC-SGCCA"
+unique(data$Methods)
+data$Methods <- factor(data$Methods, levels = c("HSIC-SGCCA", 
+                                                #"DGCCA", 
+                                                "SA-KGCCA", "SUMCOR-SGCCA", "TS-KGCCA", "MAXVAR-SGCCA", "Ground Truth"))
+sp = ggplot(data = data, aes(x=s,y=Values,color=Methods, group=Methods)) + 
+  geom_line(size=0.6,position = position_dodge(0.05)) + 
+  geom_point(size=1,position = position_dodge(0.05))+
+  geom_errorbar(aes(ymin = Values - 1.96*std, ymax = Values + 1.96*std), width=0.09, position = position_dodge(0.05))
+
+sp + facet_grid(Scenario ~ type) +xlab("Sparsity Level (q)")+ylab("Value")+
+  scale_color_manual(values = c("#E41A1C", 
+                                #"#377EB8", 
+                                "#984EA3", "#FF7F00", "#4DAF4A", "#FFDA22", "black"))+ 
+  #scale_y_continuous(
+  #  limits = c(-0.25, 1),         
+  #  breaks = seq(-0.25, 1,0.25)  
+  #) +
+  theme(legend.title = element_blank(),
+        strip.text.x = element_text(size=12),
+        strip.text.y = element_text(size=12),
+        legend.text = element_text(size = 10),   
+        legend.key.width = unit(0.3, "cm"),
+        legend.position = 'bottom',
+        legend.direction = "horizontal",
+        legend.box = "horizontal",
+        legend.key.size = unit(0.2, "cm")) + scale_x_log10()
+
+
+#ggsave('Fig_dcor3_s2.eps')
+ggsave(paste0(root_plot,'/Fig_select3_snr',snr,'_s2.png'))
+
+```
+

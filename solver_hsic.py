@@ -3,11 +3,11 @@ import numpy as np
 from tqdm import tqdm
 #torch.set_default_tensor_type(torch.DoubleTensor)
 
-from proposedmodels.synth_data import create_synthData
-from proposedmodels.hsic_sgcca import HSIC_SGCCA
+from Simulation.proposedmodels.synth_data import create_synthData
+from Simulation.proposedmodels.hsic_sgcca import HSIC_SGCCA
 
-from proposedmodels.utils import rbf_kl, rbf_kx
-from itertools import product, combinations
+from Simulation.proposedmodels.utils import rbf_kl, rbf_kx
+import itertools
 
 import time
 #torch.manual_seed(0)
@@ -16,31 +16,7 @@ class Solver():
         self.SNGCCA = HSIC_SGCCA(device)
         self.device = device
 
-    def fit(self, x_list, test_list=None, train_list=None, eps=1e-7, maxit=100, b=(100,100,100), k=3):
-        x_list = [x.to(device) for x in x_list]
-        # split
-        shuffled_index = np.random.permutation(len(x_list[0]))
-        split_index = int(len(x_list[0]) * 1 / k)
-        data_size = x_list[0].size(0)
-        start_index = i * split_index
-        end_index = (i + 1) * split_index
-        fold_index = shuffled_index[start_index:end_index]
-
-        if test_list is None:
-            test_list = []
-        if train_list is None:
-            train_list = []
-
-        for _, view in enumerate(x_list):
-            test_list.append(view[fold_index, :])
-            non_fold_index = [num for num in shuffled_index if num not in fold_index]
-            train_list.append(view[non_fold_index, :])
-
-        u = Solver._get_outputs(train_list, eps, maxit, b)
-
-        return train_list, test_list, u
-
-    def tune_hyper(self, x_list, k=5, mode = 'cv', grid_value = [1e-3, 1e-2, 1e-1], a = [1e-4, 1e-4, 1e-4]):
+    def tune_hyper(self, x_list, k=5, mode = 'cv', a=[1e-5, 1e-5, 1e-5]):
         # split
         shuffled_index = np.random.permutation(len(x_list[0]))
         split_index = int(len(x_list[0]) * 1/k)
@@ -60,11 +36,9 @@ class Solver():
             b0 = a
             count = 0
 
-            grid = grid_value
-            
-            for a in product(grid, repeat=3):
-            #while max(a) < 1e-1:
-                #a = [i * 10 for i in a]
+            # for a in combinations_with_replacement(a, 3):
+            while max(a) < 1e-1:
+                a = [i * 10 for i in a]
                 count +=1
                 o_list = [0] * 3
                 obj_temp = np.zeros((k, len(x_list)))
@@ -117,7 +91,7 @@ class Solver():
             Pi_list, u_list = self.SNGCCA.fit_admm(train_data, constraint=a, criterion = 1e-4, logging=2, mode=mode)
             K_list = [rbf_kx(test_data[i], Pi_list[i]) for i in range(len(test_data))]
             obj_k = []
-            for items in combinations(range(len(K_list)), 2):
+            for items in itertools.combinations(range(len(K_list)), 2):
                 obj_k.append(np.trace(K_list[items[0]] @ rbf_kl(K_list[items[1]])))
             obj_temp[fold] = np.stack(obj_k)
             o_list = [np.sum(abs(u_list[i]) < 0.05) + o_list[i] for i in range(3)]
@@ -131,6 +105,7 @@ class Solver():
     def _get_outputs(self, b, logging=1):
         u = self.SNGCCA.fit_admm(b, logging)
         return u
+
 
 if __name__ == '__main__':
     ############
@@ -153,7 +128,7 @@ if __name__ == '__main__':
     print(constraint)
     #Pi = solver.tune_hyper(views, k=1, mode='multi_start', a=constraint)
     criterion = 5e-3
-    u = solver.SNGCCA.fit_admm(views, constraint=constraint, criterion=criterion, logging=1)
+    u = solver.SNGCCA.fit_admm(views, constraint=constraint, criterion=criterion, logging=0)
     print(u[0])
     #print(u[1])
     #print(u[2])

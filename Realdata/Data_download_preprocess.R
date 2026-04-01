@@ -26,8 +26,8 @@ mRNA.dataPrep <- GDCprepare(query = mRNA.query)
 save(mRNA.dataPrep, file = "mRNA.dataPrep.rda")
 
 table(colData(mRNA.dataPrep)$gender)
-#female   male 
-#1098     12
+# female   male 
+# 1098     12
 
 # only consider females
 female.id <- colData(mRNA.dataPrep)$gender=="female"

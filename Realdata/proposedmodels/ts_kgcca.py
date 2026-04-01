@@ -105,20 +105,24 @@ def _subproblem(M_matrices, c, pk, k, u):
     #print(np.linalg.norm(u_new))
     return u_new
         
-def _hyper_tuning(M_matrices, s_k_range, p, K, u, max_iter=1000):
+def _hyper_tuning(M_matrices, s_k_range, p, K, u, max_iter=1000, stage = 1, P = None):
     best_s_k = {}
     best_objective = -np.inf
     diff_list = [+np.inf] * K
     diff = np.inf
     i = 0
 
-    while diff > 5e-2 and i < max_iter:
+    while diff > 5e-1 and i < max_iter:
         i += 1
         for s_k in s_k_range:
             #print(f"Iteration {i}")
             for k in range(K):
                 diff_old = diff
                 u_new = _subproblem(M_matrices, s_k, p[k], k, u)
+                if stage > 1:
+                    u_new = (np.identity(p[k]) - P[k]) @ u_new
+                    u_new /= l2n(u_new)
+                    
                 diff_list[k] = np.max(np.abs(u_new - u[k]))
                 
                 diff = max(diff_list)
@@ -134,9 +138,11 @@ def _hyper_tuning(M_matrices, s_k_range, p, K, u, max_iter=1000):
                 best_s_k[k] = s_k
                 best_u = u
     
+    
+        
     return best_s_k, best_u
 
-def tskgcca(data):
+def tskgcca(data, stage = 1, u_m = None):
     
     # Generate example data (replace with actual data)
     K = len(data)
@@ -179,26 +185,40 @@ def tskgcca(data):
             # Store the result in the dictionary
             M_matrices[(s, t)] = M_st
     
-    for _ in range(5):
+    P = []
+    if stage > 1:
+        
+        for k in range(K):
+            K_s_transformed = [K_matrices[(s, i)] @ H for i in range(p[s])]
+            M_kk = np.array([
+                [np.trace(K_s_transformed[i] @ K_s_transformed[j]) / (n ** 2) for j in range(p[s])]
+                for i in range(p[s])
+            ])
+            A_k = M_kk @ u_m[k] 
+            P_k = A_k @ np.linalg.pinv(A_k.T @ A_k) @ A_k.T
+            P.append(P_k)
+
+    for _ in range(2):
         s_k_range = np.linspace(1, np.sqrt(p[k]), 10)
         #print('start')
-        best_s_k, best_u = _hyper_tuning(M_matrices, s_k_range, p, K, u)
+        best_s_k, best_u = _hyper_tuning(M_matrices, s_k_range, p, K, u, stage = stage, P = P)
+        
     return best_s_k, best_u
 
 if __name__ == "__main__":
 
     combinations = [
-        [100, 30, 5],
-        [100, 50, 5],
+        #[100, 30, 5],
+        #[100, 50, 5],
         [100, 100, 5],
-        [100, 200, 5],
+        #[100, 200, 5],
         #[200, 100, 5],
         #[400, 100, 5],
-        [100, 100, 10],
-        [100, 100, 20]
+        #[100, 100, 10],
+        #[100, 100, 20]
     ]
-    
-    for mode in [1]:
+    stage = 2
+    for mode in [1,2]:
         for params in combinations:
             
             t = []
@@ -216,18 +236,24 @@ if __name__ == "__main__":
                     folder = 'Nonlinear/'
             data_path = root + 'Data/' + folder + '/' + str(N) + '_' + str(P) + '_' + str(S) + '/'
             print(params)
+            
+            if stage > 1:
+                path_u = 'E:/GitHub/res/SNGCCA/SNGCCA/Simulation/' + folder + '/' + str(N) + '_' + str(P) + '_' + str(S) + '/'
+                u1_m = np.genfromtxt(path_u + 'tskcca_u1.csv', delimiter=',')
+                u2_m = np.genfromtxt(path_u + 'tskcca_u2.csv', delimiter=',')
+                u3_m = np.genfromtxt(path_u + 'tskcca_u3.csv', delimiter=',')
             for r in range(100):
                 #views = create_synthData_new(v=5,N=N,mode=1,F=30)
                 view1 = np.genfromtxt(data_path + 'data' + str(1) + '_' + str(r) + '.csv', delimiter=',')
                 view2 = np.genfromtxt(data_path + 'data' + str(2) + '_' + str(r) + '.csv', delimiter=',')
                 view3 = np.genfromtxt(data_path + 'data' + str(3) + '_' + str(r) + '.csv', delimiter=',')
                 views = [view1, view2, view3]
-                #print(f'input views shape :')
-                #for i, view in enumerate(views):
-                #    print(f'view_{i} :  {view.shape}')
+                
+                if stage > 1:
+                    u_m = [u1_m[r:r+1,].T, u2_m[r:r+1,].T, u3_m[r:r+1,].T]
                 start_time = time.time()
                 
-                s_k, u = tskcca(views)
+                s_k, u = tskgcca(views, stage = 2, u_m = u_m)
                 end_time = time.time()       
                 t.append(end_time - start_time)
                 u1.append(u[0])
@@ -235,7 +261,7 @@ if __name__ == "__main__":
                 u3.append(u[2])
             
             merged_array = merged_array = np.empty((100,P))
-            path = 'E:/res/SNGCCA/SNGCCA/Simulation/' + folder + '/' + str(N) + '_' + str(P) + '_' + str(S) + '/'
+            path = 'E:/Github/res/SNGCCA/SNGCCA/Simulation/pair2/' + folder + '/' + str(N) + '_' + str(P) + '_' + str(S) + '/'
         
             for i, arr in enumerate(u1):
                 merged_array[i] = u1[i].flatten()
