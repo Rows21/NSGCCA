@@ -395,7 +395,9 @@ if(i == 1){
               uk   = u_list,
               SIMPLIFY = FALSE
             )
-
+  Ktilde_list[[1]] <- center_kernel(unname(Ktilde_list[[1]]))
+  Ktilde_list[[2]] <- center_kernel(unname(Ktilde_list[[2]]))
+  Ktilde_list[[3]] <- center_kernel(unname(Ktilde_list[[3]]))
   result <- rgcca(Ktilde_list, tau = c(1,1,1), ncomp = 1,n_iter_max = 10)
 
   proj1 <- result$a[[1]]
