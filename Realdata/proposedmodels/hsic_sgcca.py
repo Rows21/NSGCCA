@@ -47,8 +47,9 @@ class HSIC_SGCCA():
         
         #H /= np.trace(H)
         Gamma = np.zeros((p, p))
-        Kx = rbf_kx(view, Pi)
-        H = sqcovx * Pi * sqcovx
+        #Kx = rbf_kx(view, Pi)
+        Kx = rbf_kx_fast(view, Pi)
+        H = sqcovx @ Pi @ sqcovx
         R = None
         if stage >1 and u_pre_list is not None:
             A = sqcovx @ u_pre_list.T
@@ -56,8 +57,8 @@ class HSIC_SGCCA():
             R = np.eye(P.shape[0]) - P
             RPR = R @ Pi @ R
             Z = z_r(view, R)
-            Kx = rbf_kx(view, RPR)
-            H = sqcovx * RPR * sqcovx
+            Kx = rbf_kx_fast(view, RPR)
+            H = sqcovx @ RPR @ sqcovx
         else:
             Z = z(view)
         return covx, sqcovx, tau, Pi, Kx, Z, H, Gamma, R
@@ -78,7 +79,7 @@ class HSIC_SGCCA():
         initPi = cp.eye(p) / cp.trace(covx)
         Pi = initPi
 
-        Kx = rbf_kx_cp(view, Pi)
+        Kx = rbf_kx_fast_cp(view, Pi)
         Z = z_cp(view, p)
 
         H = sqcovx * Pi * sqcovx
@@ -92,7 +93,21 @@ class HSIC_SGCCA():
         u_new_meta = u_new_meta[:, top_indices]
         u_new = u_new_meta
         self.u_list[i] = u_new
-        
+    
+    def _u_svd2(self, i, Pi):
+        Pi_sym = 0.5 * (Pi + Pi.T)
+        eigvals, eigvecs = np.linalg.eigh(Pi_sym)
+
+        u = eigvecs[:, np.argmax(eigvals)]
+
+        # scale to u.T S u = 1
+        S = self.covx_list[i]
+        denom = np.sqrt(float(u.T @ S @ u))
+        if denom > 1e-12:
+            u = u / denom
+
+        self.u_list[i] = u.reshape(-1, 1)
+    
     def _u_svd_cp(self, i, Pi):
         _, u_new_meta = cp.linalg.eigh((Pi + Pi.T) / 2)
         l1_norms = cp.sum(cp.abs(u_new_meta), axis=0)
@@ -104,7 +119,7 @@ class HSIC_SGCCA():
     def fit_admm(self, 
                  views, 
                  constraint, 
-                 criterion=5e-3,
+                 criterion=5e-7,
                  logging=1, 
                  mode = 'compute', 
                  Pi0_list = None, 
@@ -170,15 +185,16 @@ class HSIC_SGCCA():
             for i, view in enumerate(self.views):
                 n, p = view.shape
                 Kl_grad = sum([self.K_list[j] for j in range(self.n_views) if j != i])
-                K_tilde = rbf_kl(Kl_grad) # H @ Kl_grad @ H
+                K_tilde = rbf_kl_fast(Kl_grad) # H @ Kl_grad @ H
+                #K_tilde0 = rbf_kl(Kl_grad)
                 
                 Coeft = self.K_list[i] * K_tilde
                 #dF = delta_PiH(view, Coeft)
 
-                if p < n:
-                    dF = delta_Pi(view, Coeft)
+                if self.stage > 1:
+                    dF = delta_Pi_fast2(view, Coeft, R=self.R_list[i])
                 else:
-                    dF = delta_Pi(view, Coeft)
+                    dF = delta_Pi_fast(view, Coeft)
                 
                 L = 2 * np.sum(abs(K_tilde) * self.Z_list[i])/ (4 * n ** 2)
                 Pi = self.Pi_list[i]
@@ -202,15 +218,24 @@ class HSIC_SGCCA():
                 covx = self.covx_list[i]
                 tau = self.tau_list[i]
 
-                H = self.H_list[i]
-                Gamma = self.Gamma_list[i]
+                #H = self.H_list[i]
+                #Gamma = self.Gamma_list[i]
+
+                R = self.R_list[i]
+
+                if self.stage == 1:
+                    H = sqcovx @ Pi @ sqcovx
+                else:
+                    H = sqcovx @ (R @ Pi @ R) @ sqcovx
+                Gamma = np.zeros_like(H)
                 #print(inner_tol)
                 if self.stage > 1:
-                    R = self.R_list[i]
+
                     RPR = R @ Pi @ R
                     while (inner_iter <= inner_maxiter) & (inner_error > inner_tol):
                         #print(inner_iter)
                         #print("Pi",torch.trace(sqcovx @ Pi @ sqcovx) )
+                        Pi_old = Pi.copy()
                         temp_v = Pi-(rho/tau) * R @ sqcovx @ (sqcovx @ RPR @ sqcovx - H + Gamma) @ sqcovx @ R
                         v = tau * temp_v + L * a
                         RVR = R @ v @ R
@@ -222,13 +247,15 @@ class HSIC_SGCCA():
                         #print("H",torch.trace(H))
                         Gamma += sqcovx @ RPR @ sqcovx - H
                         
-                        inner_error = np.max([np.max(np.max(np.abs(sqcovx @ RPR @ sqcovx - H))), np.max(np.max(np.abs(Pi - Pi_pre)))])
+                        #inner_error = np.max([np.max(np.max(np.abs(sqcovx @ RPR @ sqcovx - H))), np.max(np.max(np.abs(Pi - Pi_pre)))])
+                        inner_error = max(np.max(np.abs(sqcovx @ RPR @ sqcovx - H)),np.max(np.abs(Pi - Pi_old)))
                         inner_iter = inner_iter + 1
 
                 else:
                     while (inner_iter <= inner_maxiter) & (inner_error > inner_tol):
                         #print(inner_iter)
                         #print("Pi",torch.trace(sqcovx @ Pi @ sqcovx) )
+                        Pi_old = Pi.copy()
                         temp = Pi-(rho/tau) * covx @ Pi @ covx + (rho/tau) * sqcovx @ (H-Gamma) @ sqcovx
                         temp = tau/(tau+L)*temp+L/(tau+L) * a
                         
@@ -237,28 +264,35 @@ class HSIC_SGCCA():
                         #print("H",torch.trace(H))
                         Gamma = Gamma + sqcovx @ Pi @ sqcovx - H
                         
-                        inner_error = np.max([np.max(np.max(np.abs(sqcovx @ Pi @ sqcovx - H))), np.max(np.max(np.abs(Pi - Pi_pre)))])
+                        #inner_error = np.max([np.max(np.max(np.abs(sqcovx @ Pi @ sqcovx - H))), np.max(np.max(np.abs(Pi - Pi_pre)))])
+                        inner_error = max(np.max(np.abs(sqcovx @ Pi @ sqcovx - H)),np.max(np.abs(Pi - Pi_old)))
                         inner_iter = inner_iter + 1
 
                 self.Pi_list[i] = Pi
                 self.H_list[i] = H
                 self.Gamma_list[i] = Gamma
                 
-                self.K_list[i] = rbf_kx(view, Pi)
+                if self.stage > 1:
+                    R = self.R_list[i]
+                    self.K_list[i] = rbf_kx_fast(view, R @ Pi @ R)
+                else:
+                    self.K_list[i] = rbf_kx_fast(view, Pi)
                 
                 diff_list[i] = np.max(abs(Pi - Pi_pre))
                 #print(inner_iter)
                 #print(inner_error)
             error_iter = np.max(np.stack(diff_list))
             F_trial = -np.sum([constraint[i] * np.linalg.norm(self.Pi_list[i], ord=1) for i in range(len(self.Pi_list))])
+            #sig = 0
             for items in itertools.combinations(range(len(self.K_list)), 2):
                 F_trial += np.trace(self.K_list[items[0]] @ rbf_kl(self.K_list[items[1]]))
+                #sig += np.trace(self.K_list[items[0]] @ rbf_kl(self.K_list[items[1]]))
 
             loss = '{:.4g}'.format(sum([abs(i) for i in diff_list]))
             if logging == 1:
                 print('outer_iter=', outer_iter, 'loss=', sum(diff_list), "diff_tol=",self.L_list, "diff_list=", diff_list, 'obj=', F_trial)
             elif logging == 0:
-                progress_bar.set_description(f"outer_iter=: {outer_iter},obj: {'{:.4g}'.format(F_trial)}, Loss: {loss}, diff_list: {np.around(diff_list, decimals=2)}")
+                progress_bar.set_description(f"outer_iter=: {outer_iter},obj: {'{:.4g}'.format(F_trial)}, Loss: {loss}, diff_list: {np.around(diff_list, decimals=8)}")
 
             if error_iter < criterion:
                 if self.stage == 1:
@@ -276,11 +310,8 @@ class HSIC_SGCCA():
             else:
                 continue
         for i in range(self.n_views):
-            if self.stage == 1:
-                self._u_svd(i, self.Pi_list[i])
-            else:
-                self._u_svd(i, self.R_list[i] @ self.Pi_list[i] @ self.R_list[i])
+            self._u_svd(i, self.R_list[i] @ self.Pi_list[i] @ self.R_list[i])
         if mode == 'multi_start':
             return self.Pi_list, self.u_list, F_trial
         else: 
-            return self.Pi_list, self.u_list
+            return self.u_list

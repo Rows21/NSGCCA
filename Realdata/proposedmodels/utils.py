@@ -8,7 +8,7 @@ import xgboost as xgb
 #from DeepQuantreg import utils as utils
 from tqdm import tqdm
 from sklearn.model_selection import train_test_split
-#from SurvivalEVAL.Evaluator import PointEvaluator
+from SurvivalEVAL.Evaluator import PointEvaluator
 from scipy.stats import ttest_rel
 #device = 'cuda' if torch.cuda.is_available() else 'cpu'
 #print("Using", torch.cuda.device_count(), "GPUs")
@@ -59,6 +59,22 @@ def rbf_kx(x:np.ndarray, Pi:np.ndarray, sigma=None):
     Kx = np.exp(- Kx / 2)
     return Kx
 
+def rbf_kx_fast(x: np.ndarray, Pi: np.ndarray, sigma=None):
+    # x: n x p
+    # Pi: p x p
+
+    if sigma is None:
+        sigma = 1.0
+
+    A = x @ Pi @ x.T
+    diag_A = np.diag(A)
+
+    D = diag_A[:, None] + diag_A[None, :] - 2 * A
+    D = np.maximum(D, 0)  # avoid tiny negative values from numerical error
+
+    Kx = np.exp(-D / (2 * sigma**2))
+    return Kx
+
 def dF1_vectorized(view: np.ndarray, Pi: np.ndarray, K: np.ndarray, i_mask: int = None):
     """
     view: (n, p)
@@ -103,7 +119,13 @@ def rbf_kl(sum_K):
     I_n = np.eye(n)
     H = I_n - np.outer(np.ones(n), np.ones(n)) / n
     return H @ sum_K @ H
-    
+
+def rbf_kl_fast(sum_K: np.ndarray):
+    row_mean = np.mean(sum_K, axis=1, keepdims=True)
+    col_mean = np.mean(sum_K, axis=0, keepdims=True)
+    total_mean = np.mean(sum_K)
+
+    return sum_K - row_mean - col_mean + total_mean
 #def z(x, p):
 #    n = x.shape[0]
 #    Z_F2 = np.zeros((n, n))
@@ -116,12 +138,17 @@ def z(x):
     Z_F2 = np.einsum('ijk,ijk->ij', diff, diff) ** 2
     return Z_F2
 
+#def z_r(x, R):
+#    diff = x[:, np.newaxis, :] - x[np.newaxis, :, :]
+#    diff = np.einsum('ab,ijb,bc->ijc', R, diff, R)
+#    Z_F2 = np.einsum('ijk,ijk->ij', diff, diff) ** 2
+#    #Z_F2 = R @ Z_F2 @ R
+#    return Z_F2
+
 def z_r(x, R):
-    diff = x[:, np.newaxis, :] - x[np.newaxis, :, :]
-    diff = np.einsum('ab,ijb,bc->ijc', R, diff, R)
-    Z_F2 = np.einsum('ijk,ijk->ij', diff, diff) ** 2
-    #Z_F2 = R @ Z_F2 @ R
-    return Z_F2
+    diff = x[:, None, :] - x[None, :, :]
+    diff_R = diff @ R
+    return np.sum(diff_R * diff_R, axis=2) ** 2
 
 @numba.njit(parallel=True)
 def delta_Pi(x:np.ndarray, Coeft:np.ndarray):
@@ -132,6 +159,30 @@ def delta_Pi(x:np.ndarray, Coeft:np.ndarray):
         for j in range(n):
             temp += Coeft[i,j] * np.outer(x[i] - x[j], x[i] - x[j])        
     return temp /(2 * n ** 2)
+
+@numba.njit(parallel=True)
+def delta_Pi_fast(x: np.ndarray, Coeft: np.ndarray):
+    n = Coeft.shape[0]
+
+    C = 0.5 * (Coeft + Coeft.T)
+    L = np.diag(C.sum(axis=1)) - C
+
+    out = x.T @ L @ x / n**2
+    return 0.5 * (out + out.T)
+
+#@numba.njit(parallel=True)
+def delta_Pi_fast2(x: np.ndarray, Coeft: np.ndarray, R: np.ndarray):
+    n = Coeft.shape[0]
+
+    C = 0.5 * (Coeft + Coeft.T)
+
+    Y = x @ R
+
+    d = C.sum(axis=1)
+    LY = d[:, None] * Y - C @ Y
+
+    out = Y.T @ LY / (n ** 2)
+    return 0.5 * (out + out.T)
 
 @numba.njit(parallel=True)
 def delta_PiH(x:np.ndarray, Coeft:np.ndarray):
