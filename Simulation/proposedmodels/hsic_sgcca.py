@@ -9,7 +9,7 @@ if device == 'cuda':
 #import cupy as cp
 from tqdm import tqdm
 
-from proposedmodels.utils import *
+from Simulation.proposedmodels.utils import *
 
 class HSIC_SGCCA():
     def __init__(self, device='cpu', stage = 1):
@@ -309,9 +309,18 @@ class HSIC_SGCCA():
                     return self.u_list
             else:
                 continue
-        for i in range(self.n_views):
-            self._u_svd(i, self.R_list[i] @ self.Pi_list[i] @ self.R_list[i])
+        
+    
+        if self.stage == 1:
+            for i in range(self.n_views):
+                self._u_svd(i, self.Pi_list[i])
+        else:
+            for i in range(self.n_views):
+                self._u_svd(i, self.R_list[i] @ self.Pi_list[i] @ self.R_list[i])
+        #for i in range(self.n_views):
+        #    self._u_svd(i, self.R_list[i] @ self.Pi_list[i] @ self.R_list[i])
         if mode == 'multi_start':
             return self.Pi_list, self.u_list, F_trial
         else: 
-            return self.u_list
+            return self.Pi_list, self.u_list
+

@@ -3,11 +3,12 @@ import numpy as np
 from tqdm import tqdm
 #torch.set_default_tensor_type(torch.DoubleTensor)
 
-from Simulation.proposedmodels.synth_data import create_synthData
+from Simulation.proposedmodels.synth_data import generate_linear_snr
 from Simulation.proposedmodels.hsic_sgcca import HSIC_SGCCA
 
 from Simulation.proposedmodels.utils import rbf_kl, rbf_kx
 import itertools
+from itertools import product
 
 import time
 #torch.manual_seed(0)
@@ -16,7 +17,7 @@ class Solver():
         self.SNGCCA = HSIC_SGCCA(device)
         self.device = device
 
-    def tune_hyper(self, x_list, k=5, mode = 'cv', a=[1e-5, 1e-5, 1e-5]):
+    def tune_hyper(self, x_list, k=5, mode = 'cv', a=[1e-4, 1e-4, 1e-4]):
         # split
         shuffled_index = np.random.permutation(len(x_list[0]))
         split_index = int(len(x_list[0]) * 1/k)
@@ -26,33 +27,33 @@ class Solver():
             end_index = (j + 1) * split_index
             fold_index.append(shuffled_index[start_index:end_index])
             
-        obj_validate = 999999
+        obj_validate = 0
         if mode == 'cv':
             # set hyperparams set
-            #a = [1e-4, 1e-4, 1e-4]
+            a = [1e-4, 1e-3, 1e-2, 1e-1]
+            comb = list(product(a, repeat=3))
             print("Start Hyperparams Tuning")
             # fixed folds number
             # start cross validation
-            b0 = a
+            b0 = [1e-4,1e-4,1e-4]
             count = 0
 
-            # for a in combinations_with_replacement(a, 3):
-            while max(a) < 1e-1:
-                a = [i * 10 for i in a]
+            for metahype in comb:
+            #while max(a) < 1e-1:
+                print(metahype)
                 count +=1
                 o_list = [0] * 3
                 obj_temp = np.zeros((k, len(x_list)))
-                min_index, mean_obj = self._cv(x_list, fold_index, shuffled_index, obj_temp, o_list, a, mode, k)
+                min_index, mean_obj = self._cv(x_list, fold_index, shuffled_index, obj_temp, o_list, metahype, mode, k)
+                #metahype[min_index] = metahype[min_index] * 10
+                #a = [i * 10 for i in a]
+
                 print("Sparsity selection number=", count, "hyperparams=", a, "obj=", mean_obj)
-                #a[min_index] = a[min_index] * 10
-                
-                if mean_obj < obj_validate:
-                    b0 = a
-                    #print(b0)
+                if mean_obj > obj_validate:
+                    b0 = metahype
                     obj_validate = mean_obj
                 else:
                     continue
-                
             print("Finish Tuning!")
             return b0, obj_validate
         elif mode == 'multi_start':
@@ -72,6 +73,7 @@ class Solver():
                     continue
             
             return b0
+
     
     def _cv(self, x_list, fold_index, shuffled_index, obj_temp, o_list, a, mode, k=5):
         for fold in tqdm(range(k)):
@@ -121,7 +123,7 @@ if __name__ == '__main__':
     
     Pi = None
 
-    views = create_synthData(num,N, mode=mode, F=tol)
+    views = generate_linear_snr(N=100, F=100, v=5, SNR=25,corr12=0.0, corr13=0.7, corr23=0.7)
     solver = Solver(device=device)
     
     constraint, _ = solver.tune_hyper(views, k=5, mode='cv')

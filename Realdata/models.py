@@ -15,7 +15,7 @@ class MlpNet(nn.Module):
                 nn.init.zeros_(layer1.bias)
                 layer = nn.Sequential(
                     layer1,
-                    #nn.Sigmoid(), 
+                    nn.Sigmoid(), 
                     nn.BatchNorm1d(num_features=layer_sizes[l_id + 1], affine=False),
                 )
                 #nn.init.xavier_uniform_(layer.linear.weight)

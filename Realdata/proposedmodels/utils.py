@@ -8,7 +8,7 @@ import xgboost as xgb
 #from DeepQuantreg import utils as utils
 from tqdm import tqdm
 from sklearn.model_selection import train_test_split
-from SurvivalEVAL.Evaluator import PointEvaluator
+#from SurvivalEVAL.Evaluator import PointEvaluator
 from scipy.stats import ttest_rel
 #device = 'cuda' if torch.cuda.is_available() else 'cpu'
 #print("Using", torch.cuda.device_count(), "GPUs")

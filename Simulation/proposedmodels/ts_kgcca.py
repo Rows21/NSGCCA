@@ -1,6 +1,8 @@
 import numpy as np
 from sklearn.metrics.pairwise import pairwise_distances
 import time
+from itertools import product
+import copy
 
 def gram_matrix(X):
     """Compute centered Gaussian kernel Gram matrix."""
@@ -9,8 +11,14 @@ def gram_matrix(X):
     upper_off_diag = pairwise_dist[np.triu_indices_from(pairwise_dist, k=1)]
     sigma2 = np.median(upper_off_diag)
     K = np.exp(-pairwise_dist / (2 * sigma2))
+    row_means = np.mean(K, axis=1, keepdims=True) 
+    col_means = np.mean(K, axis=0, keepdims=True) 
+    grand_mean = K.mean()
+    K_centered = K - row_means - col_means+ grand_mean
+
+    K_centered = (K_centered + K_centered.T) / 2  # Symmetrize
     # Parameters
-    return K
+    return K_centered, K
 
 def l2n(vec):
     """ computes "safe" l2 norm """
@@ -28,7 +36,7 @@ def binary_search(argu, sumabs):
     lam1 = 0
     lam2 = np.max(np.abs(argu)) - 1e-5
 
-    for idx in range(150):
+    for idx in range(1000):
         su = soft(argu, (lam1 + lam2) / 2)
         if np.sum(np.abs(su/l2n(su))) < sumabs:
             lam2 = (lam1 + lam2) / 2
@@ -104,45 +112,86 @@ def _subproblem(M_matrices, c, pk, k, u):
     u_new /= l2n(u_new)
     #print(np.linalg.norm(u_new))
     return u_new
-        
-def _hyper_tuning(M_matrices, s_k_range, p, K, u, max_iter=1000, stage = 1, P = None):
-    best_s_k = {}
+
+def copy_u(u):
+    if isinstance(u, dict):
+        return {key: val.copy() for key, val in u.items()}
+    elif isinstance(u, list):
+        return [val.copy() for val in u]
+    else:
+        return copy.deepcopy(u)
+
+def _hyper_tuning(M_matrices, p, K, u, best_s_k = None, max_iter=150, stage = 1, P = None):
+    
     best_objective = -np.inf
     diff_list = [+np.inf] * K
     diff = np.inf
     i = 0
 
-    while diff > 5e-1 and i < max_iter:
-        i += 1
-        for s_k in s_k_range:
-            #print(f"Iteration {i}")
-            for k in range(K):
-                diff_old = diff
-                u_new = _subproblem(M_matrices, s_k, p[k], k, u)
-                if stage > 1:
-                    u_new = (np.identity(p[k]) - P[k]) @ u_new
-                    u_new /= l2n(u_new)
-                    
-                diff_list[k] = np.max(np.abs(u_new - u[k]))
-                
-                diff = max(diff_list)
-                if diff < diff_old:
-                    u[k] = u_new
-                #print(f"View {k}: {diff}")
+    if best_s_k is None:
+        #best_s_k = [-1] * K
+        s_k_range = np.linspace(1, np.sqrt(p[0]), 10)
+        combinations = list(product(s_k_range, repeat=3))
 
-            objective_value = sum([u[s].T @ M_matrices[(s,t)] @ u[t] for s in range(K) for t in range(s+1, K)]).item()
-            #print(objective_value)
-            
-            if objective_value > best_objective:
-                best_objective = objective_value
-                best_s_k[k] = s_k
-                best_u = u
+        for s_k in combinations:
+            #u = copy_u(u_init)
+            diff = np.inf
+            i = 0
+            while diff > 5e-3 and i < max_iter:
+                i += 1
+                #print(f"Iteration {i}")
+                for k in range(K):
+                    diff_old = diff
+                    u_new = _subproblem(M_matrices, s_k[k], p[k], k, u)
+                    if stage > 1:
+                        u_new = (np.identity(p[k]) - P[k]) @ u_new
+                        u_new /= l2n(u_new)
+                        
+                    diff_list[k] = np.max(np.abs(u_new - u[k]))
+                    
+                    diff = max(diff_list)
+                    if diff < diff_old:
+                        u[k] = u_new
+                    #print(f"View {k}: {diff}")
+
+                objective_value = sum([u[s].T @ M_matrices[(s,t)] @ u[t] for s in range(K) for t in range(s+1, K)]).item()
+                    #print(objective_value)
+                    
+                if objective_value > best_objective:
+                        best_objective = objective_value
+                        #print(best_s_k)
+                        best_s_k = s_k
+                        best_u = u
+    else:
+        while diff > 5e-3 and i < max_iter:
+                i += 1
+                #print(f"Iteration {i}")
+                for k in range(K):
+                    diff_old = diff
+                    u_new = _subproblem(M_matrices, best_s_k[k], p[k], k, u)
+                    if stage > 1:
+                        u_new = (np.identity(p[k]) - P[k]) @ u_new
+                        u_new /= l2n(u_new)
+                        
+                    diff_list[k] = np.max(np.abs(u_new - u[k]))
+                    
+                    diff = max(diff_list)
+                    if diff < diff_old:
+                        u[k] = u_new
+                    #print(f"View {k}: {diff}")
+
+                objective_value = sum([u[s].T @ M_matrices[(s,t)] @ u[t] for s in range(K) for t in range(s+1, K)]).item()
+
+                if objective_value > best_objective:
+                    best_objective = objective_value
+                    #best_s_k[k] = s_k
+                    best_u = u
     
     
         
     return best_s_k, best_u
 
-def tskgcca(data, stage = 1, u_m = None):
+def tskcca(data, stage = 1, best_s_k = None, u_m = None):
     
     # Generate example data (replace with actual data)
     K = len(data)
@@ -156,7 +205,7 @@ def tskgcca(data, stage = 1, u_m = None):
 
     # Compute centered Gram matrices
     K_matrices = {
-        (k, j): gram_matrix(X_data[(k, j)]) for k in range(K) for j in range(p[k])
+        (k, j): gram_matrix(X_data[(k, j)])[1] for k in range(K) for j in range(p[k])
     }
 
     # Random initialization
@@ -185,9 +234,8 @@ def tskgcca(data, stage = 1, u_m = None):
             # Store the result in the dictionary
             M_matrices[(s, t)] = M_st
     
-    P = []
     if stage > 1:
-        
+        P = []
         for k in range(K):
             K_s_transformed = [K_matrices[(s, i)] @ H for i in range(p[s])]
             M_kk = np.array([
@@ -197,11 +245,11 @@ def tskgcca(data, stage = 1, u_m = None):
             A_k = M_kk @ u_m[k] 
             P_k = A_k @ np.linalg.pinv(A_k.T @ A_k) @ A_k.T
             P.append(P_k)
-
-    for _ in range(2):
-        s_k_range = np.linspace(1, np.sqrt(p[k]), 10)
-        #print('start')
-        best_s_k, best_u = _hyper_tuning(M_matrices, s_k_range, p, K, u, stage = stage, P = P)
+    
+    if best_s_k is None:
+        best_s_k, best_u = _hyper_tuning(M_matrices, p, K, u, stage = stage, P = P if stage > 1 else None)
+    else:
+        best_s_k, best_u = _hyper_tuning(M_matrices, p, K, u, best_s_k, stage = stage, P = P if stage > 1 else None)
         
     return best_s_k, best_u
 

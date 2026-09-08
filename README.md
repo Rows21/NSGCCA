@@ -42,6 +42,14 @@ conda env create -f env.yml
  
  <!-- ✅ ⬜️  -->
 
+ ## Hyper-parameter tuning
+  We design hyper-parameter tuning before function executions:
+  ### HSIC-SGCCA
+  Use function: solver.tune_hyper(views, k=5, mode='cv')
+  ### TS-KGCCA & SA-KGCCA
+  The hyper-paramter tuning structures are built-in functions.
+
+
  ## Training
   - Follow the [Tutorial](/Tutorial.ipynb) file for training `HSIC-SGCCA`, `SA-KGCCA` and `TS-KGCCA`.
   ```
@@ -53,7 +61,21 @@ conda env create -f env.yml
 
   ## For SA-KGCCA
   u = sakgcca(views)
+  
   ```
+  - Note that for KGCCA component in TS-KGCCA, we use function `tskcca_post` in the [tskgcca_post](/Simulation/tskgcca_post.py) file for simulation and [tskgcca_post_real](/Realdata/tskgcca_post_real.py) file for real data example.
+  - Higher-stage calculation is controlled by `stage = n`.
+
+ ## Results 
+ ### Simulation Studies
+ FIgure 1: The variable selection performance are processed through [Select.Rmd](/Simulation/Select.Rmd). <br>
+ Figure 2: The Normalized sample HSIC performance are calculated through [CKA.Rmd](/Simulation/CKA.Rmd).  <br>
+ Figure 3: The scatter plots are generated through [Linear_Combination.Rmd](/Simulation/Linear_Combination.Rmd).
+
+ ### Real-World Studies -- TCGA breast cancer database
+ [Data_download_preprocess](/Realdata/Data_download_preprocess.R): TCGA-BRCA preprocessing through R script. <br>
+ [Venn Diagram](/Results): The clustering results for TCGA-BRCA. 
+ Survival model is processed through [XGBoost-AFT](https://xgboost.readthedocs.io/en/stable/python/python_intro.html) model and [SurvivalEVAL](https://github.com/shi-ang/SurvivalEVAL) package.
 
 
 ## Citation
@@ -67,12 +89,6 @@ If you find this repository helpful, please consider citing:
 }
 ```
 
- ## Results 
- ### Simulation Studies
- [Figure 2](/Results): The simulation performance for Synthetic Datasets. 
- ### Real-World Studies -- TCGA breast cancer database
- [Data_download_preprocess](/Realdata/Data_download_preprocess.R): TCGA-BRCA preprocessing through R script. <br>
- [Venn Diagram](/Results): The clustering results for TCGA-BRCA. 
 
 ## Acknowledgement
 This repository is built using the [timm](https://github.com/rwightman/pytorch-image-models) library.
