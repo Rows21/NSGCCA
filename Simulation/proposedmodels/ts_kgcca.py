@@ -103,7 +103,7 @@ def _subproblem(M_matrices, c, pk, k, u):
     for key, matrix in M_matrices.items():
         if k in key:
             other_value = key[0] if key[1] == k else key[1]
-            if key[1] == k:  # 如果 2 在第二位，则转置矩阵
+            if key[1] == k:  
                 matrix = matrix.T
             sum_term += matrix @ u[other_value]
                         
@@ -121,7 +121,7 @@ def copy_u(u):
     else:
         return copy.deepcopy(u)
 
-def _hyper_tuning(M_matrices, p, K, u, best_s_k = None, max_iter=150, stage = 1, P = None):
+def _hyper_tuning(M_matrices, p, K, u, best_s_k = None, max_iter=50, stage = 1, P = None):
     
     best_objective = -np.inf
     diff_list = [+np.inf] * K

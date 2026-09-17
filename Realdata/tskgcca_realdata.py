@@ -31,7 +31,7 @@ def binary_search(argu, sumabs):
     lam1 = 0
     lam2 = np.max(np.abs(argu)) - 1e-5
 
-    for idx in range(150):
+    for idx in range(1000):
         su = soft(argu, (lam1 + lam2) / 2)
         if np.sum(np.abs(su/l2n(su))) < sumabs:
             lam2 = (lam1 + lam2) / 2
@@ -108,14 +108,14 @@ def _subproblem(M_matrices, c, pk, k, u):
     #print(np.linalg.norm(u_new))
     return u_new
         
-def _hyper_tuning(M_matrices, s_k_range, p, K, u, max_iter=1000):
+def _hyper_tuning(M_matrices, s_k_range, p, K, u, max_iter=50):
     best_s_k = {}
     best_objective = -np.inf
     diff_list = [+np.inf] * K
     diff = np.inf
     i = 0
 
-    while diff > 5e-1 and i < max_iter:
+    while diff > 5e-3 and i < max_iter:
         i += 1
         for s_k in s_k_range:
             #print(f"Iteration {i}")
@@ -191,8 +191,7 @@ def tskcca(data):
 if __name__ == '__main__':
 
     device = 'cpu'
-    #root = '/scratch/rw2867/projects/SNGCCA'
-    root = 'E:/res/SNGCCA'
+    root = '/scratch/rw2867/projects/SNGCCA'
 
     views = _get_tcga(root)
     views = [view[:200] for view in views]

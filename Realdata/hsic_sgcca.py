@@ -168,11 +168,11 @@ class HSIC_SGCCA():
             self.Gamma_list.append(Gamma* (self.n_views - 1))
             
 
-        outer_maxiter = 10
+        outer_maxiter = 20
         outer_tol = 1e-5
         inner_maxiter = 50
         
-        inner_tol = 2e-9
+        inner_tol = 5e-3#2e-9
         outer_error = 1
         diff_list = [999] * self.n_views
         criterion = criterion

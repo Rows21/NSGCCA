@@ -155,7 +155,7 @@ def solve_alpha_block(n, p, k, K, alpha_fixed, K_matrices, s_k, epsilon_k, stage
 
     # Solve the optimization problem
     problem = cp.Problem(objective, constraints)
-    problem.solve(solver=cp.SCS, ignore_dpp=True, use_indirect=True, max_iters=5)
+    problem.solve(solver=cp.SCS, ignore_dpp=True, use_indirect=True, max_iters=50)
 
     # Return the updated values for alpha_{kj} and the objective value
     return [alpha_var.value for alpha_var in alpha_vars], problem.value

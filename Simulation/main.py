@@ -40,7 +40,7 @@ class Solver():
 
         return train_list, test_list, u
 
-    def tune_hyper(self, x_list, k=5, mode = 'cv', grid_value = [1e-3, 1e-2, 1e-1], a = [1e-4, 1e-4, 1e-4]):
+    def tune_hyper(self, x_list, k=5, mode = 'cv', grid_value = [1e-4, 1e-3, 1e-2, 1e-1], a = [1e-4, 1e-4, 1e-4]):
         # split
         shuffled_index = np.random.permutation(len(x_list[0]))
         split_index = int(len(x_list[0]) * 1/k)
@@ -90,7 +90,7 @@ class Solver():
                 obj_temp = np.zeros((k, len(x_list)))
                 if i == 0:
                     Pi0_list = [np.eye(x_list[j].shape[1])/np.trace(np.cov(x_list[j].T)) for j in range(3)]
-                Pi_list, u_list, obj = self.SNGCCA.fit_admm(x_list, constraint=a, criterion = 5e-5, logging=2, mode=mode, Pi0_list=Pi0_list)
+                Pi_list, u_list, obj = self.SNGCCA.fit_admm(x_list, constraint=a, criterion = 5e-3, logging=2, mode=mode, Pi0_list=Pi0_list)
                 if obj > obj_validate:
                     b0 = self.SNGCCA.Pi0_list
                     obj_validate = obj
@@ -114,7 +114,7 @@ class Solver():
                 non_fold_index = [num for num in shuffled_index if num not in fold_index[fold]]
                 train_data.append(view[non_fold_index, :])
                 
-            Pi_list, u_list = self.SNGCCA.fit_admm(train_data, constraint=a, criterion = 1e-4, logging=2, mode=mode)
+            Pi_list, u_list = self.SNGCCA.fit_admm(train_data, constraint=a, criterion = 5e-3, logging=2, mode=mode)
             K_list = [rbf_kx(test_data[i], Pi_list[i]) for i in range(len(test_data))]
             obj_k = []
             for items in combinations(range(len(K_list)), 2):
